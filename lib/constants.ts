@@ -13,7 +13,7 @@ export const SITE_CONFIG = {
 
 export const NAVIGATION_ITEMS = [
   { name: "Home", href: "#home" },
-  { name: "About Us", href: "#about" },
+  { name: "About Us", href: "/about" },
   { name: "Centers", href: "#centers" },
   { name: "Graduates", href: "/graduates" },
   { name: "Events", href: "/events" },

@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { GraduationCap, Home, Award, Users, DollarSign, Monitor, Sparkles } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button" // Assuming Button component is imported from a UI library
 
 export function WhyChooseUsSection() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
@@ -86,6 +88,18 @@ export function WhyChooseUsSection() {
             to work or to study. Our program serves as your gateway to effortless language mastery, providing the
             essential foundation for a successful academic experience overseas.
           </p>
+
+          {/* Learn More Button */}
+          <div className="mt-10 text-center">
+            <Link href="/about">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-105"
+              >
+                Learn More About Us
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Features Grid */}
