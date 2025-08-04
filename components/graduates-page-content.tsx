@@ -1,4 +1,5 @@
 "use client"
+import { ImageSlider } from "@/components/common/image-slider"
 
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
@@ -143,6 +144,12 @@ const graduatesData: Graduate[] = [
     gradient: "from-indigo-400 to-blue-500",
     icon: Trophy,
   },
+]
+
+const gallery=[
+  "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
+  "/placeholder.svg?height=400&width=600",
+  "/placeholder.svg?height=400&width=600",
 ]
 
 export function GraduatesPageContent() {
@@ -490,6 +497,12 @@ export function GraduatesPageContent() {
             </div>
           </div>
         )}
+        <div className="w-full lg:w-9/12 mx-auto ">
+       <ImageSlider
+                      key={'selectedBranch'}
+                      images={gallery}
+                      altPrefix={'text'}
+                    /></div>
       </div>
     </div>
   )

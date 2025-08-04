@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { MapPin, Phone, Mail, Clock, Users, Building, Instagram, Facebook,ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
+import { ImageSlider } from "@/components/common/image-slider"
 export function BranchesSection() {
   const [selectedBranch, setSelectedBranch] = useState(0)
-  const autoplayIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   const branches = [
@@ -28,6 +27,12 @@ export function BranchesSection() {
       images: [
         "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
         "/placeholder.svg?height=400&width=600",
+        "/placeholder.svg?height=400&width=600",
+        "/placeholder.svg?height=400&width=600",
+        "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
+        "/placeholder.svg?height=400&width=600",
+        "/placeholder.svg?height=400&width=600",
+        "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
         "/placeholder.svg?height=400&width=600",
       ],
     },
@@ -91,16 +96,9 @@ export function BranchesSection() {
     setCurrentImageIndex(0)
   }, [selectedBranch])
 
-  const handlePrevImage = () => {
-    const newIndex =
-      (currentImageIndex - 1 + branches[selectedBranch].images.length) % branches[selectedBranch].images.length
-    setCurrentImageIndex(newIndex)
-  }
 
-  const handleNextImage = () => {
-    const newIndex = (currentImageIndex + 1) % branches[selectedBranch].images.length
-    setCurrentImageIndex(newIndex)
-  }
+
+
 
   return (
     <section className="py-20 relative">
@@ -217,52 +215,11 @@ export function BranchesSection() {
               </div>
 
                {/* Image Slider */}
-               <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden group bg-black/20">
-                {branches[selectedBranch].images.map((src, index) => (
-                  <img
-                    key={`${selectedBranch}-${index}`}
-                    src={src || "/placeholder.svg"}
-                    alt={`${branches[selectedBranch].name} image ${index + 1}`}
-                    className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                      currentImageIndex === index ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                ))}
-
-                {/* Controls */}
-                <div className="absolute inset-0 flex items-center justify-between p-2">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={handlePrevImage}
-                    className="bg-black/20 text-white rounded-full hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={handleNextImage}
-                    className="bg-black/20 text-white rounded-full hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </Button>
-                </div>
-
-                {/* Dots */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {branches[selectedBranch].images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                        currentImageIndex === index ? "bg-white" : "bg-white/40 hover:bg-white/70"
-                      }`}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
+               <ImageSlider
+                key={selectedBranch}
+                images={branches[selectedBranch].images}
+                altPrefix={branches[selectedBranch].name}
+              />
             </div>
           </div>
         </div>

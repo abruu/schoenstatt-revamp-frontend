@@ -59,19 +59,19 @@ export function ContactSection() {
     {
       icon: Phone,
       title: "Call Us",
-      details: ["+91 487 2421234", "+91 480 2701234"],
+      details: ["+91 799 4361 013"],
       gradient: "from-green-400 to-green-600",
     },
     {
       icon: Mail,
       title: "Email Us",
-      details: ["info@sla.schoenstatt-fathers.in", "admissions@sla.schoenstatt-fathers.in"],
+      details: ["languageacademyschoenstatt@gmail.com"],
       gradient: "from-blue-400 to-blue-600",
     },
     {
       icon: MapPin,
       title: "Visit Us",
-      details: ["Thrissur • Chalakudy • Peravoor", "Kerala, India"],
+      details: ["Sion Centre, Kottekkad, Kuttoor, Thrissur, Kerala 680013"],
       gradient: "from-purple-400 to-purple-600",
     },
     {
@@ -176,7 +176,7 @@ export function ContactSection() {
                         <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-green-400/50">
                           <SelectValue placeholder="Select course level" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/10">
+                        <SelectContent className="order-white/10">
                           <SelectItem value="a1">A1 - Beginner</SelectItem>
                           <SelectItem value="a2">A2 - Elementary</SelectItem>
                           <SelectItem value="b1">B1 - Intermediate</SelectItem>
@@ -195,7 +195,7 @@ export function ContactSection() {
                       <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-green-400/50">
                         <SelectValue placeholder="Select preferred center" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-white/10">
+                      <SelectContent className=" border-white/10">
                         <SelectItem value="thrissur">Thrissur Center</SelectItem>
                         <SelectItem value="chalakudy">Chalakudy Center</SelectItem>
                         <SelectItem value="peravoor">Peravoor Center</SelectItem>
@@ -266,7 +266,7 @@ export function ContactSection() {
                       <div className="space-y-1">
                         <h4 className="font-semibold text-white">{info.title}</h4>
                         {info.details.map((detail, idx) => (
-                          <p key={idx} className="text-gray-400 text-sm">
+                          <p key={idx} className="text-gray-400 text-base">
                             {detail}
                           </p>
                         ))}

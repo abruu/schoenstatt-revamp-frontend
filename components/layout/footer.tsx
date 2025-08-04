@@ -142,9 +142,10 @@ export function Footer() {
 
         <div className="border-t border-white/10 mt-16 pt-8 text-center">
           <p className="text-gray-400">
-            © 2025 {SITE_CONFIG.name}. All rights reserved. | Crafted with ⚡ for the future of learning.
+            © 2025 {SITE_CONFIG.name}. All rights reserved. | Crafted by Spectra Tech
           </p>
         </div>
+        <div className="text-gray-400 text-right">GSTIN 32AARTS0116N1Z9</div>
       </div>
     </footer>
   )

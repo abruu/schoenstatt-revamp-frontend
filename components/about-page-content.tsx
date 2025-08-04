@@ -20,72 +20,112 @@ import {
 export function AboutPageContent() {
 
 
-  const faqItems = [
+  type FaqItem = {
+    question: string;
+    answer: string;
+    isHtml?: boolean;
+  }
+
+  const faqItems: FaqItem[] = [
     {
-      question: "What courses do you offer?",
+      question: "How long do I have to learn German in order to pass B2?",
       answer:
-        "We offer comprehensive German language courses from A1 (beginner) to B2 (upper-intermediate) levels. We also provide specialized preparation courses for the Telc B2 certification exam.",
+        "It starts with basic level A1, which lasts for 2 months(8 weeks), then A2 for 2 months (8 weeks), followed by B1 for 2 months(9 weeks), then B2 for 3 months(12 weeks). After one months preparation course, you will be eligible to appear for the B2 Exam. Altogether it comes around 10 months.",
+      isHtml: false
     },
     {
-      question: "Are your certificates internationally recognized?",
+      question: "Can I directly join B1 or B2?",
       answer:
-        "Yes, absolutely. We are an official partner of 'Sprachforum Augsburg' and conduct Telc exams. The Telc certificate is internationally recognized by universities, employers, and government bodies in Germany and worldwide.",
+        "Yes, provided you need to have sufficient knowledge of levels A1 and A2, if necessary, the institute will conduct an exam to find out your current knowledge level in order to assign you the right course.",
+      isHtml: false
     },
     {
-      question: "Do you provide accommodation for students?",
+      question: "Do you give placement in Germany?",
       answer:
-        "Yes, we provide comfortable and secure hostel facilities with quality food for our students, ensuring a conducive learning environment away from home.",
+        "We will provide you with all the help in order to find a placement in Germany, as possible as we could.",
+      isHtml: false
     },
     {
-      question: "What makes your teaching method different?",
+      question: "Do we need to study one year 'Studienkolleg' in Germany, if we aspire to do Nursing in Germany after Plus Two studies?",
       answer:
-        "Our holistic approach combines rigorous language training with deep cultural immersion. Our faculty, many of whom were trained in Germany, use interactive methods and state-of-the-art technology to make learning effective and engaging.",
+        "No, You are eligible to apply for diploma in Nursing with your Plus Two Certificate and your B2 certificate.",
+      isHtml: false
     },
     {
-      question: "What kind of support do you offer for students planning to go to Germany?",
+      question: "Can I apply for Nursing course in Germany with a NIOS certificate?",
       answer:
-        "We provide end-to-end support, including career guidance, assistance with university applications, job placement support, and guidance on the visa process. Our goal is to ensure a smooth transition for our students to life in Germany.",
+        "No, you need to have a regular Plus Two certificate",
+      isHtml: false
+    },
+
+    {
+      question: "Which certification does SLA have?",
+      answer:
+        "SLA conducts Telc exams in cooperation with 'Sprachforum Augsburg' (Telc- Certified Centre) with language Lab. The German officials come here and conduct the exams regularly here. However, due to the current corona crisis, they haven't come last year. When the condition becomes better, then it will take place regularly. During this time, we help the students to appear for the Goethe exams.",
+      isHtml: false
+    },
+
+    {
+      question: "Is Telc Certificate different from Goethe?",
+      answer:
+        "No, both certificates have got same value. The pattern of both the exams are more or less the same.",
+      isHtml: false
+    },
+
+
+    {
+      question: "Do I need to show a huge amount in the bank account as we apply for Visa to do Nursing in Germany?",
+      answer:
+        "No.",
+      isHtml: false
+    },
+
+    {
+      question: "How much does the course cost?",
+      answer:
+        "A1 – 13,000/- + 18% GST\nA2 – 13,000/- + 18% GST\nB1 – 16,000/- + 18% GST\nB2 – 22,000/- + 18% GST\nB2 Exam Preparation – 10,000/- + 18% GST",
+      isHtml: true
     },
   ]
   const differentItems = [
     {
       icon: GraduationCap,
-      title: "Expert Faculty",
+      title: "We Educate",
       description:
-        "Our instructors are certified and have direct experience with German culture and language training.",
+        "Empowering Minds, Building Futures.",
       gradient: "from-cyan-400 to-blue-600",
     },
     {
       icon: HeartHandshake,
-      title: "Holistic Approach",
+      title: "We Help​",
       description:
-        "We go beyond language, integrating cultural nuances and real-world application into our curriculum.",
+        "Our Commitment to Your Journey at SLA",
       gradient: "from-green-400 to-teal-600",
     },
     {
       icon: ShieldCheck,
-      title: "Official Telc Partner",
-      description: "As an authorized Telc exam center, we offer internationally recognized certifications.",
+      title: "We Inspire",
+      description: "Dream. Believe. Achieve: Inspiration at SLA.",
       gradient: "from-purple-400 to-violet-600",
     },
     {
       icon: TrendingUp,
-      title: "Proven Success",
-      description: "Our students consistently achieve high scores and successfully transition to life in Germany.",
+      title: "We Empower​",
+      description: "Achieving Dreams, Ambitions Transformed",
       gradient: "from-amber-400 to-orange-600",
     },
-    {
-      icon: Computer,
-      title: "Modern Infrastructure",
-      description: "Learn in a state-of-the-art environment with smart classrooms and advanced learning tools.",
-      gradient: "from-rose-400 to-red-600",
-    },
-    {
-      icon: LifeBuoy,
-      title: "End-to-End Support",
-      description: "From admissions to placements, we provide comprehensive guidance for your entire journey.",
-      gradient: "from-sky-400 to-indigo-600",
-    },
+    // {
+    //   icon: Computer,
+    //   title: "Modern Infrastructure",
+    //   description: "Learn in a state-of-the-art environment with smart classrooms and advanced learning tools.",
+    //   gradient: "from-rose-400 to-red-600",
+    // },
+    // {
+    //   icon: LifeBuoy,
+    //   title: "End-to-End Support",
+    //   description: "From admissions to placements, we provide comprehensive guidance for your entire journey.",
+    //   gradient: "from-sky-400 to-indigo-600",
+    // },
   ]
   return (
     <div className="container mx-auto px-4 py-16 space-y-24">
@@ -102,10 +142,7 @@ export function AboutPageContent() {
               </span>
             </h1>
             <p className="text-xl text-gray-400 max-w-2xl leading-relaxed">
-              Schoenstatt Language Academy (SLA) is a premier institution dedicated to providing world-class German
-              language education. As an initiative of the Secular Institute of Schoenstatt Fathers, we blend academic
-              excellence with a holistic approach, preparing students not just to speak German, but to thrive in a
-              German-speaking environment.
+            At SLA, we specialize in German language education and cultural immersion. Founded with a commitment to renewal, our experienced faculty offers courses from A1 to B2 levels.
             </p>
           </div>
           <div className="lg:col-span-2 relative w-full h-full min-h-[300px] lg:min-h-[500px]">
@@ -186,12 +223,14 @@ export function AboutPageContent() {
         {/* What Makes Us Different */}
         <section className="space-y-16 scroll-animate fade-up">
           <div className="text-center space-y-4">
+          <p className="text-sm font-bold tracking-widest text-center text-yellow-400 uppercase">OUR CAUSES​
+          </p>
+
             <h2 className="text-3xl lg:text-4xl font-bold text-white">What Makes Us Different</h2>
             <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-              Our unique approach sets us apart, ensuring our students receive the best possible education and support.
-            </p>
+            At SLA, our causes define us. We’re committed to promoting language proficiency and embracing cultural diversity. Join us and see the difference.            </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {differentItems.map((item, index) => (
               <div key={index} className="relative group">
                 <div
@@ -256,19 +295,29 @@ export function AboutPageContent() {
             <span className="text-blue-400 font-medium">FAQ</span>
           </div>
           <h2 className="text-3xl lg:text-4xl font-bold text-white">Frequently Asked Questions</h2>
-          <p className="text-lg text-gray-400">Find answers to common questions about our academy.</p>
+          <p className="text-lg text-gray-400">Whether you’re curious about our teaching methods or need guidance on which course to choose, our FAQ provides all the essential information to help you navigate your language learning journey with SLA. (<a href="/pdf/Schoenstatt-Language-Academy-Malayalam0.pdf" target="_blank" className="text-yellow-400 hover:underline underline">View Malayalam Version</a>)</p>
         </div>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="single" collapsible defaultValue="item-0" className="w-full">
           {faqItems.map((item, index) => (
             <AccordionItem
               key={index}
               value={`item-${index}`}
               className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl mb-4 px-6"
             >
-              <AccordionTrigger className="text-lg font-semibold text-white hover:no-underline">
+              <AccordionTrigger className="text-lg text-start font-semibold text-white text hover:no-underline">
                 {item.question}
               </AccordionTrigger>
-              <AccordionContent className="text-gray-300 leading-relaxed pt-2">{item.answer}</AccordionContent>
+              <AccordionContent className="text-gray-300 text-base leading-relaxed pt-2">
+                {item.isHtml ? (
+                  <ul className="list-disc pl-5 space-y-1">
+                    {item.answer.split('\n').filter(line => line.trim()).map((line, i) => (
+                      <li key={i}>{line.trim()}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <>{item.answer}</>
+                )}
+              </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
