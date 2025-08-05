@@ -25,15 +25,10 @@ export function BranchesSection() {
       facebook: "https://www.facebook.com/sla.kuttur",
       location: "https://www.google.com/maps?q=Schoenstatt+language+Academy,+Kottekkad,+Kuttoor,+Thrissur,+Kerala+680013&ftid=0x3ba7eebb3655554d:0xbfad3e55405da126&entry=gps&lucs=,94215790,47071704,94206166,47069508,94218635,94203019,47084304,94208458,94208447&g_ep=CAISDTYuMTE0LjMuNTkxOTAYACCenQoqUSw5NDIxNTc5MCw0NzA3MTcwNCw5NDIwNjE2Niw0NzA2OTUwOCw5NDIxODYzNSw5NDIwMzAxOSw0NzA4NDMwNCw5NDIwODQ1OCw5NDIwODQ0N0ICSU4%3D",
       images: [
-        "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
-        "/placeholder.svg?height=400&width=600",
+        "images/locations/kuttur2.webp",
+        "images/locations/Kuttur-1.webp",
+
+
       ],
     },
     {
@@ -52,9 +47,7 @@ export function BranchesSection() {
       facebook: "https://www.facebook.com/people/Sla-German-Chalakudy/",
       location: "https://www.google.com/maps?q=Schoenstatt+Language+Academy,+Alur+-+Cherukunnu+Rd,+near+St+Thomas+Church,+Alur,+Kerala+680683&ftid=0x3ba7f92f1b0bff95:0x90ada14d0862e435&entry=gps&lucs=,94215790,47071704,94206166,47069508,94218635,94203019,47084304,94208458,94208447&g_ep=CAISDTYuMTE0LjMuNTkxOTAYACCenQoqUSw5NDIxNTc5MCw0NzA3MTcwNCw5NDIwNjE2Niw0NzA2OTUwOCw5NDIxODYzNSw5NDIwMzAxOSw0NzA4NDMwNCw5NDIwODQ1OCw5NDIwODQ0N0ICSU4%3DChalakudy",
       images: [
-        "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
+        "images/locations/Chalakudy.webp"
       ],
     },
     {
@@ -73,9 +66,7 @@ export function BranchesSection() {
       facebook: "https://www.facebook.com/slaperavoor",
       location: "https://www.google.com/maps?q=VPXV+45R+Schoenstatt+Language+Academy(SLA),+Peravoor.+%E0%B4%B7%E0%B5%87%E0%B5%BA%E0%B4%B8%E0%B5%8D%E0%B4%B1%E0%B5%8D%E0%B4%B1%E0%B4%BE%E0%B4%9F%E0%B5%8D%E0%B4%9F%E0%B5%8D+%E0%B4%B2%E0%B4%BE%E0%B4%82%E0%B4%97%E0%B5%8D%E0%B4%B5%E0%B5%87%E0%B4%9C%E0%B5%8D+%E0%B4%85%E0%B4%95%E0%B5%8D%E0%B4%95%E0%B4%BE%E0%B4%A6%E0%B4%AE%E0%B4%BF,+Manathana-Kottiyoor+Rd,+Thondiyil,+Peravoor,+Kerala+670673&ftid=0x3ba5cd9c885ad593:0x5946cb768036ce96&entry=gps&lucs=,94215790,47071704,94206166,47069508,94218635,94203019,47084304,94208458,94208447&g_ep=CAISDTYuMTE0LjMuNTkxOTAYACCenQoqUSw5NDIxNTc5MCw0NzA3MTcwNCw5NDIwNjE2Niw0NzA2OTUwOCw5NDIxODYzNSw5NDIwMzAxOSw0NzA4NDMwNCw5NDIwODQ1OCw5NDIwODQ0N0ICSU4%3D",
       images: [
-        "/placeholder.svg?height=400&width=600",
-        "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
-        "/placeholder.svg?height=400&width=600",
+        "images/locations/Peravoor.webp"
       ],
   },
   ]

@@ -12,7 +12,7 @@ export function CoursesSection() {
         <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-600/5 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto  relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Content */}
           <div className="space-y-8">
@@ -47,72 +47,32 @@ export function CoursesSection() {
           </div>
 
           {/* Course Card */}
-          <div className="relative">
-            <div className="relative group">
-              {/* Glowing border effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
+           <div className="relative">
+                      <div className="relative group">
+                        {/* Glowing border effect */}
+                        <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-blue-500 to-purple-600 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
 
-              {/* Main card container */}
-              <div className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 rounded-3xl overflow-hidden shadow-2xl border border-blue-700/50">
-                {/* Header with logo and title */}
-                <div className="p-8 pb-4">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center">
-                        <div className="w-12 h-12 bg-blue-900 rounded-full flex items-center justify-center">
-                          <span className="text-yellow-400 font-bold text-lg">SLA</span>
+                        {/* Main image container */}
+                        <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
+                          <Image
+                            src="/images/Gallery/Our-Courses.webp"
+                            alt="SLA Students and Faculty"
+                            width={600}
+                            height={400}
+                            className="w-full h-auto object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+
+                          {/* Floating elements */}
+                          {/* <div className="absolute top-4 right-4 bg-yellow-400/20 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2">
+                            <span className="text-yellow-400 text-sm font-medium">Live Learning</span>
+                          </div> */}
                         </div>
+
+                        {/* Floating geometric shapes */}
+
                       </div>
-                      <div>
-                        <h3 className="text-white font-bold text-lg">SCHOENSTATT</h3>
-                        <p className="text-yellow-400 font-semibold">LANGUAGE ACADEMY</p>
-                      </div>
                     </div>
-                    <div className="w-20 h-16 bg-white/10 rounded-lg overflow-hidden">
-                      <Image
-                        src="/images/hero-group.jpg"
-                        alt="Students"
-                        width={80}
-                        height={64}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-blue-200 text-sm mb-6">AN INSTITUTE FOR GERMAN LANGUAGE STUDIES</p>
-
-                  {/* Features */}
-                  <div className="grid grid-cols-2 gap-4 text-sm text-blue-200 mb-6">
-                    <div className="space-y-2">
-                      <p>• Experienced faculty with German training</p>
-                      <p>• Cultural immersion programs</p>
-                      <p>• Comprehensive language curriculum</p>
-                    </div>
-                    <div className="space-y-2">
-                      <p>• Interactive learning methods</p>
-                      <p>• Small batch sizes for personal attention</p>
-                      <p>• Career guidance and placement support</p>
-                    </div>
-                  </div>
-
-                  {/* Locations */}
-                  <p className="text-blue-300 text-sm mb-4">
-                    Kuttur (Thrissur) | Aloor (Chalakudy) | Peravaoor (Kannur)
-                  </p>
-                </div>
-
-                {/* Bottom banner */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-center">
-                  <h4 className="text-yellow-400 text-2xl font-bold mb-2">Admission starts</h4>
-                  <p className="text-white text-xl font-semibold">German A1, A2, B1, B2</p>
-                </div>
-
-                {/* Decorative elements */}
-                <div className="absolute top-4 right-4 w-8 h-8 bg-yellow-400/20 rounded-full"></div>
-                <div className="absolute bottom-20 left-4 w-6 h-6 bg-blue-400/20 rounded-full"></div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>

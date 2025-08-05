@@ -158,7 +158,7 @@ export function HeroSection() {
               {/* Main image container */}
               <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
                 <Image
-                  src="/images/hero-group.jpg"
+                  src="/images/Gallery/header_pic.jpg"
                   alt="SLA Students and Faculty"
                   width={600}
                   height={400}

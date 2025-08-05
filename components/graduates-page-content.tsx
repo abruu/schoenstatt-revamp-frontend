@@ -146,10 +146,26 @@ const graduatesData: Graduate[] = [
   },
 ]
 
-const gallery=[
-  "https://static.vecteezy.com/system/resources/previews/010/938/844/non_2x/tropical-purple-butterfly-illustration-beautiful-butterfly-vector.jpg",
-  "/placeholder.svg?height=400&width=600",
-  "/placeholder.svg?height=400&width=600",
+const gallery = [
+  "/images/SLA gratuates/SLA gratuates 1.jpg",
+  "/images/SLA gratuates/sla gratutes 2.jpg",
+  "/images/SLA gratuates/SLA gratutes 3.jpg",
+  "/images/SLA gratuates/gratues 1.jpg",
+  "/images/SLA gratuates/gratues 2.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-00.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-01.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-02.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-03.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-04.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-05.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-06.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-07.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-08.jpg",
+  "/images/SLA gratuates/PHOTO-2025-04-04-01-45-09.jpg",
+  "/images/SLA gratuates/PHOTO-2025-06-23-21-08-10.jpg",
+  "/images/SLA gratuates/PHOTO-2025-06-26-16-02-31.jpg",
+  "/images/SLA gratuates/connects1.png",
+  "/images/SLA gratuates/connects2.png"
 ]
 
 export function GraduatesPageContent() {
@@ -497,12 +513,14 @@ export function GraduatesPageContent() {
             </div>
           </div>
         )}
-        <div className="w-full lg:w-9/12 mx-auto ">
-       <ImageSlider
-                      key={'selectedBranch'}
-                      images={gallery}
-                      altPrefix={'text'}
-                    /></div>
+        <div className="w-full lg:w-9/12 mx-auto">
+          <ImageSlider
+            key={'selectedBranch'}
+            images={gallery}
+            altPrefix={'Graduate'}
+            className="w-full h-[500px] rounded-2xl bg-black/10"
+          />
+        </div>
       </div>
     </div>
   )

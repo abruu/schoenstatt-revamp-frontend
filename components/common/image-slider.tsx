@@ -68,14 +68,14 @@ export function ImageSlider({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className={cn("relative overflow-hidden group bg-black/20", className)}>
+    <div className="flex flex-col gap-4 backdrop-blur-xl">
+      <div className={cn("relative overflow-hidden group bg-black/20 backdrop-blur-xl", className)}>
         {images.map((src, index) => (
           <img
             key={index}
             src={src || "/placeholder.svg"}
             alt={`${altPrefix} ${index + 1}`}
-            className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            className={`w-full h-full object-contain absolute inset-0 transition-opacity duration-700 ease-in-out ${
               currentImageIndex === index ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -142,7 +142,7 @@ export function ImageSlider({
               <img
                 src={src || "/placeholder.svg"}
                 alt={`Thumbnail ${altPrefix} ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </button>
           ))}

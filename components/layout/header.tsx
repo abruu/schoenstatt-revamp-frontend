@@ -20,7 +20,7 @@ export function Header() {
     if (pathname !== "/") return
 
     const handleScroll = () => {
-      const sections = ["home", "about", "centers", "gallery", "contact"]
+      const sections = ["home", "courses", "about", "centers", "gallery", "contact"]
       const scrollPosition = window.scrollY + 100
 
       for (const section of sections) {

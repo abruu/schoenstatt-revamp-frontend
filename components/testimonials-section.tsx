@@ -10,60 +10,60 @@ export function TestimonialsSection() {
 
   const testimonials = [
     {
-      name: "Arjun Krishnan",
+      name: "Annet Biju",
       course: "B2 Level Graduate",
       location: "Thrissur",
-      image: "/placeholder.svg?height=400&width=400",
+      image: "images/testimonials/Annet.webp",
       rating: 5,
       feedback:
-        "SLA transformed my German learning journey completely. The teachers are incredibly supportive and the curriculum is perfectly structured. I successfully cleared my B2 exam and now I'm pursuing my masters in Germany!",
+        "SLA, as its name implies, is absolutely lovely❤️. I believe it serves as an excellent platform for mastering the German language.",
       achievement: "Now studying in Munich, Germany",
       gradient: "from-blue-400 to-blue-600",
     },
     {
-      name: "Priya Menon",
+      name: "Abin Kurbel",
       course: "A2 Level Graduate",
       location: "Chalakudy",
-      image: "/placeholder.svg?height=400&width=400",
+      image: "images/testimonials/Abin.webp",
       rating: 5,
       feedback:
-        "The learning environment at SLA is exceptional. The smart classrooms and interactive teaching methods made learning German enjoyable. The cultural insights provided were invaluable for my preparation.",
+        "Studying in SLA was interesting. Teachers and staff were so supportive, and they helped me to crack B2 Telc exam in my first attempt",
       achievement: "Secured job in Berlin",
       gradient: "from-green-400 to-green-600",
     },
     {
-      name: "Rohit Nair",
+      name: "Soby Rose C J",
       course: "B1 Level Graduate",
       location: "Peravoor",
-      image: "/placeholder.svg?height=400&width=400",
+      image: "images/testimonials/Soby.webp",
       rating: 5,
       feedback:
-        "SLA's career guidance program is outstanding. They not only taught me German but also helped me with job applications and interview preparation. The hostel facilities made my learning journey comfortable.",
+        "The Language Academy is truly outstanding. Its instructors are highly skilled and dedicated, and the classes are diverse and engaging.",
       achievement: "Working at BMW, Germany",
       gradient: "from-purple-400 to-purple-600",
     },
     {
-      name: "Sneha Pillai",
+      name: "Aljo Johnson",
       course: "A1 Level Graduate",
       location: "Thrissur",
-      image: "/placeholder.svg?height=400&width=400",
+      image: "images/testimonials/Aljo.webp",
       rating: 5,
       feedback:
-        "As a beginner, I was nervous about learning German. But SLA's supportive environment and excellent teaching methodology made it so easy. The affordable fees and flexible timings were perfect for me.",
+        "SLA helped me complete my Telc B2 exam in my first attempt. It’s been a rewarding journey, enhancing my understanding and and fluency. I successfully began my Ausbildung in Koblenz, Germany.",
       achievement: "Continuing to B2 Level",
       gradient: "from-yellow-400 to-yellow-600",
     },
-    {
-      name: "Amal George",
-      course: "B2 Level Graduate",
-      location: "Chalakudy",
-      image: "/placeholder.svg?height=400&width=400",
-      rating: 5,
-      feedback:
-        "The Telc exam preparation at SLA is top-notch. The mock tests and personalized feedback helped me achieve excellent scores. The connection with Sprachforum Augsburg adds great value to the certification.",
-      achievement: "PhD in Frankfurt, Germany",
-      gradient: "from-pink-400 to-pink-600",
-    },
+    // {
+    //   name: "Amal George",
+    //   course: "B2 Level Graduate",
+    //   location: "Chalakudy",
+    //   image: "/placeholder.svg?height=400&width=400",
+    //   rating: 5,
+    //   feedback:
+    //     "The Telc exam preparation at SLA is top-notch. The mock tests and personalized feedback helped me achieve excellent scores. The connection with Sprachforum Augsburg adds great value to the certification.",
+    //   achievement: "PhD in Frankfurt, Germany",
+    //   gradient: "from-pink-400 to-pink-600",
+    // },
   ]
 
   useEffect(() => {
@@ -109,8 +109,9 @@ export function TestimonialsSection() {
           </h2>
 
           <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-            Hear from our successful graduates who have achieved their German language goals and are now thriving in
-            Germany.
+          At SLA, our commitment to excellence is reflected in the experiences of our valued clients. Here’s what some of them have to say about their journey with us:
+
+
           </p>
         </div>
 

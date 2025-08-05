@@ -9,18 +9,19 @@ export const SITE_CONFIG = {
     instagram: "#",
     youtube: "#",
   },
-}
+};
 
 export const NAVIGATION_ITEMS = [
   { name: "Home", href: "#home" },
+  // { name: "Courses", href: "#courses" },
   { name: "About Us", href: "/about" },
   { name: "Centers", href: "#centers" },
   { name: "Graduates", href: "/graduates" },
   { name: "Events", href: "/events" },
-  { name: "Gallery", href: "/gallery" },
+  { name: "Gallery", href: "#gallery" },
   { name: "Contact Us", href: "#contact" },
   { name: "B2 Telc Exam", href: "/b2-exam" },
-]
+];
 
 export const CENTERS = [
   {
@@ -45,7 +46,12 @@ export const CENTERS = [
     students: "150+",
     established: "2019",
     gradient: "from-green-400 to-green-600",
-    features: ["Smart Classrooms", "Language Lab", "Cultural Center", "Exam Center"],
+    features: [
+      "Smart Classrooms",
+      "Language Lab",
+      "Cultural Center",
+      "Exam Center",
+    ],
   },
   {
     id: "peravoor",
@@ -57,9 +63,14 @@ export const CENTERS = [
     students: "100+",
     established: "2020",
     gradient: "from-purple-400 to-purple-600",
-    features: ["Modern Facilities", "Online Classes", "Weekend Batches", "Flexible Timings"],
+    features: [
+      "Modern Facilities",
+      "Online Classes",
+      "Weekend Batches",
+      "Flexible Timings",
+    ],
   },
-]
+];
 
 export const CONTACT_INFO = [
   {
@@ -71,7 +82,10 @@ export const CONTACT_INFO = [
   {
     type: "email",
     title: "Email Us",
-    details: ["info@sla.schoenstatt-fathers.in", "admissions@sla.schoenstatt-fathers.in"],
+    details: [
+      "info@sla.schoenstatt-fathers.in",
+      "admissions@sla.schoenstatt-fathers.in",
+    ],
     gradient: "from-blue-400 to-blue-600",
   },
   {
@@ -86,4 +100,4 @@ export const CONTACT_INFO = [
     details: ["Mon - Sat: 9:00 AM - 6:00 PM", "Sunday: Closed"],
     gradient: "from-yellow-400 to-yellow-600",
   },
-]
+];

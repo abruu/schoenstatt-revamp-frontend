@@ -16,6 +16,9 @@ import { ParticleBackground } from "@/components/layout/particle-background"
 import { LoadingScreen } from "@/components/common/loading-screen"
 import { NoticeBoard } from "@/components/common/notice-board"
 import { ScrollAnimations } from "@/components/common/scroll-animations"
+import { GallerySection } from "@/components/gallery-section"
+// import { GallerySection } from "@/components/gallery-section" // Empty component file
+// Using EnhancedGallerySection instead which is already imported above
 
 export default function HomePage() {
   // Handle hash navigation on component mount
@@ -82,6 +85,7 @@ export default function HomePage() {
             <div>
               <EnhancedNewsSection />
             </div>
+            <section id="gallery" className="scroll-animate fade-up"> <GallerySection /> </section>
             <section id="contact" className="scroll-animate fade-up">
               <ContactSection />
             </section>
