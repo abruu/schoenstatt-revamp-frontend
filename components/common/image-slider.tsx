@@ -122,6 +122,7 @@ export function ImageSlider({
         )}
       </div>
 
+
       {showThumbnails && images.length > 1 && (
         <div
           ref={thumbnailContainerRef}
