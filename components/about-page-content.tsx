@@ -149,7 +149,7 @@ export function AboutPageContent() {
             <div className="absolute -inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl blur-2xl opacity-30"></div>
             <div className="relative w-full h-full">
               <Image
-                src="/images/hero-group.jpg"
+                src="images/Gallery/aboutuse.jpg"
                 alt="SLA Team and Students"
                 layout="fill"
                 objectFit="cover"
@@ -327,7 +327,7 @@ export function AboutPageContent() {
           <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl blur-2xl opacity-20"></div>
           <div className="relative">
             <Image
-              src="/images/about-mission-group.png"
+              src="images/about.webp"
               alt="SLA team on a mission"
               width={1280}
               height={720}

@@ -68,7 +68,7 @@ export function ImageSlider({
   }
 
   return (
-    <div className="flex flex-col gap-4 backdrop-blur-xl">
+    <div className="flex flex-col gap-4 ">
       <div className={cn("relative overflow-hidden group bg-black/20 backdrop-blur-xl", className)}>
         {images.map((src, index) => (
           <img
