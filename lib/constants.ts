@@ -18,7 +18,7 @@ export const NAVIGATION_ITEMS = [
   { name: "Centers", href: "#centers" },
   { name: "Graduates", href: "/graduates" },
   { name: "Events", href: "/events" },
-  { name: "Gallery", href: "#gallery" },
+  { name: "Gallery", href: "/gallery" },
   { name: "Contact Us", href: "#contact" },
   { name: "B2 Telc Exam", href: "/b2-exam" },
 ];

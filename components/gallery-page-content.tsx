@@ -35,7 +35,7 @@ export function GalleryPageContent() {
   const galleryImages = [
     {
       id: 1,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/4C445242-D0CB-4EE6-8488-E18095CDDD61.JPG",
       alt: "Modern Smart Classroom",
       category: "classrooms",
       title: "Smart Classroom Technology",
@@ -47,7 +47,7 @@ export function GalleryPageContent() {
     },
     {
       id: 2,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/Our-Courses.webp",
       alt: "Students in Class",
       category: "students",
       title: "Interactive Learning Session",
@@ -58,7 +58,7 @@ export function GalleryPageContent() {
     },
     {
       id: 3,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2024-08-01-02-29-37.jpg",
       alt: "B2 Graduation Ceremony",
       category: "graduation",
       title: "B2 Level Graduation Ceremony",
@@ -69,7 +69,7 @@ export function GalleryPageContent() {
     },
     {
       id: 4,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2024-08-03-01-55-10.jpg",
       alt: "Language Lab",
       category: "classrooms",
       title: "Advanced Language Laboratory",
@@ -80,7 +80,7 @@ export function GalleryPageContent() {
     },
     {
       id: 5,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-01-28-02-06-53.jpg",
       alt: "Cultural Event",
       category: "students",
       title: "German Cultural Festival",
@@ -91,7 +91,7 @@ export function GalleryPageContent() {
     },
     {
       id: 6,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-01-29-15-38-17 2.jpg",
       alt: "A2 Graduates",
       category: "graduation",
       title: "A2 Level Achievement Ceremony",
@@ -102,7 +102,7 @@ export function GalleryPageContent() {
     },
     {
       id: 7,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-03-13-08-41-32 2.jpg",
       alt: "Library",
       category: "classrooms",
       title: "German Literature Library",
@@ -113,7 +113,7 @@ export function GalleryPageContent() {
     },
     {
       id: 8,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-03-13-08-41-32 6.jpg",
       alt: "Study Group",
       category: "students",
       title: "Collaborative Learning Session",
@@ -124,7 +124,7 @@ export function GalleryPageContent() {
     },
     {
       id: 9,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-03-13-08-41-32 7.jpg",
       alt: "Exam Preparation",
       category: "students",
       title: "Telc Exam Preparation",
@@ -135,7 +135,7 @@ export function GalleryPageContent() {
     },
     {
       id: 10,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-03-13-08-41-32 8.jpg",
       alt: "New Building Exterior",
       category: "classrooms",
       title: "New SLA Building at Kuttur",
@@ -146,7 +146,7 @@ export function GalleryPageContent() {
     },
     {
       id: 11,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-03-25-08-13-28 3.jpg",
       alt: "Faculty Meeting",
       category: "students",
       title: "Faculty Development Session",
@@ -157,7 +157,7 @@ export function GalleryPageContent() {
     },
     {
       id: 12,
-      src: "/placeholder.svg?height=800&width=1200",
+      src: "/images/Gallery/PHOTO-2025-03-25-08-13-28 4.jpg",
       alt: "Student Activities",
       category: "graduation",
       title: "Extracurricular Activities",
@@ -165,6 +165,237 @@ export function GalleryPageContent() {
       date: "November 2024",
       location: "All Centers",
       tags: ["activities", "extracurricular", "culture"],
+    },
+    {
+      id: 13,
+      src: "/images/Gallery/PHOTO-2025-03-25-08-13-28 6.jpg",
+      alt: "Classroom Discussion",
+      category: "classrooms",
+      title: "Interactive Discussion Session",
+      description: "Students engaged in lively discussion about German culture and language nuances",
+      date: "February 2025",
+      location: "Thrissur Center",
+      tags: ["discussion", "classroom", "interactive"],
+    },
+    {
+      id: 14,
+      src: "/images/Gallery/PHOTO-2025-03-25-08-13-28 7.jpg",
+      alt: "Student Presentation",
+      category: "students",
+      title: "Student Presentation Day",
+      description: "Students presenting their research projects on various aspects of German culture",
+      date: "March 2025",
+      location: "Chalakudy Center",
+      tags: ["presentation", "research", "projects"],
+    },
+    {
+      id: 15,
+      src: "/images/Gallery/PHOTO-2025-03-25-08-13-28 8.jpg",
+      alt: "Graduation Day",
+      category: "graduation",
+      title: "C1 Level Graduation Day",
+      description: "Advanced level students celebrating their successful completion of C1 certification",
+      date: "March 2025",
+      location: "All Centers",
+      tags: ["graduation", "c1", "certification"],
+    },
+    {
+      id: 16,
+      src: "/images/Gallery/PHOTO-2025-03-25-08-13-28.jpg",
+      alt: "Modern Classroom",
+      category: "classrooms",
+      title: "Technology-Enhanced Learning Space",
+      description: "Modern classroom equipped with the latest audio-visual tools for immersive language learning",
+      date: "January 2025",
+      location: "Peravoor Center",
+      tags: ["classroom", "technology", "modern"],
+    },
+    {
+      id: 17,
+      src: "/images/Gallery/PHOTO-2025-04-01-12-41-51.jpg",
+      alt: "Group Activity",
+      category: "students",
+      title: "Collaborative Learning Workshop",
+      description: "Students working in groups on practical German language exercises",
+      date: "April 2025",
+      location: "Thrissur Center",
+      tags: ["workshop", "collaboration", "practical"],
+    },
+    {
+      id: 18,
+      src: "/images/Gallery/PHOTO-2025-05-08-19-53-27 2.jpg",
+      alt: "Language Lab Session",
+      category: "classrooms",
+      title: "Advanced Audio Lab Session",
+      description: "Students practicing pronunciation and listening skills in our state-of-the-art language lab",
+      date: "May 2025",
+      location: "Chalakudy Center",
+      tags: ["language lab", "pronunciation", "listening"],
+    },
+    {
+      id: 19,
+      src: "/images/Gallery/PHOTO-2025-05-08-19-53-27 3.jpg",
+      alt: "Student Exchange Program",
+      category: "students",
+      title: "German Exchange Program Orientation",
+      description: "Students preparing for cultural exchange program with partner institutions in Germany",
+      date: "May 2025",
+      location: "All Centers",
+      tags: ["exchange program", "international", "orientation"],
+    },
+    {
+      id: 20,
+      src: "/images/Gallery/PHOTO-2025-05-08-19-53-27 4.jpg",
+      alt: "B1 Graduation",
+      category: "graduation",
+      title: "B1 Level Certification Ceremony",
+      description: "Proud moment for students receiving their B1 level German language certification",
+      date: "May 2025",
+      location: "Peravoor Center",
+      tags: ["graduation", "b1", "certification"],
+    },
+    {
+      id: 21,
+      src: "/images/Gallery/PHOTO-2025-05-08-19-53-27.jpg",
+      alt: "Digital Learning",
+      category: "classrooms",
+      title: "Digital Learning Environment",
+      description: "Students utilizing digital resources and online platforms for enhanced German language learning",
+      date: "May 2025",
+      location: "Thrissur Center",
+      tags: ["digital", "online", "e-learning"],
+    },
+    {
+      id: 22,
+      src: "/images/Gallery/PHOTO-2025-05-13-18-43-35.jpg",
+      alt: "Student Performance",
+      category: "students",
+      title: "German Cultural Performance",
+      description: "Students showcasing German cultural elements through music and theatrical performances",
+      date: "May 2025",
+      location: "Chalakudy Center",
+      tags: ["performance", "culture", "music"],
+    },
+    {
+      id: 23,
+      src: "/images/Gallery/PHOTO-2025-05-22-08-34-29 2.jpg",
+      alt: "A1 Graduation",
+      category: "graduation",
+      title: "A1 Level Completion Ceremony",
+      description: "Beginning level students celebrating their first milestone in German language learning",
+      date: "May 2025",
+      location: "All Centers",
+      tags: ["graduation", "a1", "beginners"],
+    },
+    {
+      id: 24,
+      src: "/images/Gallery/PHOTO-2025-05-22-08-34-29.jpg",
+      alt: "Interactive Classroom",
+      category: "classrooms",
+      title: "Interactive Learning Environment",
+      description: "Engaging classroom setup promoting active participation and immersive learning",
+      date: "May 2025",
+      location: "Peravoor Center",
+      tags: ["interactive", "classroom", "engagement"],
+    },
+    {
+      id: 25,
+      src: "/images/Gallery/PHOTO-2025-06-18-14-18-09.jpg",
+      alt: "Student Workshop",
+      category: "students",
+      title: "German Culture Workshop",
+      description: "Students participating in hands-on workshop exploring various aspects of German culture",
+      date: "June 2025",
+      location: "Thrissur Center",
+      tags: ["workshop", "culture", "hands-on"],
+    },
+    {
+      id: 26,
+      src: "/images/Gallery/PHOTO-2025-06-18-14-18-10.jpg",
+      alt: "Advanced Certification",
+      category: "graduation",
+      title: "Advanced Certification Program",
+      description: "Students receiving specialized certification in advanced German language proficiency",
+      date: "June 2025",
+      location: "Chalakudy Center",
+      tags: ["certification", "advanced", "specialized"],
+    },
+    {
+      id: 27,
+      src: "/images/Gallery/PHOTO-2025-06-19-05-03-42.jpg",
+      alt: "Multimedia Lab",
+      category: "classrooms",
+      title: "Multimedia Language Laboratory",
+      description: "Modern multimedia lab equipped with advanced tools for comprehensive language learning",
+      date: "June 2025",
+      location: "All Centers",
+      tags: ["multimedia", "lab", "technology"],
+    },
+    {
+      id: 28,
+      src: "/images/Gallery/PHOTO-2025-06-19-05-03-44.jpg",
+      alt: "Student Group",
+      category: "students",
+      title: "German Language Club Meeting",
+      description: "Students participating in extracurricular German language club activities and discussions",
+      date: "June 2025",
+      location: "Peravoor Center",
+      tags: ["club", "extracurricular", "discussion"],
+    },
+    {
+      id: 29,
+      src: "/images/Gallery/PHOTO-2025-06-19-05-03-45.jpg",
+      alt: "Professional Certification",
+      category: "graduation",
+      title: "Professional German Certification",
+      description: "Students receiving industry-recognized professional German language certification",
+      date: "June 2025",
+      location: "Thrissur Center",
+      tags: ["professional", "certification", "industry"],
+    },
+    {
+      id: 30,
+      src: "/images/Gallery/PHOTO-2025-06-30-20-29-03 2.jpg",
+      alt: "Virtual Classroom",
+      category: "classrooms",
+      title: "Virtual Learning Environment",
+      description: "Students participating in virtual classroom session with German native speakers",
+      date: "June 2025",
+      location: "Chalakudy Center",
+      tags: ["virtual", "online", "native speakers"],
+    },
+    {
+      id: 31,
+      src: "/images/Gallery/PHOTO-2025-06-30-20-29-03.jpg",
+      alt: "Student Conference",
+      category: "students",
+      title: "German Language Conference",
+      description: "Students attending and presenting at regional German language conference",
+      date: "June 2025",
+      location: "All Centers",
+      tags: ["conference", "presentation", "regional"],
+    },
+    {
+      id: 32,
+      src: "/images/Gallery/download.webp",
+      alt: "Language Certification",
+      category: "graduation",
+      title: "Official Language Certification",
+      description: "Students receiving official German language proficiency certification",
+      date: "July 2025",
+      location: "Peravoor Center",
+      tags: ["certification", "official", "proficiency"],
+    },
+    {
+      id: 33,
+      src: "/images/Gallery/header_pic.jpg",
+      alt: "Campus Overview",
+      category: "classrooms",
+      title: "Schoenstatt Language Academy Campus",
+      description: "Panoramic view of our main campus facilities and learning environment",
+      date: "July 2025",
+      location: "Thrissur Center",
+      tags: ["campus", "facilities", "overview"],
     },
   ]
 
@@ -260,7 +491,7 @@ export function GalleryPageContent() {
       </div>
 
       <div className="space-y-6">
-        <div className="max-w-md mx-auto">
+        {/* <div className="max-w-md mx-auto">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -270,7 +501,7 @@ export function GalleryPageContent() {
               className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-400/50"
             />
           </div>
-        </div>
+        </div> */}
         <div className="flex flex-wrap justify-center gap-4">
           {categories.map((category) => (
             <Button
@@ -286,12 +517,12 @@ export function GalleryPageContent() {
         </div>
       </div>
 
-      <div className="text-center">
+      {/* <div className="text-center">
         <p className="text-gray-400">
           Showing {filteredImages.length} of {galleryImages.length} photos
           {searchTerm && ` for "${searchTerm}"`}
         </p>
-      </div>
+      </div> */}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredImages.map((image, index) => (
