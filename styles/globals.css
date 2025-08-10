@@ -88,3 +88,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom width utility */
+.max-w-8xl {
+  max-width: 112rem !important;
+}

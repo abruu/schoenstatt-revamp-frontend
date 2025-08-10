@@ -72,20 +72,20 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className="w-full px-6 lg:px-12 xl:px-16 pt-32 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-center">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-24 sm:pt-28 relative z-10">
+        <div className="max-w-8xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 xl:gap-20 items-center">
           {/* Enhanced Content */}
-          <div className="space-y-8 animate-fade-in-up">
+          <div className="space-y-6 sm:space-y-8 animate-fade-in-up">
             {/* Premium Badge */}
-            <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400/20 via-yellow-500/20 to-orange-500/20 border border-yellow-400/40 backdrop-blur-lg shadow-lg hover:shadow-yellow-400/25 transition-all duration-300">
-              <Zap className="h-5 w-5 text-yellow-400 mr-3 animate-pulse" />
-              <span className="text-yellow-400 text-sm font-semibold tracking-wide">Next-Gen Language Learning</span>
+            <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-yellow-400/20 via-yellow-500/20 to-orange-500/20 border border-yellow-400/40 backdrop-blur-lg shadow-lg hover:shadow-yellow-400/25 transition-all duration-300">
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2 sm:mr-3 animate-pulse" />
+              <span className="text-yellow-400 text-xs sm:text-sm font-semibold tracking-wide">Next-Gen Language Learning</span>
             </div>
 
             {/* Dynamic Heading */}
-            <div className="space-y-6">
-              <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
+            <div className="space-y-4 sm:space-y-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
                   Immerse Yourself In The World Of The{" "}
                 </span>
@@ -94,99 +94,70 @@ export function HeroSection() {
                 </span>
               </h1>
 
-              <p className="text-xl text-gray-300 leading-relaxed max-w-2xl">
-                SLA is an Initiative of the Secular Institute of Schoenstatt Fathers, which offers German language courses, levels A1, A2, B1 and B2. Our branches are sited in Thrissur, Chalakudy and Peravoor. Our institute is founded in Germany with a charism to renew the church and the society through the covenant of love with our heavenly Mother.
+              <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed ">
+              SLA is an Initiative of the Secular Institute of Schoenstatt Fathers, which offers German language courses, levels A1, A2, B1 and B2. Our branches are sited in Thrissur, Chalakudy and Peravoor. Our institute is founded in Germany with a charism to renew the church and the society through the covenant of love with our heavenly Mother.
               </p>
             </div>
 
             {/* Rotating Testimonial */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-500">
-              <div className="flex items-center space-x-4">
+            <div className="">
+              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="flex -space-x-2">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full border-2 border-white/20"></div>
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-400 to-green-600 rounded-full border-2 border-white/20"></div>
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full border-2 border-white/20"></div>
+                </div>
                 <div className="flex text-yellow-400">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" />
+                    <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-current" />
                   ))}
                 </div>
-                <div className="text-gray-300">
-                  "{testimonials[currentTestimonial].text}"
-                  <span className="text-yellow-400 font-semibold ml-2">- {testimonials[currentTestimonial].author}</span>
-                </div>
               </div>
+              <p className="text-white/90 italic mb-2 sm:mb-3 text-sm sm:text-lg leading-relaxed">
+                "{testimonials[currentTestimonial].text}"
+              </p>
+              <p className="text-gray-400 font-medium text-sm">— {testimonials[currentTestimonial].author}</p>
             </div>
 
             {/* Enhanced Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 py-8">
-              {[
-                {
-                  icon: Users,
-                  value: counters.students,
-                  suffix: "+",
-                  label: "Happy Students",
-                  color: "from-blue-400 via-blue-500 to-blue-600",
-                  bgColor: "from-blue-500/20 to-blue-600/20"
-                },
-                {
-                  icon: Award,
-                  value: counters.success,
-                  suffix: "%",
-                  label: "Success Rate",
-                  color: "from-green-400 via-green-500 to-green-600",
-                  bgColor: "from-green-500/20 to-green-600/20"
-                },
-                {
-                  icon: Globe,
-                  value: counters.centers,
-                  suffix: "",
-                  label: "Learning Centers",
-                  color: "from-purple-400 via-purple-500 to-purple-600",
-                  bgColor: "from-purple-500/20 to-purple-600/20"
-                },
-              ].map((stat, index) => (
-                <div key={index} className="relative group cursor-pointer">
-                  <div className={`bg-gradient-to-br ${stat.bgColor} backdrop-blur-xl border border-white/20 rounded-3xl p-6 text-center hover:scale-110 transition-all duration-500 hover:border-white/40 shadow-lg hover:shadow-2xl`}>
-                    <div className={`w-14 h-14 bg-gradient-to-r ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:rotate-12 transition-transform duration-300`}>
-                      <stat.icon className="h-7 w-7 text-white" />
-                    </div>
-                    <div className="text-4xl font-black text-white mb-2 group-hover:scale-110 transition-transform duration-300">
-                      {stat.value}{stat.suffix}
-                    </div>
-                    <div className="text-sm text-gray-300 font-medium">{stat.label}</div>
-                  </div>
-                  <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} rounded-3xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 -z-10`}></div>
+            <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-6 sm:pt-8 border-t border-white/10">
+              <div className="text-center group">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                  {counters.students}+
                 </div>
-              ))}
+                <div className="text-gray-400 text-xs sm:text-sm font-medium">Happy Students</div>
+              </div>
+              <div className="text-center group">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                  {counters.success}%
+                </div>
+                <div className="text-gray-400 text-xs sm:text-sm font-medium">Success Rate</div>
+              </div>
+              <div className="text-center group">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                  {counters.centers}
+                </div>
+                <div className="text-gray-400 text-xs sm:text-sm font-medium">Learning Centers</div>
+              </div>
             </div>
 
             {/* Enhanced CTA Section */}
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 hover:from-yellow-500 hover:via-yellow-600 hover:to-orange-600 text-black font-bold px-10 py-6 rounded-2xl shadow-2xl shadow-yellow-400/40 hover:shadow-yellow-400/60 transition-all duration-300 hover:scale-105 group text-lg border-2 border-yellow-300/50"
-                  onClick={() => {
-                    const contactSection = document.getElementById("contact")
-                    if (contactSection) {
-                      contactSection.scrollIntoView({ behavior: "smooth" })
-                    }
-                  }}
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
                 >
-                  <Play className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
                   Start Your Journey
-                  <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-2 transition-transform duration-300" />
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button
-                  size="lg"
                   variant="outline"
-                  className="border-2 border-white/30 text-white hover:bg-white/15 bg-white/10 backdrop-blur-lg px-10 py-6 rounded-2xl hover:border-white/50 transition-all duration-300 hover:scale-105 group text-lg shadow-lg"
-                  onClick={() => {
-                    const coursesSection = document.getElementById("courses")
-                    if (coursesSection) {
-                      coursesSection.scrollIntoView({ behavior: "smooth" })
-                    }
-                  }}
+                  size="lg"
+                  className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 px-6 sm:px-8 py-3 sm:py-4 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
                 >
-                  <BookOpen className="mr-3 h-6 w-6 group-hover:rotate-12 transition-transform duration-300" />
-                  Explore Courses
+                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
+                  Watch Demo
                 </Button>
               </div>
               
@@ -241,12 +212,12 @@ export function HeroSection() {
                   </span>
                 </div>
                 
-                <div className="absolute bottom-6 left-6 bg-gradient-to-r from-blue-500/30 to-purple-600/30 backdrop-blur-lg border border-blue-400/50 rounded-2xl px-6 py-3 shadow-lg">
+                {/* <div className="absolute bottom-6 left-6 bg-gradient-to-r from-blue-500/30 to-purple-600/30 backdrop-blur-lg border border-blue-400/50 rounded-2xl px-6 py-3 shadow-lg">
                   <span className="text-blue-300 text-sm font-bold flex items-center">
                     <Globe className="h-4 w-4 mr-2" />
                     German Certification
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

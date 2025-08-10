@@ -83,7 +83,7 @@ export function ContactSection() {
   ]
 
   return (
-    <section id="contact" className="py-20 relative">
+    <section id="contact" className="py-12 sm:py-16 lg:py-20 relative">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-96 h-96 bg-green-400/5 rounded-full blur-3xl animate-pulse"></div>
@@ -93,27 +93,27 @@ export function ContactSection() {
         ></div>
       </div>
 
-      <div className="relative z-10 space-y-16">
+      <div className="relative z-10 space-y-12 sm:space-y-16 px-4 sm:px-6">
         {/* Header */}
-        <div className="text-center space-y-6">
-          <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-green-400/20 to-blue-500/20 border border-green-400/30 backdrop-blur-sm">
-            <MessageCircle className="h-5 w-5 text-green-400 mr-2" />
-            <span className="text-green-400 font-medium">CONTACT US</span>
+        <div className="text-center space-y-4 sm:space-y-6">
+          <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-green-400/20 to-blue-500/20 border border-green-400/30 backdrop-blur-sm">
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 mr-2" />
+            <span className="text-green-400 font-medium text-sm sm:text-base">CONTACT US</span>
           </div>
 
-          <h2 className="text-4xl lg:text-6xl font-bold">
+          <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold">
             <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               Start Your German Journey Today
             </span>
           </h2>
 
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed px-4">
             Ready to begin your German language adventure? Get in touch with us and take the first step towards your
             dreams in Germany.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-16">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 max-w-7xl mx-auto">
           {/* Contact Form */}
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-3xl blur-xl opacity-20"></div>
@@ -121,12 +121,18 @@ export function ContactSection() {
             <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
               <div className="space-y-6">
                 <div className="text-center space-y-2">
-                  <h3 className="text-2xl font-bold text-white">Send us a Message</h3>
-                  <p className="text-gray-400">Fill out the form below and we'll get back to you within 24 hours</p>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 sm:gap-3">
+                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
+                    Get In Touch
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+                    Ready to start your German language journey? Fill out the form below and we'll get back to you
+                    within 24 hours.
+                  </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
                         <User className="h-4 w-4" />
@@ -156,7 +162,7 @@ export function ContactSection() {
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-4 sm:space-y-6">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
                         <Phone className="h-4 w-4" />
@@ -220,7 +226,7 @@ export function ContactSection() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-semibold py-4 rounded-full shadow-lg hover:shadow-green-400/30 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-semibold py-3 sm:py-4 rounded-full shadow-lg hover:shadow-green-400/30 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center gap-2">
@@ -240,33 +246,33 @@ export function ContactSection() {
           </div>
 
           {/* Contact Information */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h3 className="text-3xl font-bold text-white">Get in Touch</h3>
-              <p className="text-gray-400 leading-relaxed">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white">Get in Touch</h3>
+              <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                 We're here to help you achieve your German language goals. Reach out to us through any of the following
                 channels.
               </p>
             </div>
 
-            <div className="grid gap-6">
+            <div className="grid gap-4 sm:gap-6">
               {contactInfo.map((info, index) => (
                 <div key={index} className="relative group">
                   <div
                     className={`absolute -inset-1 bg-gradient-to-r ${info.gradient} rounded-2xl blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300`}
                   ></div>
 
-                  <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
-                    <div className="flex items-start gap-4">
+                  <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl hover:shadow-3xl transition-all duration-500">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       <div
-                        className={`w-12 h-12 bg-gradient-to-r ${info.gradient} rounded-xl flex items-center justify-center flex-shrink-0`}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${info.gradient} rounded-xl flex items-center justify-center flex-shrink-0`}
                       >
-                        <info.icon className="h-6 w-6 text-white" />
+                        <info.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="font-semibold text-white">{info.title}</h4>
+                        <h4 className="font-semibold text-white text-sm sm:text-base">{info.title}</h4>
                         {info.details.map((detail, idx) => (
-                          <p key={idx} className="text-gray-400 text-base">
+                          <p key={idx} className="text-gray-400 text-sm sm:text-base break-words">
                             {detail}
                           </p>
                         ))}
@@ -278,18 +284,18 @@ export function ContactSection() {
             </div>
 
             {/* Quick Actions */}
-            <div className="space-y-4">
-              <h4 className="text-xl font-semibold text-white">Quick Actions</h4>
-              <div className="grid gap-3">
-                <Button className="justify-start bg-white/5 hover:bg-white/10 border border-white/10 text-white">
+            <div className="space-y-3 sm:space-y-4">
+              <h4 className="text-lg sm:text-xl font-semibold text-white">Quick Actions</h4>
+              <div className="grid gap-2 sm:gap-3">
+                <Button className="justify-start bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm sm:text-base py-2 sm:py-3">
                   <Phone className="h-4 w-4 mr-2" />
                   Schedule a Call
                 </Button>
-                <Button className="justify-start bg-white/5 hover:bg-white/10 border border-white/10 text-white">
+                <Button className="justify-start bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm sm:text-base py-2 sm:py-3">
                   <MapPin className="h-4 w-4 mr-2" />
                   Find Directions
                 </Button>
-                <Button className="justify-start bg-white/5 hover:bg-white/10 border border-white/10 text-white">
+                <Button className="justify-start bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm sm:text-base py-2 sm:py-3">
                   <FileText className="h-4 w-4 mr-2" />
                   Download Brochure
                 </Button>

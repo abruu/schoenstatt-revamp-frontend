@@ -5,27 +5,27 @@ import Image from "next/image"
 
 export function CoursesSection() {
   return (
-    <section className="relative py-32 overflow-hidden">
+    <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-64 h-64 bg-yellow-400/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-600/5 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="container mx-auto  relative z-10">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
           {/* Content */}
-          <div className="space-y-8">
-            <div className="space-y-6">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-4 sm:space-y-6">
               <div className="inline-block">
-                <span className="text-yellow-400 text-sm font-semibold tracking-wider uppercase">OUR COURSES</span>
+                <span className="text-yellow-400 text-xs sm:text-sm font-semibold tracking-wider uppercase">OUR COURSES</span>
               </div>
 
-              <h2 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
                 We Offer German A1, A2, B1, B2 Courses
               </h2>
 
-              <p className="text-lg text-gray-300 leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-300 leading-relaxed">
               A1-B2 courses have a period of 10 months. We have a excellent faculty, among which we have priests, who were trained in Germany and have many years of experience studying and working in Germany. Our students learn not only the language, but also the German culture and life style, which are very important for those who aspire to go to Germany in order to work or to study
               </p>
             </div>
@@ -33,7 +33,7 @@ export function CoursesSection() {
             <div>
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-8 py-4 rounded-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 text-sm sm:text-base w-full sm:w-auto"
                 onClick={() => {
                   const contactSection = document.getElementById("contact")
                   if (contactSection) {

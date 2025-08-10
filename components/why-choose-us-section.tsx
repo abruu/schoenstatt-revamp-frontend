@@ -54,7 +54,7 @@ export function WhyChooseUsSection() {
   ]
 
   return (
-    <section className="py-20 relative">
+    <section className="py-12 sm:py-16 lg:py-20 relative">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400/5 rounded-full blur-3xl animate-pulse"></div>
@@ -64,15 +64,15 @@ export function WhyChooseUsSection() {
         ></div>
       </div>
 
-      <div className="relative z-10 space-y-16">
+      <div className="relative z-10 space-y-12 sm:space-y-16 px-4 sm:px-6">
         {/* Header */}
-        <div className="text-center space-y-6">
-          <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border border-yellow-400/30 backdrop-blur-sm">
-            <Sparkles className="h-5 w-5 text-yellow-400 mr-2" />
-            <span className="text-yellow-400 font-medium">WHY CHOOSE US</span>
+        <div className="text-center space-y-4 sm:space-y-6">
+          <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border border-yellow-400/30 backdrop-blur-sm">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2" />
+            <span className="text-yellow-400 font-medium text-sm sm:text-base">WHY CHOOSE US</span>
           </div>
 
-          <h2 className="text-4xl lg:text-6xl font-bold leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight">
             <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               Best Platform To Learn
             </span>
@@ -82,7 +82,7 @@ export function WhyChooseUsSection() {
             </span>
           </h2>
 
-          <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4">
             The students who come to us thereby greatly appreciate the classes in SLA. They learn not only the language,
             but also the German culture and life style, which are very important for those who aspire to go to Germany
             to work or to study. Our program serves as your gateway to effortless language mastery, providing the
@@ -90,11 +90,11 @@ export function WhyChooseUsSection() {
           </p>
 
           {/* Learn More Button */}
-          <div className="mt-10 text-center">
+          <div className="mt-8 sm:mt-10 text-center">
             <Link href="/about">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-full shadow-lg hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-105 text-sm sm:text-base w-full sm:w-auto max-w-xs sm:max-w-none"
               >
                 Learn More About Us
               </Button>
@@ -103,7 +103,7 @@ export function WhyChooseUsSection() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
           {features.map((feature, index) => (
             <div
               key={index}
@@ -118,20 +118,20 @@ export function WhyChooseUsSection() {
               ></div>
 
               {/* Main card */}
-              <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full">
+              <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full">
                 {/* Icon */}
                 <div
-                  className={`w-16 h-16 bg-gradient-to-r ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r ${feature.gradient} rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}
                 >
-                  <feature.icon className="h-8 w-8 text-white" />
+                  <feature.icon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
 
                 {/* Content */}
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-white group-hover:to-gray-300 transition-all duration-300">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-white group-hover:to-gray-300 transition-all duration-300">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
+                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
                     {feature.description}
                   </p>
                 </div>
