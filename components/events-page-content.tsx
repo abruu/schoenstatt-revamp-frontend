@@ -7,134 +7,15 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
+import { getEventsForEventsPage } from "@/lib/unified-events-data"
+import { getIconComponent } from "@/lib/icon-mapping"
 
 export function EventsPageContent() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
 
-  const events = [
-    {
-      id: 1,
-      title: "New SLA Building at Kuttur, Thrissur",
-      description:
-        "Grand opening of our new state-of-the-art facility at Kuttur, Thrissur with modern classrooms, advanced language labs, and comfortable student facilities.",
-      date: "January 15, 2025",
-      category: "Infrastructure",
-      type: "New Building",
-      location: "Kuttur, Thrissur",
-      image: "/placeholder.svg?height=300&width=400",
-      icon: Building,
-      gradient: "from-blue-400 to-blue-600",
-      priority: "high",
-      isNew: true,
-      gallery: [
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-      ],
-    },
-    {
-      id: 2,
-      title: "B2 Level Graduates - December 2024",
-      description:
-        "Celebrating the outstanding achievements of our B2 level graduates including Zahra Thasneem and Liya Sanju who successfully completed their Telc certification with excellent scores.",
-      date: "December 20, 2024",
-      category: "Graduation",
-      type: "Certificate Ceremony",
-      location: "All Centers",
-      image: "/images/graduates-cert1.jpg",
-      icon: Award,
-      gradient: "from-yellow-400 to-yellow-600",
-      priority: "high",
-      isNew: true,
-      gallery: [
-        "/images/graduates-cert1.jpg",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-      ],
-    },
-    {
-      id: 3,
-      title: "SLA Connects - Students in Germany",
-      description:
-        "Our successful students including Theresa Davis, Meera Xavier, Sabitha Jose, Calvin Vinesh, Joel Biju, and Amal K Sujit have secured excellent opportunities in Germany.",
-      date: "December 15, 2024",
-      category: "Success Story",
-      type: "Achievement",
-      location: "Germany",
-      image: "/placeholder.svg?height=300&width=400",
-      icon: Users,
-      gradient: "from-green-400 to-green-600",
-      priority: "medium",
-      isNew: false,
-      gallery: [
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-      ],
-    },
-    {
-      id: 4,
-      title: "SLA Cares - Community Outreach Program",
-      description:
-        "Our faculty and students participated in various community service activities, strengthening bonds with the local community and giving back to society through meaningful initiatives.",
-      date: "December 10, 2024",
-      category: "Community",
-      type: "Social Service",
-      location: "All Centers",
-      image: "/placeholder.svg?height=300&width=400",
-      icon: Users,
-      gradient: "from-purple-400 to-purple-600",
-      priority: "medium",
-      isNew: false,
-      gallery: [
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-      ],
-    },
-    {
-      id: 5,
-      title: "A2 Level Graduation Ceremony",
-      description:
-        "Proud celebration of our A2 level course completers who have successfully mastered the elementary level of German language with dedication and hard work.",
-      date: "November 25, 2024",
-      category: "Graduation",
-      type: "Certificate Ceremony",
-      location: "Chalakudy Center",
-      image: "/placeholder.svg?height=300&width=400",
-      icon: Award,
-      gradient: "from-orange-400 to-red-500",
-      priority: "medium",
-      isNew: false,
-      gallery: [
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-      ],
-    },
-    {
-      id: 6,
-      title: "German Cultural Festival 2024",
-      description:
-        "Students and faculty came together to celebrate German traditions, food, music, and customs in a vibrant cultural event that showcased the rich heritage of Germany.",
-      date: "October 15, 2024",
-      category: "Cultural",
-      type: "Festival",
-      location: "Thrissur Center",
-      image: "/placeholder.svg?height=300&width=400",
-      icon: Users,
-      gradient: "from-pink-400 to-purple-500",
-      priority: "low",
-      isNew: false,
-      gallery: [
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-        "/placeholder.svg?height=400&width=600",
-      ],
-    },
-  ]
+  const events = getEventsForEventsPage()
 
   const categories = [
     { id: "all", name: "All Events", count: events.length },
@@ -251,7 +132,19 @@ export function EventsPageContent() {
               {/* Event Image */}
               <div className="aspect-video relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
-                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center">
+                <img 
+                  src={event.image} 
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to gradient background if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 items-center justify-center hidden">
                   <Camera className="h-16 w-16 text-gray-600" />
                 </div>
 
@@ -264,7 +157,10 @@ export function EventsPageContent() {
                 {/* Gallery indicator */}
                 <div className="absolute bottom-4 right-4 z-20">
                   <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                    <Camera className="h-3 w-3 text-white" />
+                    {(() => {
+                      const IconComponent = getIconComponent(event.icon)
+                      return <IconComponent className="h-5 w-5 text-white" />
+                    })()}
                     <span className="text-xs text-white">{event.gallery.length}</span>
                   </div>
                 </div>

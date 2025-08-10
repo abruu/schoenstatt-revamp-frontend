@@ -5,18 +5,10 @@ import { X, Bell, Calendar, Users, Award, MapPin, ChevronRight, BellRing } from 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { getEventsForNoticeBoard, UnifiedEvent } from "@/lib/unified-events-data"
+import { getIconComponent } from "@/lib/icon-mapping"
 
-interface Notice {
-  id: number
-  type: string
-  title: string
-  description: string
-  date: string
-  icon: typeof Bell
-  gradient: string
-  priority: string
-  isNew: boolean
-}
+// Using UnifiedEvent interface from unified-events-data
 
 export function NoticeBoard() {
   const [isVisible, setIsVisible] = useState(false)
@@ -24,56 +16,7 @@ export function NoticeBoard() {
   const [showBellIcon, setShowBellIcon] = useState(false)
   const [hasNewNotices, setHasNewNotices] = useState(true)
 
-  const notices: Notice[] = [
-    {
-      id: 1,
-      type: "New Building",
-      title: "New SLA Building at Kuttur, Thrissur",
-      description:
-        "We are excited to announce the opening of our new state-of-the-art facility at Kuttur, Thrissur with modern classrooms and advanced learning equipment.",
-      date: "January 15, 2025",
-      icon: MapPin,
-      gradient: "from-blue-400 to-blue-600",
-      priority: "high",
-      isNew: true,
-    },
-    {
-      id: 2,
-      type: "Graduation",
-      title: "B2 Level Graduates - Congratulations!",
-      description:
-        "Congratulations to Zahra Thasneem and Liya Sanju for successfully completing their B2 level German certification with excellent scores.",
-      date: "January 10, 2025",
-      icon: Award,
-      gradient: "from-yellow-400 to-yellow-600",
-      priority: "medium",
-      isNew: true,
-    },
-    {
-      id: 3,
-      type: "Success Story",
-      title: "Students Successfully Placed in Germany",
-      description:
-        "Our students including Theresa Davis, Meera Xavier, Sabitha Jose, and others have successfully secured positions in Germany.",
-      date: "December 28, 2024",
-      icon: Users,
-      gradient: "from-green-400 to-green-600",
-      priority: "medium",
-      isNew: false,
-    },
-    {
-      id: 4,
-      type: "Community",
-      title: "SLA Cares - Community Outreach Program",
-      description:
-        "Our faculty and students participated in community service activities, strengthening bonds and giving back to society.",
-      date: "December 20, 2024",
-      icon: Users,
-      gradient: "from-purple-400 to-purple-600",
-      priority: "low",
-      isNew: false,
-    },
-  ]
+  const notices: UnifiedEvent[] = getEventsForNoticeBoard()
 
   useEffect(() => {
     // Check if notice board was previously closed
@@ -161,7 +104,7 @@ export function NoticeBoard() {
               >
                 <Bell className="h-4 w-4 text-white animate-bounce" />
               </div>
-              <span className="text-white font-semibold">Notice Board</span>
+              <span className="text-white font-semibold">Notice Boar11d</span>
             </div>
             <div className="flex items-center gap-2">
               <Link href="/events">
@@ -184,7 +127,10 @@ export function NoticeBoard() {
               <div
                 className={`w-10 h-10 bg-gradient-to-r ${currentNoticeData.gradient} rounded-lg flex items-center justify-center flex-shrink-0`}
               >
-                <currentNoticeData.icon className="h-5 w-5 text-white" />
+                {(() => {
+                  const IconComponent = getIconComponent(currentNoticeData.icon)
+                  return <IconComponent className="h-5 w-5 text-white" />
+                })()}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">

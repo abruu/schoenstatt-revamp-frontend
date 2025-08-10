@@ -7,6 +7,7 @@ export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [isContentLoaded, setIsContentLoaded] = useState(false)
 
   const loadingSteps = [
     { icon: GraduationCap, text: "Loading German Courses...", color: "text-blue-400" },
@@ -23,6 +24,7 @@ export default function LoadingScreen() {
       // First time visitor - show loading screen
       setIsLoading(true)
 
+      // Step animation timer
       const stepTimer = setInterval(() => {
         setCurrentStep((prev) => {
           if (prev < loadingSteps.length - 1) {
@@ -32,29 +34,66 @@ export default function LoadingScreen() {
         })
       }, 800)
 
-      const progressTimer = setInterval(() => {
-        setProgress((prev) => {
-          if (prev < 100) {
-            return prev + 2
-          }
-          return prev
-        })
-      }, 50)
+      // Check if DOM content is already loaded
+      if (document.readyState === 'complete') {
+        setIsContentLoaded(true)
+      } else {
+        // Listen for when all content is loaded
+        const handleLoad = () => {
+          setIsContentLoaded(true)
+        }
 
-      const loadTimer = setTimeout(() => {
-        setIsLoading(false)
-        // Mark as visited
-        localStorage.setItem("sla-has-visited", "true")
-      }, 4000)
+        // Use window.onload to wait for all resources (images, stylesheets, etc.)
+        window.addEventListener('load', handleLoad)
+
+        // Cleanup
+        return () => {
+          clearInterval(stepTimer)
+          window.removeEventListener('load', handleLoad)
+        }
+      }
 
       return () => {
         clearInterval(stepTimer)
-        clearInterval(progressTimer)
-        clearTimeout(loadTimer)
       }
     }
     // If user has visited before, don't show loading screen
   }, [loadingSteps.length])
+
+  // Progress animation based on content loading
+  useEffect(() => {
+    if (!isLoading) return
+
+    const progressTimer = setInterval(() => {
+      setProgress((prev) => {
+        if (isContentLoaded && prev >= 90) {
+          // If content is loaded and we're near 100%, complete it
+          return 100
+        } else if (isContentLoaded && prev < 90) {
+          // If content is loaded but progress is low, speed up to 90%
+          return Math.min(prev + 5, 90)
+        } else if (!isContentLoaded && prev < 80) {
+          // If content not loaded, progress slowly to 80%
+          return prev + 1
+        }
+        return prev
+      })
+    }, 50)
+
+    return () => clearInterval(progressTimer)
+  }, [isLoading, isContentLoaded])
+
+  // Hide loading screen when content is loaded and progress is complete
+  useEffect(() => {
+    if (isContentLoaded && progress >= 100) {
+      const hideTimer = setTimeout(() => {
+        setIsLoading(false)
+        localStorage.setItem("sla-has-visited", "true")
+      }, 500) // Small delay for smooth transition
+
+      return () => clearTimeout(hideTimer)
+    }
+  }, [isContentLoaded, progress])
 
   if (!isLoading) return null
 

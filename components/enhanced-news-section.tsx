@@ -5,84 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, ExternalLink, Zap, Users, BookOpen, Building, Camera, User, Clock } from "lucide-react"
 import Link from "next/link"
+import { getEventsForNewsSection } from "@/lib/unified-events-data"
 
 export function EnhancedNewsSection() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
-  const newsArticles = [
-    {
-      id: "1",
-      title: "New SLA Building at Kuttur, Thrissur",
-      excerpt:
-        "We are excited to announce the opening of our new state-of-the-art facility at Kuttur, Thrissur with modern classrooms and advanced learning equipment.",
-      date: "January 15, 2025",
-      location: "Kuttur, Thrissur",
-      type: "Infrastructure",
-      author: "SLA Administration",
-      readTime: "3 min read",
-      isNew: true,
-      hasGallery: true,
-      galleryCount: 5,
-      icon: Building,
-      gradient: "from-blue-400 to-blue-600",
-      category: "Infrastructure",
-      image: "/placeholder.svg?height=250&width=350",
-    },
-    {
-      id: "2",
-      title: "B2 Level Graduates - December 2024",
-      excerpt:
-        "Celebrating the outstanding achievements of our B2 level graduates including Zahra Thasneem and Liya Sanju who successfully completed their Telc certification.",
-      date: "December 20, 2024",
-      location: "All Centers",
-      type: "Graduation",
-      author: "Academic Department",
-      readTime: "4 min read",
-      isNew: true,
-      hasGallery: true,
-      galleryCount: 3,
-      icon: Users,
-      gradient: "from-yellow-400 to-yellow-600",
-      category: "Graduation",
-      image: "/images/graduates-cert1.jpg",
-    },
-    {
-      id: "3",
-      title: "Digital Learning Initiative Launch",
-      excerpt:
-        "SLA introduces cutting-edge digital learning platforms and AI-powered language tools to enhance the German learning experience.",
-      date: "January 8, 2025",
-      location: "All Centers",
-      type: "Innovation",
-      author: "Technology Team",
-      readTime: "5 min read",
-      isNew: true,
-      hasGallery: false,
-      galleryCount: 0,
-      icon: BookOpen,
-      gradient: "from-purple-400 to-pink-500",
-      category: "Technology",
-      image: "/placeholder.svg?height=250&width=350",
-    },
-    {
-      id: "4",
-      title: "SLA Cares - Community Outreach Program",
-      excerpt:
-        "Our faculty and students participated in various community service activities, strengthening bonds with the local community.",
-      date: "December 10, 2024",
-      location: "All Centers",
-      type: "Community Service",
-      author: "Community Relations",
-      readTime: "3 min read",
-      isNew: false,
-      hasGallery: true,
-      galleryCount: 3,
-      icon: Users,
-      gradient: "from-purple-400 to-purple-600",
-      category: "Community",
-      image: "/placeholder.svg?height=250&width=350",
-    },
-  ]
+  const newsArticles = getEventsForNewsSection()
 
   return (
     <section className="space-y-16 scroll-animate fade-left">
@@ -119,7 +47,19 @@ export function EnhancedNewsSection() {
               {/* Article Image */}
               <div className="aspect-video relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
-                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center">
+                <img 
+                  src={article.image} 
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to gradient background if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 items-center justify-center hidden">
                   <article.icon className="h-16 w-16 text-gray-600" />
                 </div>
 
