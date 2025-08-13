@@ -43,7 +43,7 @@ export function EnhancedNewsSection() {
             ></div>
 
             {/* Main card */}
-            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full flex flex-col">
+            <div className="relative bg-white/5 card-blur-soft border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full flex flex-col">
               {/* Article Image */}
               <div className="aspect-video relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>

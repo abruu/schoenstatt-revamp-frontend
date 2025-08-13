@@ -63,7 +63,7 @@ export default function HomePage() {
           <section id="home">
             <HeroSection />
           </section>
-          <div className="container mx-auto px-4 space-y-32">
+          <div className="container mx-auto px-4 space-y-20">
             <section id="courses" className="scroll-animate fade-up">
               <CoursesSection />
             </section>
@@ -79,9 +79,9 @@ export default function HomePage() {
             {/* <section id="gallery">
               <EnhancedGallerySection />
             </section> */}
-            <div>
+            {/* <div>
               <EnhancedGraduatesSection />
-            </div>
+            </div> */}
             <div>
               <EnhancedNewsSection />
             </div>

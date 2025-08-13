@@ -19,19 +19,19 @@ export function EventsPageContent() {
 
   const categories = [
     { id: "all", name: "All Events", count: events.length },
+,
+    { id: "Updates", name: "SLA Updates", count: events.filter((e) => e.category === "Updates").length },
     {
-      id: "Infrastructure",
-      name: "Infrastructure",
-      count: events.filter((e) => e.category === "Infrastructure").length,
+      id: "Connect",
+      name: "SLA Connect",
+      count: events.filter((e) => e.category === "Connect").length,
     },
-    { id: "Graduation", name: "Graduations", count: events.filter((e) => e.category === "Graduation").length },
     {
-      id: "Success Story",
-      name: "Success Stories",
-      count: events.filter((e) => e.category === "Success Story").length,
+      id: "Care",
+      name: "SLA Cares",
+      count: events.filter((e) => e.category === "Care").length,
     },
-    { id: "Community", name: "Community", count: events.filter((e) => e.category === "Community").length },
-    { id: "Cultural", name: "Cultural", count: events.filter((e) => e.category === "Cultural").length },
+
   ]
 
   const filteredEvents = events
@@ -132,8 +132,8 @@ export function EventsPageContent() {
               {/* Event Image */}
               <div className="aspect-video relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
-                <img 
-                  src={event.image} 
+                <img
+                  src={event.image}
                   alt={event.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -219,7 +219,7 @@ export function EventsPageContent() {
         </div>
       )}
 
-      {filteredEvents.length > 0 && (
+      {/* {filteredEvents.length > 0 && (
         <div className="text-center">
           <Button
             variant="outline"
@@ -229,7 +229,7 @@ export function EventsPageContent() {
             Load More Events
           </Button>
         </div>
-      )}
+      )} */}
     </div>
   )
 }

@@ -92,7 +92,7 @@ export function BranchesSection() {
 
 
   return (
-    <section className="py-20 relative">
+    <section className="py-15 relative">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-10 right-10 w-72 h-72 bg-blue-400/5 rounded-full blur-3xl animate-pulse"></div>

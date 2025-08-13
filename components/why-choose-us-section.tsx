@@ -54,7 +54,7 @@ export function WhyChooseUsSection() {
   ]
 
   return (
-    <section className="py-12 sm:py-16 lg:py-20 relative">
+    <section className=" sm:py-6 lg:py- relative">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400/5 rounded-full blur-3xl animate-pulse"></div>
@@ -82,7 +82,7 @@ export function WhyChooseUsSection() {
             </span>
           </h2>
 
-          <p className="text-base sm:text-lg lg:text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4">
+          <p className="text-base sm:text-lg lg:text-xl text-justify text-gray-300 max-w-4xl mx-auto leading-relaxed px-4">
             The students who come to us thereby greatly appreciate the classes in SLA. They learn not only the language,
             but also the German culture and life style, which are very important for those who aspire to go to Germany
             to work or to study. Our program serves as your gateway to effortless language mastery, providing the

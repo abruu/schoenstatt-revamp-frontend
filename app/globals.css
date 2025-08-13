@@ -40,14 +40,37 @@
 /* Custom scroll animations */
 .scroll-animate {
   opacity: 0;
-  transform: translateY(40px);
   transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform, opacity;
 }
 
 .scroll-animate.animate-in {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) translateX(0);
+}
+
+/* Animation variants */
+.scroll-animate.fade-up {
+  transform: translateY(40px);
+}
+
+.scroll-animate.fade-down {
+  transform: translateY(-40px);
+}
+
+.scroll-animate.fade-left {
+  transform: translateX(40px);
+}
+
+.scroll-animate.fade-right {
+  transform: translateX(-40px);
+}
+
+.scroll-animate.fade-up.animate-in,
+.scroll-animate.fade-down.animate-in,
+.scroll-animate.fade-left.animate-in,
+.scroll-animate.fade-right.animate-in {
+  transform: translateY(0) translateX(0);
 }
 
 /* Custom scrollbar for thumbnail slider */
@@ -72,4 +95,20 @@
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Enhanced card blur effects */
+.card-blur {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.card-blur-soft {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.card-blur-strong {
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
 }

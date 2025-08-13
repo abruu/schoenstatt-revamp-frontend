@@ -39,7 +39,7 @@ export function ParticleBackground() {
         vx: (Math.random() - 0.5) * 0.5,
         vy: (Math.random() - 0.5) * 0.5,
         size: Math.random() * 2 + 1,
-        opacity: Math.random() * 0.5 + 0.2,
+        opacity: Math.random() * 0.6 + 0.4,
       })
     }
 
@@ -60,7 +60,7 @@ export function ParticleBackground() {
         // Draw particle
         ctx.beginPath()
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255, 215, 0, ${particle.opacity})`
+        ctx.fillStyle = `rgba(100, 150, 255, ${particle.opacity})`
         ctx.fill()
 
         // Draw connections
@@ -74,7 +74,7 @@ export function ParticleBackground() {
               ctx.beginPath()
               ctx.moveTo(particle.x, particle.y)
               ctx.lineTo(otherParticle.x, otherParticle.y)
-              ctx.strokeStyle = `rgba(255, 215, 0, ${0.1 * (1 - distance / 100)})`
+              ctx.strokeStyle = `rgba(100, 150, 255, ${0.2 * (1 - distance / 100)})`
               ctx.lineWidth = 0.5
               ctx.stroke()
             }

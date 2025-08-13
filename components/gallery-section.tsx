@@ -193,7 +193,7 @@ export function GallerySection() {
             </div>
           ))}
         </div>
-      </div> <div className="text-center mt-20">
+      </div> <div className="text-center mt-16">
         <Link href="/gallery">
         <Button
           variant="outline"

@@ -99,11 +99,11 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
       <article className="space-y-8">
         <header className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
-            <Badge className={`bg-gradient-to-r ${event.gradient} text-white`}>{event.category}</Badge>
-            <Badge variant="outline" className="border-white/20 text-gray-300">
+            {/* <Badge className={`bg-gradient-to-r ${event.gradient} text-white`}>{event.category}</Badge> */}
+            {/* <Badge variant="outline" className="border-white/20 text-gray-300">
               {event.type}
-            </Badge>
-            {event.isNew && <Badge className="bg-red-500 text-white animate-pulse">New</Badge>}
+            </Badge> */}
+            {/* {event.isNew && <Badge className="bg-red-500 text-white animate-pulse">New</Badge>} */}
           </div>
           <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
             <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">{event.title}</span>
@@ -134,12 +134,12 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
               </Badge>
             )) || null}
           </div>
-          <div className="flex justify-end">
+          {/* <div className="flex justify-end">
             <Button size="sm" className="bg-white/10 hover:bg-white/20 border border-white/20 text-white">
               <Share2 className="h-4 w-4 mr-2" />
               Share Article
             </Button>
-          </div>
+          </div> */}
         </header>
 
         {event.hasGallery && event.galleryItems && event.galleryItems.length > 0 && (
@@ -196,10 +196,22 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
                           </div>
                         </div>
                       </div>
-                      <div className="p-4">
-                        <h4 className="font-semibold text-white mb-1 text-sm">{image.title}</h4>
-                        <p className="text-xs text-gray-400">{image.description}</p>
-                      </div>
+
+                      {(image.title || image.description) && (
+  <div className="p-4">
+    {image.title && (
+      <h4 className="font-semibold text-white mb-1 text-sm">{image.title}</h4>
+    )}
+    {image.description && (
+      <p className="text-xs text-gray-400">{image.description}</p>
+    )}
+  </div>
+)}
+
+
+
+
+
                     </div>
                   </div>
                 ))}
@@ -338,7 +350,7 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
                   <h3 className="text-xl font-bold text-white mb-2">{currentImage.title}</h3>
                   <p className="text-gray-300 text-sm leading-relaxed">{currentImage.description}</p>
                 </div>
-                <div className="p-6 flex gap-3">
+                {/* <div className="p-6 flex gap-3">
                   <Button className="w-full bg-white/10 hover:bg-white/20 border border-white/20">
                     <Download className="h-4 w-4 mr-2" />
                     Download
@@ -347,7 +359,7 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
-                </div>
+                </div> */}
                 {event.galleryItems && event.galleryItems.length > 1 && (
                   <div className="flex-grow overflow-y-auto p-6 pt-0">
                     <h4 className="text-lg font-semibold text-white mb-4">
