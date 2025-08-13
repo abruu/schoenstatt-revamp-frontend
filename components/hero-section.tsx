@@ -53,7 +53,7 @@ export function HeroSection() {
   if (!mounted) return null
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative h-screen flex items-center justify-center overflow-hidden">
       {/* Enhanced Animated Background */}
       <div className="absolute inset-0">
         {/* Floating particles */}
@@ -72,11 +72,11 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-24 sm:pt-28 relative z-10">
-        <div className="max-w-8xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 xl:gap-20 items-center">
+      <div className="w-full h-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-24 sm:pt-28 pb-16 sm:pb-20 relative z-10 flex items-center">
+        <div className="max-w-8xl mx-auto w-full">
+          <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 xl:gap-16 items-center h-full">
           {/* Enhanced Content */}
-          <div className="space-y-6 sm:space-y-8 animate-fade-in-up">
+          <div className="space-y-4 sm:space-y-6 animate-fade-in-up">
             {/* Premium Badge */}
             <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-yellow-400/20 via-yellow-500/20 to-orange-500/20 border border-yellow-400/40 backdrop-blur-lg shadow-lg hover:shadow-yellow-400/25 transition-all duration-300">
               <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2 sm:mr-3 animate-pulse" />
@@ -84,8 +84,8 @@ export function HeroSection() {
             </div>
 
             {/* Dynamic Heading */}
-            <div className="space-y-4 sm:space-y-6">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
                   Immerse Yourself In The World Of The{" "}
                 </span>
@@ -94,7 +94,7 @@ export function HeroSection() {
                 </span>
               </h1>
 
-              <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed ">
+              <p className="text-sm sm:text-base lg:text-lg text-gray-300 leading-relaxed">
               SLA is an Initiative of the Secular Institute of Schoenstatt Fathers, which offers German language courses, levels A1, A2, B1 and B2. Our branches are sited in Thrissur, Chalakudy and Peravoor. Our institute is founded in Germany with a charism to renew the church and the society through the covenant of love with our heavenly Mother.
               </p>
             </div>
@@ -120,21 +120,21 @@ export function HeroSection() {
             </div>
 
             {/* Enhanced Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-6 sm:pt-8 border-t border-white/10">
+            <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-4 sm:pt-6 border-t border-white/10">
               <div className="text-center group">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent mb-1">
                   {counters.students}+
                 </div>
                 <div className="text-gray-400 text-xs sm:text-sm font-medium">Happy Students</div>
               </div>
               <div className="text-center group">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent mb-1">
                   {counters.success}%
                 </div>
                 <div className="text-gray-400 text-xs sm:text-sm font-medium">Success Rate</div>
               </div>
               <div className="text-center group">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-1">
                   {counters.centers}
                 </div>
                 <div className="text-gray-400 text-xs sm:text-sm font-medium">Learning Centers</div>
@@ -142,8 +142,8 @@ export function HeroSection() {
             </div>
 
             {/* Enhanced CTA Section */}
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
