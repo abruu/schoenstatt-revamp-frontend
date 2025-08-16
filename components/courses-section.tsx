@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import Image from "next/image"
 
 export function CoursesSection() {
@@ -31,18 +32,14 @@ export function CoursesSection() {
             </div>
 
             <div>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 text-sm sm:text-base w-full sm:w-auto"
-                onClick={() => {
-                  const contactSection = document.getElementById("contact")
-                  if (contactSection) {
-                    contactSection.scrollIntoView({ behavior: "smooth" })
-                  }
-                }}
-              >
-                Apply For Next Batch
-              </Button>
+              <Link href="/register">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 text-sm sm:text-base w-full sm:w-auto"
+                >
+                  Apply For Next Batch
+                </Button>
+              </Link>
             </div>
           </div>
 

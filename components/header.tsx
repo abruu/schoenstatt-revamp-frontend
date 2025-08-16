@@ -22,7 +22,7 @@ export function Header() {
     { name: "Centers", href: "/centers" },
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
-    { name: "B2 Telc Exam", href: "/b2-exam" },
+    { name: "Register Now", href: "/register" },
     { name: "Gallery", href: "/gallery" },
     { name: "Videos", href: "/videos" },
   ]
@@ -68,9 +68,11 @@ export function Header() {
           </nav>
 
           {/* CTA Button */}
-          <Button className="hidden lg:flex bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-8 py-3 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105">
-            Get Started
-          </Button>
+          <Link href="/register">
+            <Button className="hidden lg:flex bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-8 py-3 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105">
+              Get Started
+            </Button>
+          </Link>
 
           {/* Mobile Menu Button */}
           <button
@@ -105,9 +107,11 @@ export function Header() {
                 {item.name}
               </Link>
             ))}
-            <Button className="mt-8 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold px-8 py-3 rounded-full w-full">
-              Get Started
-            </Button>
+            <Link href="/register" className="block mt-8">
+              <Button className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold px-8 py-3 rounded-full w-full">
+                Get Started
+              </Button>
+            </Link>
           </nav>
         </div>
       </div>

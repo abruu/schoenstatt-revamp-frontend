@@ -1,23 +1,49 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Users, Award, Globe, Zap, Star, BookOpen, Play, ChevronDown } from "lucide-react"
+import { ArrowRight, Users, Award, Globe, Zap, Star, BookOpen, Play, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 
 export function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [counters, setCounters] = useState({ students: 0, success: 0, centers: 0 })
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
-  const [scrollY, setScrollY] = useState(0)
-  const [isInView, setIsInView] = useState(false)
-  const heroRef = useRef<HTMLElement>(null)
-  const imageRef = useRef<HTMLDivElement>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   const testimonials = [
     { text: "Best German learning experience!", author: "Maria K." },
     { text: "Excellent teaching methodology", author: "John D." },
     { text: "Achieved B2 level in 8 months", author: "Sarah L." }
+  ]
+
+  const heroImages = [
+    {
+      src: "/images/Gallery/header_pic.jpg",
+      alt: "SLA Students and Faculty",
+      badge: "Live Interactive Classes",
+      icon: Zap
+    },
+    {
+      src: "/images/SLA gratuates/gratues 1.jpg", // Replace with actual image paths
+      alt: "German Language Learning",
+      badge: "Expert Instructors",
+      icon: Users
+    },
+    {
+      src: "/images/SLA gratuates/gratues 2.jpg", // Replace with actual image paths
+      alt: "Modern Learning Environment",
+      badge: "State-of-Art Facilities",
+      icon: Award
+    },
+    {
+      src: "/images/SLA gratuates/SLA gratuates 1.jpg", // Replace with actual image paths
+      alt: "Global Certification",
+      badge: "German Certification",
+      icon: Globe
+    }
   ]
 
   useEffect(() => {
@@ -48,61 +74,43 @@ export function HeroSection() {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
     }, 4000)
 
-    // Enhanced scroll effects
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      setScrollY(currentScrollY)
-
-      // Check if hero section is in view
-      if (heroRef.current) {
-        const rect = heroRef.current.getBoundingClientRect()
-        const inView = rect.top < window.innerHeight && rect.bottom > 0
-        setIsInView(inView)
-      }
-    }
-
-    // Intersection Observer for more precise visibility detection
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.target === heroRef.current) {
-            setIsInView(entry.isIntersecting)
-          }
-        })
-      },
-      { threshold: 0.1, rootMargin: '50px' }
-    )
-
-    if (heroRef.current) {
-      observer.observe(heroRef.current)
-    }
-
-    // Smooth scroll listener with throttling
-    let ticking = false
-    const throttledScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          handleScroll()
-          ticking = false
-        })
-        ticking = true
-      }
-    }
-
-    window.addEventListener('scroll', throttledScroll, { passive: true })
+    // Auto image slider
+    const imageInterval = setInterval(() => {
+      nextImage()
+    }, 5000)
 
     return () => {
       clearTimeout(timeout)
       clearInterval(testimonialInterval)
-      window.removeEventListener('scroll', throttledScroll)
-      observer.disconnect()
+      clearInterval(imageInterval)
     }
   }, [])
+
+  const nextImage = () => {
+    if (isTransitioning) return
+    setIsTransitioning(true)
+    setCurrentImageIndex((prev) => (prev + 1) % heroImages.length)
+    setTimeout(() => setIsTransitioning(false), 500)
+  }
+
+  const prevImage = () => {
+    if (isTransitioning) return
+    setIsTransitioning(true)
+    setCurrentImageIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length)
+    setTimeout(() => setIsTransitioning(false), 500)
+  }
+
+  const goToImage = (index: number) => {
+    if (isTransitioning || index === currentImageIndex) return
+    setIsTransitioning(true)
+    setCurrentImageIndex(index)
+    setTimeout(() => setIsTransitioning(false), 500)
+  }
 
   if (!mounted) return null
 
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Enhanced Animated Background */}
       <div className="absolute inset-0">
         {/* Floating particles */}
@@ -121,11 +129,11 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className="w-full h-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-24 sm:pt-28 pb-16 sm:pb-20 relative z-10 flex items-center">
-        <div className="max-w-8xl mx-auto w-full">
-          <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 xl:gap-16 items-center h-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-24 sm:pt-28 sm:pb-28 relative z-10">
+        <div className="max-w-8xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 xl:gap-20 items-center">
           {/* Enhanced Content */}
-          <div className="space-y-4 sm:space-y-6 animate-fade-in-up">
+          <div className="space-y-6 sm:space-y-8 animate-fade-in-up">
             {/* Premium Badge */}
             <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-yellow-400/20 via-yellow-500/20 to-orange-500/20 border border-yellow-400/40 backdrop-blur-lg shadow-lg hover:shadow-yellow-400/25 transition-all duration-300">
               <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2 sm:mr-3 animate-pulse" />
@@ -133,8 +141,8 @@ export function HeroSection() {
             </div>
 
             {/* Dynamic Heading */}
-            <div className="space-y-3 sm:space-y-4">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
+            <div className="space-y-4 sm:space-y-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
                   Immerse Yourself In The World Of The{" "}
                 </span>
@@ -143,11 +151,30 @@ export function HeroSection() {
                 </span>
               </h1>
 
-              <p className="text-sm sm:text-base lg:text-lg text-gray-300 leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed ">
               SLA is an Initiative of the Secular Institute of Schoenstatt Fathers, which offers German language courses, levels A1, A2, B1 and B2. Our branches are sited in Thrissur, Chalakudy and Peravoor. Our institute is founded in Germany with a charism to renew the church and the society through the covenant of love with our heavenly Mother.
               </p>
             </div>
-
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
+              
+            <Link href="/register">
+                <Button
+                  size="lg"
+                  className=" bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
+                >
+                  Start Your Journey
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+            </Link>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 px-6 sm:px-8 py-3 sm:py-4 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
+                >
+                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
+                  Watch Demo
+                </Button>
+              </div>
             {/* Rotating Testimonial */}
             <div className="">
               <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -167,23 +194,23 @@ export function HeroSection() {
               </p>
               <p className="text-gray-400 font-medium text-sm">— {testimonials[currentTestimonial].author}</p>
             </div>
-
+           
             {/* Enhanced Stats Grid */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-4 sm:pt-6 border-t border-white/10">
+            <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-6 sm:pt-8 border-t border-white/10">
               <div className="text-center group">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent mb-1">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                   {counters.students}+
                 </div>
                 <div className="text-gray-400 text-xs sm:text-sm font-medium">Happy Students</div>
               </div>
               <div className="text-center group">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent mb-1">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                   {counters.success}%
                 </div>
                 <div className="text-gray-400 text-xs sm:text-sm font-medium">Success Rate</div>
               </div>
               <div className="text-center group">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-1">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                   {counters.centers}
                 </div>
                 <div className="text-gray-400 text-xs sm:text-sm font-medium">Learning Centers</div>
@@ -191,24 +218,8 @@ export function HeroSection() {
             </div>
 
             {/* Enhanced CTA Section */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
-                >
-                  Start Your Journey
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 px-6 sm:px-8 py-3 sm:py-4 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
-                >
-                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
-                  Watch Demo
-                </Button>
-              </div>
+            <div className="space-y-6">
+             
               
               {/* Trust indicators */}
               <div className="flex items-center space-x-6 text-gray-400 text-sm">
@@ -228,126 +239,99 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Enhanced Image Section with Advanced Scroll Effects */}
-          <div 
-            ref={imageRef}
-            className="relative group animate-fade-in-right"
-            style={{
-              transform: `translateY(${scrollY * 0.1}px) scale(${isInView ? 1 : 0.95})`,
-              opacity: isInView ? 1 : 0.8,
-              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out'
-            }}
-          >
-            {/* Enhanced Glow effect with scroll interaction */}
-            <div 
-              className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 via-orange-500/30 to-red-500/30 rounded-[2rem] blur-2xl opacity-75 group-hover:opacity-100 transition-all duration-500"
-              style={{
-                transform: `scale(${1 + scrollY * 0.0002})`,
-                opacity: Math.max(0.3, 0.75 - scrollY * 0.001)
-              }}
-            ></div>
-            
-            {/* Floating elements with enhanced scroll physics */}
-            <div 
-              className="absolute -top-12 -left-12 w-16 sm:w-20 md:w-24 h-16 sm:h-20 md:h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl opacity-30 shadow-2xl transition-all duration-300"
-              style={{
-                transform: `translateY(${scrollY * -0.15}px) rotate(${scrollY * 0.05}deg)`,
-                opacity: Math.max(0.1, 0.3 - scrollY * 0.0008)
-              }}
-            ></div>
-            <div 
-              className="absolute -bottom-12 -right-12 w-14 sm:w-16 md:w-20 h-14 sm:h-16 md:h-20 bg-gradient-to-r from-blue-400 to-purple-600 rounded-2xl opacity-40 shadow-2xl transition-all duration-300"
-              style={{
-                transform: `translateY(${scrollY * 0.12}px) rotate(${scrollY * -0.03}deg)`,
-                opacity: Math.max(0.15, 0.4 - scrollY * 0.0006)
-              }}
-            ></div>
-            <div 
-              className="absolute top-1/2 -right-4 sm:-right-6 md:-right-8 w-12 sm:w-14 md:w-16 h-12 sm:h-14 md:h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-25 transition-all duration-300"
-              style={{
-                transform: `translateY(${scrollY * -0.08}px) scale(${1 + Math.sin(scrollY * 0.01) * 0.1})`,
-                opacity: Math.max(0.1, 0.25 - scrollY * 0.0005)
-              }}
-            ></div>
-
-            {/* Main enhanced image container with advanced scroll effects */}
-            <div 
-              className="relative bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl border border-white/30 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 group-hover:scale-[1.02]"
-              style={{
-                transform: `perspective(1000px) rotateX(${scrollY * 0.02}deg) rotateY(${scrollY * 0.01}deg)`,
-                boxShadow: `0 ${20 + scrollY * 0.05}px ${40 + scrollY * 0.1}px rgba(0,0,0,0.3)`
-              }}
-            >
-              <div className="relative overflow-hidden">
-                <Image
-                  src="/images/Gallery/header_pic.jpg"
-                  alt="SLA Students and Faculty"
-                  width={700}
-                  height={500}
-                  className="w-full h-auto object-cover transition-transform duration-700"
-                  style={{
-                    transform: `scale(${1.05 + scrollY * 0.0001}) translateY(${scrollY * -0.05}px)`,
-                    filter: `brightness(${Math.max(0.8, 1 - scrollY * 0.0003)}) contrast(${Math.max(0.9, 1 + scrollY * 0.0002)})`
-                  }}
-                />
-              </div>
+          {/* Enhanced Visual Section */}
+          <div className="relative animate-fade-in-right">
+            <div className="relative group">
+              {/* Enhanced glowing effects */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-blue-500 via-purple-600 to-yellow-400 rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700 animate-gradient-x"></div>
               
-              {/* Enhanced overlay gradients with scroll interaction */}
-              <div 
-                className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity duration-300"
-                style={{ opacity: Math.min(0.6, 0.3 + scrollY * 0.0008) }}
-              ></div>
-              <div 
-                className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-blue-600/10 transition-opacity duration-300"
-                style={{ opacity: Math.max(0.05, 0.1 - scrollY * 0.0003) }}
-              ></div>
+              {/* Floating elements around image */}
+              <div className="absolute -top-12 -left-12 w-24 h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl opacity-30 animate-float shadow-2xl"></div>
+              <div className="absolute -bottom-12 -right-12 w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-600 rounded-2xl opacity-40 animate-float-delayed shadow-2xl"></div>
+              <div className="absolute top-1/2 -right-8 w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-25 animate-bounce"></div>
 
-              {/* Enhanced floating badges with responsive design */}
-              <div 
-                className="absolute top-3 sm:top-4 md:top-6 right-3 sm:right-4 md:right-6 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 backdrop-blur-lg border border-yellow-400/50 rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 shadow-lg transition-all duration-300"
-                style={{
-                  transform: `translateY(${scrollY * -0.03}px) scale(${Math.max(0.8, 1 - scrollY * 0.0002)})`,
-                  opacity: Math.max(0.6, 1 - scrollY * 0.0008)
-                }}
-              >
-                <span className="text-yellow-300 text-xs sm:text-sm font-bold flex items-center">
-                  <Zap className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-pulse" />
-                  <span className="hidden sm:inline">Live Interactive Classes</span>
-                  <span className="sm:hidden">Live Classes</span>
-                </span>
-              </div>
-              
-              {/* Mobile-optimized bottom badge */}
-              <div 
-                className="absolute bottom-3 sm:bottom-4 md:bottom-6 left-3 sm:left-4 md:left-6 bg-gradient-to-r from-blue-500/30 to-purple-600/30 backdrop-blur-lg border border-blue-400/50 rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 shadow-lg transition-all duration-300"
-                style={{
-                  transform: `translateY(${scrollY * 0.02}px) scale(${Math.max(0.8, 1 - scrollY * 0.0002)})`,
-                  opacity: Math.max(0.6, 1 - scrollY * 0.0008)
-                }}
-              >
-                <span className="text-blue-300 text-xs sm:text-sm font-bold flex items-center">
-                  <Globe className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                  <span className="hidden sm:inline">German Certification</span>
-                  <span className="sm:hidden">Certified</span>
-                </span>
-              </div>
+              {/* Enhanced Image Slider Container */}
+              <div className="relative bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl border border-white/30 rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 group-hover:scale-[1.02]">
+                {/* Image Slider */}
+                <div className="relative h-[400px] sm:h-[500px] overflow-hidden">
+                  {heroImages.map((image, index) => {
+                    const IconComponent = image.icon
+                    return (
+                      <div
+                        key={index}
+                        className={`absolute inset-0 transition-all duration-700 ease-in-out ${
+                          index === currentImageIndex
+                            ? 'opacity-100 scale-100 translate-x-0'
+                            : index < currentImageIndex
+                            ? 'opacity-0 scale-95 -translate-x-full'
+                            : 'opacity-0 scale-95 translate-x-full'
+                        }`}
+                      >
+                        <Image
+                          src={image.src}
+                          alt={image.alt}
+                          width={700}
+                          height={500}
+                          className="w-full h-full object-fill group-hover:scale-105 transition-transform duration-700"
+                          style={{ objectFit: 'fill' }}
+                        />
+                        
+                        {/* Enhanced overlay gradients */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-blue-600/10"></div>
 
-              {/* Interactive scroll progress indicator */}
-              <div 
-                className="absolute top-0 left-0 h-1 bg-gradient-to-r from-yellow-400 to-blue-600 transition-all duration-300"
-                style={{ 
-                  width: `${Math.min(100, (scrollY / (typeof window !== 'undefined' ? window.innerHeight : 800)) * 100)}%`,
-                  opacity: scrollY > 50 ? 0.8 : 0
-                }}
-              ></div>
-            </div>
+                        {/* Dynamic floating badge */}
+                        {/* <div className="absolute top-6 right-6 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 backdrop-blur-lg border border-yellow-400/50 rounded-2xl px-6 py-3 shadow-lg transform transition-all duration-500 hover:scale-105">
+                          <span className="text-yellow-300 text-sm font-bold flex items-center">
+                            <IconComponent className="h-4 w-4 mr-2 animate-pulse" />
+                            {image.badge}
+                          </span>
+                        </div> */}
+                      </div>
+                    )
+                  })}
+                </div>
 
-            {/* Mobile touch interaction hint */}
-            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 md:hidden">
-              <div className="flex items-center space-x-2 text-white/60 text-xs animate-pulse">
-                <ChevronDown className="h-4 w-4" />
-                <span>Scroll to explore</span>
-                <ChevronDown className="h-4 w-4" />
+                {/* Navigation Arrows */}
+                <button
+                  onClick={prevImage}
+                  disabled={isTransitioning}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 rounded-full p-3 transition-all duration-300 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
+                >
+                  <ChevronLeft className="h-5 w-5 text-white group-hover/btn:text-yellow-400 transition-colors" />
+                </button>
+                
+                <button
+                  onClick={nextImage}
+                  disabled={isTransitioning}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 rounded-full p-3 transition-all duration-300 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
+                >
+                  <ChevronRight className="h-5 w-5 text-white group-hover/btn:text-yellow-400 transition-colors" />
+                </button>
+
+                {/* Slide Indicators */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2">
+                  {heroImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      disabled={isTransitioning}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 hover:scale-125 disabled:cursor-not-allowed ${
+                        index === currentImageIndex
+                          ? 'bg-yellow-400 shadow-lg shadow-yellow-400/50'
+                          : 'bg-white/30 hover:bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {/* Progress Bar */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+                  <div 
+                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-300 ease-linear"
+                    style={{ width: `${((currentImageIndex + 1) / heroImages.length) * 100}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -382,11 +366,21 @@ export function HeroSection() {
           from { opacity: 0; transform: translateX(30px); }
           to { opacity: 1; transform: translateX(0); }
         }
+        @keyframes slide-in {
+          from { opacity: 0; transform: translateX(100%) scale(0.95); }
+          to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes slide-out {
+          from { opacity: 1; transform: translateX(0) scale(1); }
+          to { opacity: 0; transform: translateX(-100%) scale(0.95); }
+        }
         .animate-gradient-x { animation: gradient-x 3s ease infinite; background-size: 200% 200%; }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-float-delayed { animation: float-delayed 6s ease-in-out infinite 2s; }
         .animate-fade-in-up { animation: fade-in-up 0.8s ease-out; }
         .animate-fade-in-right { animation: fade-in-right 0.8s ease-out 0.2s both; }
+        .animate-slide-in { animation: slide-in 0.7s ease-out; }
+        .animate-slide-out { animation: slide-out 0.7s ease-out; }
       `}</style>
     </section>
   )

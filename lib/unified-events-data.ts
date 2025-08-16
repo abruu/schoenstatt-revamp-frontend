@@ -15,6 +15,7 @@ export interface UnifiedEvent {
   description: string;
   excerpt?: string; // Short version for news cards
   date: string;
+  endDate?: string; // End date for notice board visibility
   category: string;
   type: string;
   location: string;
@@ -54,6 +55,7 @@ export const unifiedEventsData: UnifiedEvent[] = [
     excerpt:
       "We are excited to announce the opening of our new state-of-the-art facility at Kuttur, Thrissur with modern classrooms and advanced learning equipment.",
     date: "January 15, 2025",
+    // endDate: "March 15, 2025",
     category: "Updates",
     type: "New Building",
     location: "Kuttur, Thrissur",
@@ -118,6 +120,7 @@ export const unifiedEventsData: UnifiedEvent[] = [
       "Stay informed with SLA Updates! Here you’ll find the latest news, announcements, and important information about our programs and events. Keep up-to-date with everything happening at SLA.",
     excerpt: "Latest News and Announcements",
     date: "December 20, 2024",
+    // endDate: "January 20, 2025",
     category: "Updates",
     type: "Updates",
     location: "All Centers",
@@ -207,6 +210,7 @@ export const unifiedEventsData: UnifiedEvent[] = [
       "Explore our photo gallery capturing the joyful moments of our students in Germany. See how they are thriving and enjoying their time abroad, making memories that last a lifetime.",
     excerpt: "Latest News and Announcements",
     date: "July 20, 2025",
+    // endDate: "September 20, 2025",
     category: "Connect",
     type: "Connect",
     location: "All Centers",
@@ -309,7 +313,8 @@ export const unifiedEventsData: UnifiedEvent[] = [
     description:
       "Explore our photo gallery capturing the joyful moments of our students in Germany. See how they are thriving and enjoying their time abroad, making memories that last a lifetime.",
     excerpt: "Latest News and Announcements",
-    date: "July 20, 2025",
+    date: "January 10, 2025",
+    // endDate: "January 31, 2025",
     category: "Care",
     type: "Care",
     location: "All Centers",
@@ -470,8 +475,21 @@ export const getEventsForEventsPage = () =>
 export const getEventsForNewsSection = () =>
   unifiedEventsData.filter((event) => event.showInNewsSection);
 
-export const getEventsForNoticeBoard = () =>
-  unifiedEventsData.filter((event) => event.showInNoticeBoard);
+export const getEventsForNoticeBoard = () => {
+  const currentDate = new Date();
+  return unifiedEventsData.filter((event) => {
+    if (!event.showInNoticeBoard) return false;
+    
+    // If endDate is specified, check if it's still valid
+    if (event.endDate) {
+      const endDate = new Date(event.endDate);
+      return endDate >= currentDate;
+    }
+    
+    // If no endDate specified, show the event
+    return true;
+  });
+};
 
 // Get events by priority
 export const getEventsByPriority = (priority: "high" | "medium" | "low") =>

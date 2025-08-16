@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NAVIGATION_ITEMS, SITE_CONFIG } from "@/lib/constants"
@@ -194,12 +195,11 @@ export function Header() {
           </nav>
 
           {/* CTA Button */}
-          <Button
-            onClick={() => handleNavigation("#contact", "Contact")}
-            className="hidden lg:flex bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-8 py-3 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105"
-          >
-            Get Started
-          </Button>
+          <Link href="/register">
+            <Button className="hidden lg:flex bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-8 py-3 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105">
+              Register Now
+            </Button>
+          </Link>
 
           {/* Mobile Menu Button */}
           <button
@@ -214,16 +214,16 @@ export function Header() {
       {/* Mobile Menu */}
       <div
         className={cn(
-          "lg:hidden fixed inset-0 bg-black backdrop-blur-xl transition-all duration-500 z-[60]",
+          "lg:hidden fixed inset-0 bg-black/95 backdrop-blur-xl transition-all duration-500 z-[60]",
           isOpen ? "opacity-100 visible" : "opacity-0 invisible",
         )}
         style={{
           top: "80px",
-          backgroundColor: "rgb(0, 0, 0)",
+          backgroundColor: "rgba(0, 0, 0, 0.98)",
           backgroundImage: "none"
         }}
       >
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="container mx-auto px-4  bg-black/95 sm:px-6 py-6 sm:py-8">
           <nav className="space-y-4 sm:space-y-6">
             {NAVIGATION_ITEMS.map((item, index) => {
               const isActive = isActiveItem(item)
@@ -244,12 +244,11 @@ export function Header() {
                 </button>
               )
             })}
-            <Button
-              onClick={() => handleNavigation("#contact", "Contact")}
-              className="mt-6 sm:mt-8 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold px-6 sm:px-8 py-3 rounded-full w-full text-sm sm:text-base"
-            >
-              Get Started
-            </Button>
+            <Link href="/register" className="block mt-8">
+              <Button className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold px-8 py-3 rounded-full w-full">
+                Get Started
+              </Button>
+            </Link>
           </nav>
         </div>
       </div>

@@ -20,7 +20,8 @@ export const NAVIGATION_ITEMS = [
   { name: "Events", href: "/events" },
   { name: "Gallery", href: "/gallery" },
   { name: "Contact Us", href: "#contact" },
-  { name: "B2 Telc Exam", href: "/b2-exam" },
+  // { name: "Register Now", href: "/register" },
+  // { name: "B2 Telc Exam", href: "/b2-exam" }, // Hidden as requested
 ];
 
 export const CENTERS = [

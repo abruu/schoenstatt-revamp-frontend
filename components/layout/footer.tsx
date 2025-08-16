@@ -32,8 +32,8 @@ export function Footer() {
             </div>
 
             <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-              Pioneering the future of German language education through innovative teaching methodologies and immersive
-              learning experiences.
+              Premier German language education in Kerala with three centers across Thrissur, Chalakudy, and Peravoor. 
+              Pioneering innovative teaching methodologies and immersive learning experiences.
             </p>
 
             <div className="flex space-x-3 sm:space-x-4">
@@ -60,12 +60,13 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 sm:space-y-3">
               {[
+                { name: "Home", href: "#home" },
                 { name: "About Us", href: "/about" },
-                { name: "Our Courses", href: "/courses" },
+                { name: "Centers", href: "#centers" },
+                { name: "Graduates", href: "/graduates" },
                 { name: "Events", href: "/events" },
                 { name: "Gallery", href: "/gallery" },
-                { name: "B2 Telc Exam", href: "/b2-exam" },
-                { name: "Videos", href: "/videos" },
+                { name: "Contact Us", href: "#contact" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link
@@ -86,14 +87,14 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 sm:space-y-3">
               {[
-                { name: "Thrissur", href: "/centers/thrissur" },
-                { name: "Chalakudy", href: "/centers/chalakudy" },
-                { name: "Peravoor", href: "/centers/peravoor" },
+                { name: "SLA - Thrissur (Main Center)", href: "", isMain: false },
+                { name: "SLA - Chalakudy", href: "", isMain: false },
+                { name: "SLA - Peravoor", href: "", isMain: false },
               ].map((center) => (
                 <li key={center.name}>
                   <Link
                     href={center.href}
-                    className="text-sm sm:text-base text-gray-400 hover:text-yellow-400 transition-all duration-300 hover:translate-x-1 sm:hover:translate-x-2 inline-block"
+                    className={`text-sm sm:text-base ${center.isMain ? 'text-yellow-400 font-medium' : 'text-gray-400'} hover:text-yellow-400 transition-all duration-300 hover:translate-x-1 sm:hover:translate-x-2 inline-block`}
                   >
                     {center.name}
                   </Link>
@@ -111,8 +112,8 @@ export function Footer() {
             <div className="space-y-3 sm:space-y-4">
               {[
                 { icon: Mail, text: "info@sla.schoenstatt-fathers.in" },
-                { icon: Phone, text: "+91 487 2421234" },
-                { icon: MapPin, text: "Thrissur, Kerala, India" },
+                { icon: Phone, text: "+91 487 2421234 (Thrissur)" },
+                { icon: MapPin, text: "Main Center: Thrissur, Kerala" },
               ].map((contact, index) => (
                 <div key={index} className="flex items-start gap-2 sm:gap-3">
                   <contact.icon className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mt-0.5 flex-shrink-0" />
