@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Users, Award, Globe, Zap, Star, BookOpen, Play, ChevronDown } from "lucide-react"
@@ -9,6 +9,10 @@ export function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [counters, setCounters] = useState({ students: 0, success: 0, centers: 0 })
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [scrollY, setScrollY] = useState(0)
+  const [isInView, setIsInView] = useState(false)
+  const heroRef = useRef<HTMLElement>(null)
+  const imageRef = useRef<HTMLDivElement>(null)
 
   const testimonials = [
     { text: "Best German learning experience!", author: "Maria K." },
@@ -44,16 +48,64 @@ export function HeroSection() {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
     }, 4000)
 
+    // Enhanced scroll effects
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      setScrollY(currentScrollY)
+
+      // Check if hero section is in view
+      if (heroRef.current) {
+        const rect = heroRef.current.getBoundingClientRect()
+        const inView = rect.top < window.innerHeight && rect.bottom > 0
+        setIsInView(inView)
+      }
+    }
+
+    // Intersection Observer for more precise visibility detection
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.target === heroRef.current) {
+            setIsInView(entry.isIntersecting)
+          }
+        })
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    )
+
+    if (heroRef.current) {
+      observer.observe(heroRef.current)
+    }
+
+    // Smooth scroll listener with throttling
+    let ticking = false
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll()
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+
+    window.addEventListener('scroll', throttledScroll, { passive: true })
+
     return () => {
       clearTimeout(timeout)
       clearInterval(testimonialInterval)
+      window.removeEventListener('scroll', throttledScroll)
+      observer.disconnect()
     }
   }, [])
 
   if (!mounted) return null
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section 
+      ref={heroRef}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+    >
       {/* Enhanced Animated Background */}
       <div className="absolute inset-0">
         {/* Floating particles */}
@@ -179,45 +231,126 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Enhanced Visual Section */}
-          <div className="relative animate-fade-in-right">
-            <div className="relative group">
-              {/* Enhanced glowing effects */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-blue-500 via-purple-600 to-yellow-400 rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700 animate-gradient-x"></div>
-              
-              {/* Floating elements around image */}
-              <div className="absolute -top-12 -left-12 w-24 h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl opacity-30 animate-float shadow-2xl"></div>
-              <div className="absolute -bottom-12 -right-12 w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-600 rounded-2xl opacity-40 animate-float-delayed shadow-2xl"></div>
-              <div className="absolute top-1/2 -right-8 w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-25 animate-bounce"></div>
+          {/* Enhanced Image Section with Advanced Scroll Effects */}
+          <div 
+            ref={imageRef}
+            className="relative group animate-fade-in-right"
+            style={{
+              transform: `translateY(${scrollY * 0.1}px) scale(${isInView ? 1 : 0.95})`,
+              opacity: isInView ? 1 : 0.8,
+              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out'
+            }}
+          >
+            {/* Enhanced Glow effect with scroll interaction */}
+            <div 
+              className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 via-orange-500/30 to-red-500/30 rounded-[2rem] blur-2xl opacity-75 group-hover:opacity-100 transition-all duration-500"
+              style={{
+                transform: `scale(${1 + scrollY * 0.0002})`,
+                opacity: Math.max(0.3, 0.75 - scrollY * 0.001)
+              }}
+            ></div>
+            
+            {/* Floating elements with enhanced scroll physics */}
+            <div 
+              className="absolute -top-12 -left-12 w-16 sm:w-20 md:w-24 h-16 sm:h-20 md:h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl opacity-30 shadow-2xl transition-all duration-300"
+              style={{
+                transform: `translateY(${scrollY * -0.15}px) rotate(${scrollY * 0.05}deg)`,
+                opacity: Math.max(0.1, 0.3 - scrollY * 0.0008)
+              }}
+            ></div>
+            <div 
+              className="absolute -bottom-12 -right-12 w-14 sm:w-16 md:w-20 h-14 sm:h-16 md:h-20 bg-gradient-to-r from-blue-400 to-purple-600 rounded-2xl opacity-40 shadow-2xl transition-all duration-300"
+              style={{
+                transform: `translateY(${scrollY * 0.12}px) rotate(${scrollY * -0.03}deg)`,
+                opacity: Math.max(0.15, 0.4 - scrollY * 0.0006)
+              }}
+            ></div>
+            <div 
+              className="absolute top-1/2 -right-4 sm:-right-6 md:-right-8 w-12 sm:w-14 md:w-16 h-12 sm:h-14 md:h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-25 transition-all duration-300"
+              style={{
+                transform: `translateY(${scrollY * -0.08}px) scale(${1 + Math.sin(scrollY * 0.01) * 0.1})`,
+                opacity: Math.max(0.1, 0.25 - scrollY * 0.0005)
+              }}
+            ></div>
 
-              {/* Main enhanced image container */}
-              <div className="relative bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl border border-white/30 rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 group-hover:scale-[1.02]">
+            {/* Main enhanced image container with advanced scroll effects */}
+            <div 
+              className="relative bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl border border-white/30 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 group-hover:scale-[1.02]"
+              style={{
+                transform: `perspective(1000px) rotateX(${scrollY * 0.02}deg) rotateY(${scrollY * 0.01}deg)`,
+                boxShadow: `0 ${20 + scrollY * 0.05}px ${40 + scrollY * 0.1}px rgba(0,0,0,0.3)`
+              }}
+            >
+              <div className="relative overflow-hidden">
                 <Image
                   src="/images/Gallery/header_pic.jpg"
                   alt="SLA Students and Faculty"
                   width={700}
                   height={500}
-                  className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-auto object-cover transition-transform duration-700"
+                  style={{
+                    transform: `scale(${1.05 + scrollY * 0.0001}) translateY(${scrollY * -0.05}px)`,
+                    filter: `brightness(${Math.max(0.8, 1 - scrollY * 0.0003)}) contrast(${Math.max(0.9, 1 + scrollY * 0.0002)})`
+                  }}
                 />
-                
-                {/* Enhanced overlay gradients */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-blue-600/10"></div>
+              </div>
+              
+              {/* Enhanced overlay gradients with scroll interaction */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity duration-300"
+                style={{ opacity: Math.min(0.6, 0.3 + scrollY * 0.0008) }}
+              ></div>
+              <div 
+                className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-blue-600/10 transition-opacity duration-300"
+                style={{ opacity: Math.max(0.05, 0.1 - scrollY * 0.0003) }}
+              ></div>
 
-                {/* Enhanced floating badges */}
-                <div className="absolute top-6 right-6 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 backdrop-blur-lg border border-yellow-400/50 rounded-2xl px-6 py-3 shadow-lg">
-                  <span className="text-yellow-300 text-sm font-bold flex items-center">
-                    <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                    Live Interactive Classes
-                  </span>
-                </div>
-                
-                {/* <div className="absolute bottom-6 left-6 bg-gradient-to-r from-blue-500/30 to-purple-600/30 backdrop-blur-lg border border-blue-400/50 rounded-2xl px-6 py-3 shadow-lg">
-                  <span className="text-blue-300 text-sm font-bold flex items-center">
-                    <Globe className="h-4 w-4 mr-2" />
-                    German Certification
-                  </span>
-                </div> */}
+              {/* Enhanced floating badges with responsive design */}
+              <div 
+                className="absolute top-3 sm:top-4 md:top-6 right-3 sm:right-4 md:right-6 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 backdrop-blur-lg border border-yellow-400/50 rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 shadow-lg transition-all duration-300"
+                style={{
+                  transform: `translateY(${scrollY * -0.03}px) scale(${Math.max(0.8, 1 - scrollY * 0.0002)})`,
+                  opacity: Math.max(0.6, 1 - scrollY * 0.0008)
+                }}
+              >
+                <span className="text-yellow-300 text-xs sm:text-sm font-bold flex items-center">
+                  <Zap className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-pulse" />
+                  <span className="hidden sm:inline">Live Interactive Classes</span>
+                  <span className="sm:hidden">Live Classes</span>
+                </span>
+              </div>
+              
+              {/* Mobile-optimized bottom badge */}
+              <div 
+                className="absolute bottom-3 sm:bottom-4 md:bottom-6 left-3 sm:left-4 md:left-6 bg-gradient-to-r from-blue-500/30 to-purple-600/30 backdrop-blur-lg border border-blue-400/50 rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 shadow-lg transition-all duration-300"
+                style={{
+                  transform: `translateY(${scrollY * 0.02}px) scale(${Math.max(0.8, 1 - scrollY * 0.0002)})`,
+                  opacity: Math.max(0.6, 1 - scrollY * 0.0008)
+                }}
+              >
+                <span className="text-blue-300 text-xs sm:text-sm font-bold flex items-center">
+                  <Globe className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">German Certification</span>
+                  <span className="sm:hidden">Certified</span>
+                </span>
+              </div>
+
+              {/* Interactive scroll progress indicator */}
+              <div 
+                className="absolute top-0 left-0 h-1 bg-gradient-to-r from-yellow-400 to-blue-600 transition-all duration-300"
+                style={{ 
+                  width: `${Math.min(100, (scrollY / (typeof window !== 'undefined' ? window.innerHeight : 800)) * 100)}%`,
+                  opacity: scrollY > 50 ? 0.8 : 0
+                }}
+              ></div>
+            </div>
+
+            {/* Mobile touch interaction hint */}
+            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 md:hidden">
+              <div className="flex items-center space-x-2 text-white/60 text-xs animate-pulse">
+                <ChevronDown className="h-4 w-4" />
+                <span>Scroll to explore</span>
+                <ChevronDown className="h-4 w-4" />
               </div>
             </div>
           </div>

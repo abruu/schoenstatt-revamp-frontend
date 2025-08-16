@@ -26,7 +26,7 @@ export const NAVIGATION_ITEMS = [
 export const CENTERS = [
   {
     id: "thrissur",
-    name: "Thrissur Center",
+    name: "SLA-Thrissur Center",
     address: "Schoenstatt Fathers, Thrissur, Kerala 680001",
     phone: "+91 487 2421234",
     email: "thrissur@sla.schoenstatt-fathers.in",
@@ -38,7 +38,7 @@ export const CENTERS = [
   },
   {
     id: "chalakudy",
-    name: "Chalakudy Center",
+    name: "SLA-Chalakudy Center",
     address: "Schoenstatt Campus, Chalakudy, Kerala 680307",
     phone: "+91 480 2701234",
     email: "chalakudy@sla.schoenstatt-fathers.in",
@@ -55,7 +55,7 @@ export const CENTERS = [
   },
   {
     id: "peravoor",
-    name: "Peravoor Center",
+    name: "SLA-Peravoor Center",
     address: "Schoenstatt Institute, Peravoor, Kerala 670673",
     phone: "+91 497 2851234",
     email: "peravoor@sla.schoenstatt-fathers.in",

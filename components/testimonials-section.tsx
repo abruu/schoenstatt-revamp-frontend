@@ -12,7 +12,7 @@ export function TestimonialsSection() {
     {
       name: "Annet Biju",
       course: "B2 Level Graduate",
-      location: "Thrissur",
+      location: "SLA - Thrissur",
       image: "images/testimonials/Annet.webp",
       rating: 5,
       feedback:
@@ -23,7 +23,7 @@ export function TestimonialsSection() {
     {
       name: "Abin Kurbel",
       course: "A2 Level Graduate",
-      location: "Chalakudy",
+      location: "SLA - Chalakudy",
       image: "images/testimonials/Abin.webp",
       rating: 5,
       feedback:
@@ -34,7 +34,7 @@ export function TestimonialsSection() {
     {
       name: "Soby Rose C J",
       course: "B1 Level Graduate",
-      location: "Peravoor",
+      location: "SLA - Peravoor",
       image: "images/testimonials/Soby.webp",
       rating: 5,
       feedback:
@@ -45,7 +45,7 @@ export function TestimonialsSection() {
     {
       name: "Aljo Johnson",
       course: "A1 Level Graduate",
-      location: "Thrissur",
+      location: "SLA - Thrissur",
       image: "images/testimonials/Aljo.webp",
       rating: 5,
       feedback:

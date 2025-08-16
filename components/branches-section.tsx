@@ -11,7 +11,7 @@ export function BranchesSection() {
   const branches = [
     {
       name: "Schoenstatt Academy (Kuttur, Thrissur)",
-      header: "Thrissur Center",
+      header: "SLA - Thrissur Center",
       address: "Schoenstatt Language Academy, Sion Centre, Kottekkad, Kuttoor, Thrissur, Kerala 680013",
       phone: "7994361013, 9447053306",
       callno:'',
@@ -33,7 +33,7 @@ export function BranchesSection() {
     },
     {
       name: "Schoenstatt Academy (Aloor,Chalakkudy)",
-      header: "Chalakudy Center",
+      header: "SLA - Chalakudy Center",
       address: "Schoenstatt Language Academy, Aloor – Cherukunnu Rd, near St Thomas Church, Aloor, Kerala 680683",
       phone: "8281603660, 8281038421",
       callno:'8281603660',
@@ -52,7 +52,7 @@ export function BranchesSection() {
     },
     {
       name: "Schoenstatt Academy (Peravoor,Kannur)",
-      header: "Peravoor Center",
+      header: "SLA - Peravoor Center",
       address: "Schoenstatt Language Academy, Manathana-Kottiyoor Rd, Thondiyil, Peravoor, Kerala 670673",
       phone: "7306861763",
       callno:'8281603660',

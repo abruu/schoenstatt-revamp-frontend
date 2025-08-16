@@ -202,9 +202,9 @@ export function ContactSection() {
                         <SelectValue placeholder="Select preferred center" />
                       </SelectTrigger>
                       <SelectContent className=" border-white/10">
-                        <SelectItem value="thrissur">Thrissur Center</SelectItem>
-                        <SelectItem value="chalakudy">Chalakudy Center</SelectItem>
-                        <SelectItem value="peravoor">Peravoor Center</SelectItem>
+                        <SelectItem value="thrissur">SLA-Thrissur Center</SelectItem>
+                        <SelectItem value="chalakudy">SLA-Chalakudy Center</SelectItem>
+                        <SelectItem value="peravoor">SLA-Peravoor Center</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
