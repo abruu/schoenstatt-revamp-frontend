@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { SITE_CONFIG } from "@/lib/constants"
+import { BackToTop } from "@/components/common/back-to-top"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -60,6 +61,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         {children}
+        <BackToTop />
         <script
           dangerouslySetInnerHTML={{
             __html: `

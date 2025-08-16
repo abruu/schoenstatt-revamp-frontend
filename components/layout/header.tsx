@@ -15,6 +15,20 @@ export function Header() {
   const router = useRouter()
   const pathname = usePathname()
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
+
   // Track active section on homepage
   useEffect(() => {
     if (pathname !== "/") return
@@ -119,7 +133,7 @@ export function Header() {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled ? "bg-black/20 backdrop-blur-xl border-b border-white/10" : "bg-transparent",
       )}
     >
@@ -203,7 +217,7 @@ export function Header() {
           "lg:hidden fixed inset-0 bg-black backdrop-blur-xl transition-all duration-500 z-[60]",
           isOpen ? "opacity-100 visible" : "opacity-0 invisible",
         )}
-        style={{ 
+        style={{
           top: "80px",
           backgroundColor: "rgb(0, 0, 0)",
           backgroundImage: "none"
