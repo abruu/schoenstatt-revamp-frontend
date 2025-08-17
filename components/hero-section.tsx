@@ -166,14 +166,16 @@ export function HeroSection() {
                   <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
             </Link>
+              <Link href="/about">
                 <Button
                   variant="outline"
                   size="lg"
                   className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 px-6 sm:px-8 py-3 sm:py-4 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
                 >
-                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
-                  Watch Demo
+                  <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
+                  Learn More
                 </Button>
+              </Link>
               </div>
             {/* Rotating Testimonial */}
             <div className="">

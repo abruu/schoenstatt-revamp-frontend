@@ -6,9 +6,9 @@ import { SITE_CONFIG } from "@/lib/constants"
 
 export function Footer() {
   return (
-    <footer className="relative bg-black/50 backdrop-blur-xl border-t border-white/10 mt-16 sm:mt-24 lg:mt-32">
+    <footer className="relative bg-black/70 backdrop-blur-3xl border-t border-white/10 mt-16 sm:mt-24 lg:mt-32">
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-black/20"></div>
 
       <div className="relative z-10 container mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
