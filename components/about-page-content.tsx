@@ -334,9 +334,9 @@ export function AboutPageContent() {
               className="rounded-2xl w-full h-auto"
             />
             <div className="absolute inset-0 bg-black/30 rounded-2xl"></div>
-            <div className="absolute bottom-8 left-8 right-8 md:left-auto md:w-2/5 p-8 bg-black/40 backdrop-blur-lg border border-white/10 rounded-2xl">
-              <p className="text-sm font-semibold tracking-widest text-yellow-400 uppercase">Our Mission</p>
-              <h3 className="mt-2 text-2xl md:text-3xl font-bold text-white">We're On A Mission Of Big Changes.</h3>
+            <div className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-auto md:w-2/5 p-4 md:p-8 bg-black/60 backdrop-blur-lg border border-white/10 rounded-2xl">
+              <p className="text-xs md:text-sm font-semibold tracking-widest text-yellow-400 uppercase">Our Mission</p>
+              <h3 className="mt-2 text-lg md:text-2xl lg:text-3xl font-bold text-white leading-tight">We're On A Mission Of Big Changes.</h3>
             </div>
           </div>
         </div>

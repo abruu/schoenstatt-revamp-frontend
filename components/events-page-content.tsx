@@ -123,12 +123,12 @@ export function EventsPageContent() {
       {/* Events Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredEvents.map((event, index) => (
-          <div key={event.id} className="relative group">
+          <Link href={`/events/${event.id}`} key={event.id} className="relative group">
             <div
               className={`absolute -inset-1 bg-gradient-to-r ${event.gradient} rounded-3xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500`}
             ></div>
 
-            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full flex flex-col">
+            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full flex flex-col cursor-pointer">
               {/* Event Image */}
               <div className="aspect-video relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
@@ -204,7 +204,7 @@ export function EventsPageContent() {
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

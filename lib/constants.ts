@@ -5,9 +5,9 @@ export const SITE_CONFIG = {
   url: "https://sla.schoenstatt-fathers.in",
   ogImage: "/images/og-image.jpg",
   links: {
-    facebook: "#",
-    instagram: "#",
-    youtube: "#",
+    facebook: "https://www.facebook.com/sla.kuttur",
+    instagram: "https://www.instagram.com/sla_kuttur/",
+    // youtube: "#",
   },
 };
 

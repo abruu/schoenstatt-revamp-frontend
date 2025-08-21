@@ -23,8 +23,10 @@ export function ImageSlider({
   showThumbnails = true,
 }: ImageSliderProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0)
   const thumbnailContainerRef = useRef<HTMLDivElement>(null)
   const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const thumbnailsPerView = 5 // Number of thumbnails visible at once
 
   const handleNextImage = useCallback(() => {
     if (images.length > 0) {
@@ -42,22 +44,34 @@ export function ImageSlider({
     setCurrentImageIndex(index)
   }
 
+  const scrollThumbnailsLeft = () => {
+    setThumbnailStartIndex(prev => Math.max(0, prev - 1))
+  }
+
+  const scrollThumbnailsRight = () => {
+    setThumbnailStartIndex(prev => Math.min(images.length - thumbnailsPerView, prev + 1))
+  }
+
   useEffect(() => {
     if (!autoPlay || images.length <= 1) return
     const timer = setTimeout(handleNextImage, autoPlayInterval)
     return () => clearTimeout(timer)
   }, [currentImageIndex, autoPlay, autoPlayInterval, images.length, handleNextImage])
 
-  // Removed automatic scrolling that was affecting the entire website
-  // useEffect(() => {
-  //   if (showThumbnails && thumbnailRefs.current[currentImageIndex]) {
-  //     thumbnailRefs.current[currentImageIndex]?.scrollIntoView({
-  //       behavior: "smooth",
-  //       block: "nearest",
-  //       inline: "center",
-  //     })
-  //   }
-  // }, [currentImageIndex, showThumbnails])
+  // Auto-scroll thumbnails to keep current image visible
+  useEffect(() => {
+    if (showThumbnails && images.length > thumbnailsPerView) {
+      const currentIndex = currentImageIndex
+      const startIndex = thumbnailStartIndex
+      const endIndex = startIndex + thumbnailsPerView - 1
+      
+      if (currentIndex < startIndex) {
+        setThumbnailStartIndex(currentIndex)
+      } else if (currentIndex > endIndex) {
+        setThumbnailStartIndex(Math.max(0, currentIndex - thumbnailsPerView + 1))
+      }
+    }
+  }, [currentImageIndex, showThumbnails, images.length, thumbnailStartIndex, thumbnailsPerView])
 
   if (!images || images.length === 0) {
     return (
@@ -124,29 +138,63 @@ export function ImageSlider({
 
 
       {showThumbnails && images.length > 1 && (
-        <div
-          ref={thumbnailContainerRef}
-          className="flex justify-center gap-2 md:gap-4 overflow-x-auto p-2  pb-2 -mb-2 custom-scrollbar"
-        >
-          {images.map((src, index) => (
-            <button
-              key={`thumb-${index}`}
-              ref={(el) => {
-                thumbnailRefs.current[index] = el
-              }}
-              onClick={() => selectImage(index)}
-              className={cn(
-                "flex-shrink-0 w-16 h-10 md:w-24 md:h-16 rounded-lg overflow-hidden transition-all duration-300 ease-in-out focus:outline-none ring-offset-2 ring-offset-background",
-                currentImageIndex === index ? "ring-2 ring-yellow-400 opacity-100" : "opacity-60 hover:opacity-100",
-              )}
+        <div className="relative flex items-center justify-center gap-2">
+          {/* Left Arrow */}
+          {images.length > thumbnailsPerView && thumbnailStartIndex > 0 && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={scrollThumbnailsLeft}
+              className="bg-black/20 text-white rounded-full hover:bg-black/40 transition-all flex-shrink-0"
+              aria-label="Previous thumbnails"
             >
-              <img
-                src={src || "/placeholder.svg"}
-                alt={`Thumbnail ${altPrefix} ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
-            </button>
-          ))}
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {/* Thumbnails Container */}
+          <div
+            ref={thumbnailContainerRef}
+            className="flex justify-center gap-2 md:gap-4 overflow-hidden p-2 pb-2 -mb-2"
+          >
+            {images
+              .slice(thumbnailStartIndex, thumbnailStartIndex + thumbnailsPerView)
+              .map((src, displayIndex) => {
+                const actualIndex = thumbnailStartIndex + displayIndex
+                return (
+                  <button
+                    key={`thumb-${actualIndex}`}
+                    ref={(el) => {
+                      thumbnailRefs.current[actualIndex] = el
+                    }}
+                    onClick={() => selectImage(actualIndex)}
+                    className={cn(
+                      "flex-shrink-0 w-16 h-10 md:w-24 md:h-16 rounded-lg overflow-hidden transition-all duration-300 ease-in-out focus:outline-none ring-offset-2 ring-offset-background",
+                      currentImageIndex === actualIndex ? "ring-2 ring-yellow-400 opacity-100" : "opacity-60 hover:opacity-100",
+                    )}
+                  >
+                    <img
+                      src={src || "/placeholder.svg"}
+                      alt={`Thumbnail ${altPrefix} ${actualIndex + 1}`}
+                      className="w-full h-full object-contain"
+                    />
+                  </button>
+                )
+              })}
+          </div>
+          
+          {/* Right Arrow */}
+          {images.length > thumbnailsPerView && thumbnailStartIndex + thumbnailsPerView < images.length && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={scrollThumbnailsRight}
+              className="bg-black/20 text-white rounded-full hover:bg-black/40 transition-all flex-shrink-0"
+              aria-label="Next thumbnails"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       )}
     </div>

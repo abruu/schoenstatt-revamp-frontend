@@ -254,17 +254,7 @@ export function GalleryPageContent() {
       location: "Peravoor Center",
       tags: ["graduation", "b1", "certification"],
     },
-    {
-      id: 21,
-      src: "/images/Gallery/PHOTO-2025-05-08-19-53-27.jpg",
-      alt: "Digital Learning",
-      category: "classrooms",
-      title: "Digital Learning Environment",
-      description: "Students utilizing digital resources and online platforms for enhanced German language learning",
-      date: "May 2025",
-      location: "Thrissur Center",
-      tags: ["digital", "online", "e-learning"],
-    },
+
     {
       id: 22,
       src: "/images/Gallery/PHOTO-2025-05-13-18-43-35.jpg",

@@ -173,9 +173,9 @@ export function BranchesSection() {
                     <Phone className={`h-5 w-5 text-green-400 flex-shrink-0`} />
                     <span className="text-gray-300">{branches[selectedBranch].phone}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Mail className={`h-5 w-5 text-purple-400 flex-shrink-0`} />
-                    <span className="text-gray-300">{branches[selectedBranch].email}</span>
+                  <div className="flex items-start gap-3">
+                    <Mail className={`h-5 w-5 text-purple-400 flex-shrink-0 mt-1`} />
+                    <span className="text-gray-300 break-all overflow-wrap-anywhere">{branches[selectedBranch].email}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className={`h-5 w-5 text-yellow-400 flex-shrink-0`} />

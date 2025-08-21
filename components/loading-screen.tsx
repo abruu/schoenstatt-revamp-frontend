@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { GraduationCap, Users, Award, Globe } from "lucide-react"
+import Image from "next/image"
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(false)
@@ -112,14 +113,18 @@ export default function LoadingScreen() {
       </div>
 
       <div className="relative z-10 text-center space-y-8 max-w-md mx-auto px-4">
-        {/* Logo Animation */}
+        {/* Logo */}
         <div className="relative">
-          <div className="w-24 h-24 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg shadow-yellow-400/50 animate-bounce mx-auto">
-            <div className="w-18 h-18 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center">
-              <div className="w-10 h-10 bg-yellow-400 rounded-full animate-pulse"></div>
-            </div>
+          <div className="w-24 h-24 mx-auto">
+            <Image
+              src="/transparent-logo.png"
+              alt="Schoenstatt Language Academy Logo"
+              width={96}
+              height={96}
+              className="w-full h-full object-contain"
+              priority
+            />
           </div>
-          <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-30 animate-ping"></div>
         </div>
 
         {/* Brand Name */}

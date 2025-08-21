@@ -121,8 +121,8 @@ export function TestimonialsSection() {
             className={`absolute -inset-1 bg-gradient-to-r ${activeTestimonial.gradient} rounded-3xl blur-xl opacity-20 transition-all duration-500`}
           ></div>
 
-          <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 lg:p-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 items-center">
+          <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 lg:p-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 items-center px-8 md:px-0">
               {/* Student Image Column */}
               <div className="md:col-span-1">
                 <div className="relative aspect-square">
@@ -169,23 +169,23 @@ export function TestimonialsSection() {
           {/* Navigation Buttons */}
           <Button
             onClick={prevTestimonial}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 z-20"
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 z-20"
             size="icon"
             aria-label="Previous testimonial"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
           </Button>
           <Button
             onClick={nextTestimonial}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 z-20"
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 z-20"
             size="icon"
             aria-label="Next testimonial"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
           </Button>
 
           {/* Testimonial Indicators */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-3 z-20 ">
             {testimonials.map((_, index) => (
               <button
                 key={index}

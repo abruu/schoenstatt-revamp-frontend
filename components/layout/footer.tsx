@@ -15,24 +15,23 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-6">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="relative">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg shadow-yellow-400/50">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-400 rounded-full animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-20"></div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  {SITE_CONFIG.shortName}
-                </span>
-                <span className="text-xs sm:text-sm text-yellow-400 font-medium tracking-wider">LANGUAGE ACADEMY</span>
-              </div>
+            <div className="relative">
+              <img
+                src="/images/logo/transparent-logo.png"
+                alt="Schoenstatt Logo"
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_10px_rgba(255,255,0,0.6)] hover:drop-shadow-[0_0_15px_rgba(255,255,0,0.8)]"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              {SITE_CONFIG.shortName}
+              </span>
+              <span className="text-xs sm:text-sm text-yellow-400 font-medium tracking-wider ">LANGUAGE ACADEMY</span>
+            </div>
             </div>
 
             <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-              Premier German language education in Kerala with three centers across Thrissur, Chalakudy, and Peravoor. 
+              Premier German language education in Kerala with three centers across Thrissur, Chalakudy, and Peravoor.
               Pioneering innovative teaching methodologies and immersive learning experiences.
             </p>
 
@@ -40,9 +39,10 @@ export function Footer() {
               {[
                 { icon: Facebook, href: SITE_CONFIG.links.facebook, color: "hover:text-blue-400" },
                 { icon: Instagram, href: SITE_CONFIG.links.instagram, color: "hover:text-pink-400" },
-                { icon: Youtube, href: SITE_CONFIG.links.youtube, color: "hover:text-red-400" },
+                // { icon: Youtube, href: SITE_CONFIG.links.youtube, color: "hover:text-red-400" },
               ].map((social, index) => (
                 <Link
+                target="_blank"
                   key={index}
                   href={social.href}
                   className={`w-8 h-8 sm:w-10 sm:h-10 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-gray-400 ${social.color} transition-all duration-300 hover:scale-110 hover:bg-white/10`}
@@ -111,8 +111,8 @@ export function Footer() {
 
             <div className="space-y-3 sm:space-y-4">
               {[
-                { icon: Mail, text: "info@sla.schoenstatt-fathers.in" },
-                { icon: Phone, text: "+91 487 2421234 (Thrissur)" },
+                { icon: Mail, text: "languageacademyschoenstatt@gmail.com" },
+                { icon: Phone, text: "9447053306 (Thrissur)" },
                 { icon: MapPin, text: "Main Center: Thrissur, Kerala" },
               ].map((contact, index) => (
                 <div key={index} className="flex items-start gap-2 sm:gap-3">
