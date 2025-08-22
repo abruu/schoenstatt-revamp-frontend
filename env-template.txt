@@ -1,0 +1,54 @@
+# Environment Variables Template
+# Copy this file to .env.local and fill in your actual values
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Resend Email Configuration
+RESEND_API_KEY=your_resend_api_key
+# For development/testing - use Resend's default domain (only sends to your own email)
+RESEND_FROM="onboarding@resend.dev"
+# For production - use your verified domain
+RESEND_FROM="Admissions <admissions@info.abru.fun>"
+
+# Instructions:
+# 1. Copy this file to .env.local in the root directory
+# 2. Replace all placeholder values with your actual credentials
+# 3. Make sure .env.local is in your .gitignore file (it should be by default)
+# 4. Restart your development server after adding environment variables
+
+# Supabase Setup:
+# - Create a new project at https://supabase.com
+# - Go to Settings > API to find your URL and keys
+# - Create the following tables in your database:
+#   
+#   Table: centers
+#   - id (text, primary key)
+#   - name (text)
+#   - email (text)
+#   
+#   Table: registrations
+#   - id (uuid, primary key, default: gen_random_uuid())
+#   - first_name (text)
+#   - last_name (text)
+#   - date_of_birth (date)
+#   - email (text)
+#   - phone (text)
+#   - address (text)
+#   - parent_name (text)
+#   - parent_contact (text)
+#   - aadhaar_number (text)
+#   - center (text, foreign key to centers.id)
+#   - course_level (text)
+#   - photo_path (text)
+#   - created_at (timestamptz, default: now())
+#
+# - Create a storage bucket named 'photos' with private access
+# - Set up Row Level Security (RLS) policies as needed
+
+# Resend Setup:
+# - Sign up at https://resend.com
+# - Create an API key in your dashboard
+# - Verify your domain for sending emails
