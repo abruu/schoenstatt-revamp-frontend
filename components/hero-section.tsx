@@ -27,19 +27,25 @@ export function HeroSection() {
       icon: Zap
     },
     {
-      src: "/images/SLA gratuates/gratues 1.jpg", // Replace with actual image paths
+      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-04.jpg", // Replace with actual image paths
       alt: "German Language Learning",
       badge: "Expert Instructors",
       icon: Users
     },
     {
-      src: "/images/SLA gratuates/gratues 2.jpg", // Replace with actual image paths
+      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-06.jpg", // Replace with actual image paths
       alt: "Modern Learning Environment",
       badge: "State-of-Art Facilities",
       icon: Award
     },
     {
-      src: "/images/SLA gratuates/SLA gratuates 1.jpg", // Replace with actual image paths
+      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-09.jpg", // Replace with actual image paths
+      alt: "Global Certification",
+      badge: "German Certification",
+      icon: Globe
+    },
+    {
+      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-07 2.jpg", // Replace with actual image paths
       alt: "Global Certification",
       badge: "German Certification",
       icon: Globe
@@ -131,7 +137,7 @@ export function HeroSection() {
 
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-24 sm:pt-28 sm:pb-28 relative z-10">
         <div className="max-w-8xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 xl:gap-20 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 xl:gap-20 ">
           {/* Enhanced Content */}
           <div className="space-y-6 sm:space-y-8 animate-fade-in-up">
             {/* Premium Badge */}
@@ -242,7 +248,7 @@ export function HeroSection() {
           </div>
 
           {/* Enhanced Visual Section */}
-          <div className="relative animate-fade-in-right">
+          <div className="relative animate-fade-in-right mt-6">
             <div className="relative group">
               {/* Enhanced glowing effects */}
               <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-blue-500 via-purple-600 to-yellow-400 rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700 animate-gradient-x"></div>
@@ -255,7 +261,7 @@ export function HeroSection() {
               {/* Enhanced Image Slider Container */}
               <div className="relative bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl border border-white/30 rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 group-hover:scale-[1.02]">
                 {/* Image Slider */}
-                <div className="relative h-[400px] sm:h-[500px] overflow-hidden">
+                <div className="relative aspect-square overflow-hidden">
                   {heroImages.map((image, index) => {
                     const IconComponent = image.icon
                     return (
@@ -269,27 +275,40 @@ export function HeroSection() {
                             : 'opacity-0 scale-95 translate-x-full'
                         }`}
                       >
-                        <Image
-                          src={image.src}
-                          alt={image.alt}
-                          width={700}
-                          height={500}
-                          className="w-full h-full object-fill group-hover:scale-105 transition-transform duration-700"
-                          style={{ objectFit: 'fill' }}
-                        />
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={image.src}
+                            alt={image.alt}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-700"
+                            priority={index === 0}
+                          />
+                        </div>
                         
                         {/* Enhanced overlay gradients */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-blue-600/10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/30"></div>
 
                         {/* Dynamic floating badge */}
-                        {/* <div className="absolute top-6 right-6 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 backdrop-blur-lg border border-yellow-400/50 rounded-2xl px-6 py-3 shadow-lg transform transition-all duration-500 hover:scale-105">
-                          <span className="text-yellow-300 text-sm font-bold flex items-center">
-                            <IconComponent className="h-4 w-4 mr-2 animate-pulse" />
-                            {image.badge}
+                        {/* <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 backdrop-blur-lg border border-yellow-400/50 rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 shadow-lg transform transition-all duration-500 hover:scale-105">
+                          <span className="text-yellow-300 text-xs sm:text-sm font-bold flex items-center">
+                            <IconComponent className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-pulse" />
+                            <span className="hidden sm:inline">{image.badge}</span>
+                            <span className="sm:hidden">{image.badge.split(' ')[0]}</span>
                           </span>
                         </div> */}
+
+                        {/* Content overlay for better readability */}
+                        {/* <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
+                          <div className="bg-black/40 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-white/20">
+                            <h3 className="text-white font-semibold text-sm sm:text-base mb-1">{image.alt}</h3>
+                            <p className="text-gray-300 text-xs sm:text-sm opacity-90">Professional German Language Learning</p>
+                          </div>
+                        </div> */}
                       </div>
+
                     )
                   })}
                 </div>
