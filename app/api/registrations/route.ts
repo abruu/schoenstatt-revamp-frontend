@@ -177,43 +177,85 @@ export async function POST(request: NextRequest) {
           to: cleanEmail,
           subject: `New Registration - ${firstName} ${lastName}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">New Student Registration</h2>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>New Student Registration</title>
+          </head>
+          <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
               
-              <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Student Information</h3>
-                <p><strong>Name:</strong> ${firstName} ${lastName}</p>
-                <p><strong>Date of Birth:</strong> ${dateOfBirth}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Phone:</strong> ${phone}</p>
-                <p><strong>Address:</strong> ${address}</p>
-                <p><strong>Aadhaar:</strong> ${aadhaarNumber}</p>
-                <p><strong>Course Level:</strong> ${courseLevel}</p>
+              <!-- Header with Logo and Gradient -->
+              <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); padding: 30px 20px; text-align: center; position: relative;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="80" cy="80" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="40" cy="60" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>'); "></div>
+                <img src="https://schoenstatt-six.vercel.app/images/logo/sla_logo.webp" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 15px; position: relative; z-index: 1;" />
+                <h1 style="color: #000; margin: 0; font-size: 24px; font-weight: 700; position: relative; z-index: 1;">New Student Registration</h1>
+                <p style="color: #000; margin: 8px 0 0 0; font-size: 14px; opacity: 0.8; position: relative; z-index: 1;">Schoenstatt Language Academy</p>
               </div>
 
-              <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Parent/Guardian Information</h3>
-                <p><strong>Name:</strong> ${parentName}</p>
-                <p><strong>Contact:</strong> ${parentContact}</p>
+              <!-- Content -->
+              <div style="padding: 30px 20px;">
+                
+                <!-- Student Information -->
+                <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #fbbf24 0%, transparent 70%); opacity: 0.05;"></div>
+                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">👤 Student Information</h3>
+                  <table style="width: 100%; border-collapse: collapse; position: relative; z-index: 1;">
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569; width: 35%;">Name:</td><td style="padding: 6px 0; color: #1e293b;">${firstName} ${lastName}</td></tr>
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Date of Birth:</td><td style="padding: 6px 0; color: #1e293b;">${dateOfBirthRaw}</td></tr>
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Email:</td><td style="padding: 6px 0; color: #1e293b;">${email}</td></tr>
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Phone:</td><td style="padding: 6px 0; color: #1e293b;">${phone}</td></tr>
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Address:</td><td style="padding: 6px 0; color: #1e293b;">${address}</td></tr>
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Aadhaar:</td><td style="padding: 6px 0; color: #1e293b;">${aadhaarNumber}</td></tr>
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Course Level:</td><td style="padding: 6px 0; color: #1e293b;">${courseLevel.toUpperCase()}</td></tr>
+                  </table>
+                </div>
+
+                <!-- Parent Information -->
+                <div style="background: linear-gradient(135deg, #fef7ff 0%, #faf5ff 100%); border: 1px solid #e9d5ff; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #a855f7 0%, transparent 70%); opacity: 0.05;"></div>
+                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">👨‍👩‍👧‍👦 Parent/Guardian Information</h3>
+                  <table style="width: 100%; border-collapse: collapse; position: relative; z-index: 1;">
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569; width: 35%;">Name:</td><td style="padding: 6px 0; color: #1e293b;">${parentName}</td></tr>
+                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Contact:</td><td style="padding: 6px 0; color: #1e293b;">${parentContact}</td></tr>
+                  </table>
+                </div>
+
+                <!-- Training Center -->
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #22c55e 0%, transparent 70%); opacity: 0.05;"></div>
+                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">🏢 Training Center</h3>
+                  <p style="margin: 0; color: #1e293b; font-weight: 600; position: relative; z-index: 1;">${centerData?.name || center}</p>
+                </div>
+
+                <!-- Student Photo -->
+                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #3b82f6 0%, transparent 70%); opacity: 0.05;"></div>
+                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">📸 Student Photo</h3>
+                  <a href="${signedUrlData.signedUrl}" style="display: inline-block; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; position: relative; z-index: 1; transition: all 0.3s ease;">View Photo</a>
+                </div>
+
+                <!-- Registration Details -->
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border-left: 4px solid #fbbf24;">
+                  <h3 style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px; font-weight: 600;">📋 Registration Details</h3>
+                  <p style="margin: 5px 0; color: #64748b; font-size: 14px;"><strong>Registration ID:</strong> ${registrationData.id}</p>
+                  <p style="margin: 5px 0; color: #64748b; font-size: 14px;"><strong>Submitted on:</strong> ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+
               </div>
 
-              <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Training Center</h3>
-                <p><strong>Center:</strong> ${centerData.name || center}</p>
+              <!-- Footer -->
+              <div style="background: #1e293b; padding: 20px; text-align: center;">
+                <p style="color: #94a3b8; margin: 0; font-size: 12px;">This is an automated notification from Schoenstatt Language Academy</p>
+                <p style="color: #64748b; margin: 8px 0 0 0; font-size: 11px;">Please do not reply to this email</p>
               </div>
 
-              <div style="margin: 20px 0;">
-                <p><strong>Student Photo:</strong></p>
-                <p><a href="${signedUrlData.signedUrl}" style="color: #007bff; text-decoration: none;">View Photo</a></p>
-              </div>
-
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
-                <p>This is an automated notification from the Schoenstatt Language Academy registration system.</p>
-                <p>Registration ID: ${registrationData.id}</p>
-                <p>Submitted on: ${new Date().toLocaleString()}</p>
-              </div>
             </div>
-          `
+          </body>
+          </html>
+        `
         })
         console.log('Institution email sent successfully:', emailResult)
       } catch (emailError) {
@@ -241,60 +283,109 @@ export async function POST(request: NextRequest) {
         to: email,
         subject: 'Registration Confirmation - Schoenstatt Language Academy',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #333; margin-bottom: 10px;">Registration Confirmed!</h1>
-              <p style="color: #666; font-size: 16px;">Thank you for registering with Schoenstatt Language Academy</p>
-            </div>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h2 style="color: #333; margin-top: 0;">Your Registration Details</h2>
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr style="border-bottom: 1px solid #ddd;">
-                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Name:</td>
-                  <td style="padding: 8px 0; color: #333;">${firstName} ${lastName}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Email:</td>
-                  <td style="padding: 8px 0; color: #333;">${email}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Phone:</td>
-                  <td style="padding: 8px 0; color: #333;">${phone}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Course Level:</td>
-                  <td style="padding: 8px 0; color: #333;">${courseLevel.toUpperCase()}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #ddd;">
-                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Training Center:</td>
-                  <td style="padding: 8px 0; color: #333;">${centerData?.name || center}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Registration ID:</td>
-                  <td style="padding: 8px 0; color: #333;">${registrationData.id}</td>
-                </tr>
-              </table>
-            </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Registration Confirmation</title>
+          </head>
+          <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+              
+              <!-- Header with Logo and Success Animation -->
+              <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 20px; text-align: center; position: relative;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="success" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23success)"/></svg>'); "></div>
+                <img src="https://schoenstatt-six.vercel.app/images/logo/sla_logo.webp" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 20px; position: relative; z-index: 1;" />
+                <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;">
+                  <div style="font-size: 40px;">✅</div>
+                </div>
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; position: relative; z-index: 1;">Registration Confirmed!</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; position: relative; z-index: 1;">Thank you for joining Schoenstatt Language Academy</p>
+              </div>
 
-            <div style="background: #e8f5e8; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0;">
-              <h3 style="color: #155724; margin-top: 0;">What's Next?</h3>
-              <ul style="color: #155724; margin: 10px 0; padding-left: 20px;">
-                <li>Our team will review your application</li>
-                <li>You will be contacted within 2-3 business days</li>
-                <li>Please keep this email for your records</li>
-              </ul>
-            </div>
+              <!-- Content -->
+              <div style="padding: 30px 20px;">
+                
+                <!-- Welcome Message -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h2 style="color: #1e293b; margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">Welcome to Our Community! 🎉</h2>
+                  <p style="color: #64748b; margin: 0; font-size: 16px;">Your registration has been successfully submitted and is being processed.</p>
+                </div>
 
-            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-              <p style="color: #666; font-size: 14px; margin: 0;">
-                If you have any questions, please contact us at the training center.
-              </p>
-              <p style="color: #666; font-size: 12px; margin: 10px 0 0 0;">
-                This is an automated confirmation email from Schoenstatt Language Academy.
-              </p>
+                <!-- Registration Details -->
+                <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #fbbf24 0%, transparent 70%); opacity: 0.05;"></div>
+                  <h3 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 600; position: relative; z-index: 1;">📋 Your Registration Details</h3>
+                  <table style="width: 100%; border-collapse: collapse; position: relative; z-index: 1;">
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 12px 0; font-weight: 600; color: #475569; width: 40%;">Name:</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${firstName} ${lastName}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Date of Birth:</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${dateOfBirthRaw}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Email:</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${email}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Phone:</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${phone}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Course Level:</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${courseLevel.toUpperCase()}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Training Center:</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${centerData?.name || center}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Registration ID:</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500; font-family: monospace; background: #f1f5f9; padding: 8px 12px; border-radius: 6px; display: inline-block;">${registrationData.id}</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Next Steps -->
+                <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #22c55e 0%, transparent 70%); opacity: 0.05;"></div>
+                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">🚀 What Happens Next?</h3>
+                  <div style="position: relative; z-index: 1;">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">1</div>
+                      <p style="margin: 0; color: #1e293b; font-weight: 500;">Our team will review your application</p>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">2</div>
+                      <p style="margin: 0; color: #1e293b; font-weight: 500;">You will be contacted within 2-3 business days</p>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">3</div>
+                      <p style="margin: 0; color: #1e293b; font-weight: 500;">Please keep this email for your records</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div style="background: linear-gradient(135deg, #fef7ff 0%, #faf5ff 100%); border: 1px solid #e9d5ff; border-radius: 12px; padding: 20px; text-align: center;">
+                  <h3 style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px; font-weight: 600;">📞 Need Help?</h3>
+                  <p style="color: #64748b; margin: 0; font-size: 14px;">If you have any questions, please contact us at your selected training center.</p>
+                </div>
+
+              </div>
+
+              <!-- Footer -->
+              <div style="background: #1e293b; padding: 25px 20px; text-align: center;">
+                <p style="color: #94a3b8; margin: 0 0 5px 0; font-size: 13px; font-weight: 500;">Schoenstatt Language Academy</p>
+                <p style="color: #64748b; margin: 0; font-size: 11px;">This is an automated confirmation email • Please do not reply</p>
+              </div>
+
             </div>
-          </div>
+          </body>
+          </html>
         `
       })
       

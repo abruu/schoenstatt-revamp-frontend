@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik"
 import * as Yup from "yup"
-import { User, Send, ArrowLeft, Home, Upload, Calendar, Mail, Phone, MapPin, Users, CreditCard, Building, BookOpen, CheckCircle, XCircle, Shield, Eye, RotateCcw } from "lucide-react"
+import { User, Send, ArrowLeft, Home, Upload, Calendar, Mail, Phone, MapPin, Users, CreditCard, Building, BookOpen, CheckCircle, XCircle, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/layout/footer"
 import { ParticleBackground } from "@/components/layout/particle-background"
@@ -26,99 +26,6 @@ interface FormValues {
   courseLevel: string
 }
 
-// Verification component
-interface VerificationProps {
-  onVerify: (verified: boolean) => void
-  isVerified: boolean
-}
-
-function VerificationButton({ onVerify, isVerified }: VerificationProps) {
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [challenge, setChallenge] = useState<string>('')
-  const [userAnswer, setUserAnswer] = useState('')
-  const [showChallenge, setShowChallenge] = useState(false)
-  const [correctAnswer, setCorrectAnswer] = useState<string>('')
-
-  const generateChallenge = () => {
-    const num1 = Math.floor(Math.random() * 10) + 1
-    const num2 = Math.floor(Math.random() * 10) + 1
-    const operation = Math.random() > 0.5 ? '+' : '-'
-    const question = operation === '+' ? `${num1} + ${num2}` : `${Math.max(num1, num2)} - ${Math.min(num1, num2)}`
-    const answer = operation === '+' ? num1 + num2 : Math.max(num1, num2) - Math.min(num1, num2)
-    setChallenge(question)
-    setCorrectAnswer(answer.toString())
-  }
-
-  const handleVerify = () => {
-    if (isVerified) {
-      onVerify(false)
-      setShowChallenge(false)
-      setUserAnswer('')
-      return
-    }
-
-    if (!showChallenge) {
-      generateChallenge()
-      setShowChallenge(true)
-      setIsVerifying(true)
-    }
-  }
-
-  const submitAnswer = () => {
-    if (userAnswer.trim() === correctAnswer) {
-      onVerify(true)
-      setIsVerifying(false)
-      setShowChallenge(false)
-      setUserAnswer('')
-    } else {
-      // Reset and try again
-      generateChallenge()
-      setUserAnswer('')
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-center">
-        <button
-          type="button"
-          onClick={handleVerify}
-          className={`flex items-center gap-3 px-6 py-3 rounded-lg border-2 transition-all duration-300 ${
-            isVerified
-              ? 'bg-green-500/20 border-green-500 text-green-400'
-              : 'bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30'
-          }`}
-        >
-          <Shield className={`h-5 w-5 ${isVerified ? 'text-green-400' : 'text-white'}`} />
-          {isVerified ? 'Verified ✓' : 'Verify you are human'}
-        </button>
-      </div>
-      
-      {showChallenge && (
-        <div className="bg-white/5 border border-white/20 rounded-lg p-4 space-y-3">
-          <p className="text-center text-white/80">Please solve: <span className="font-mono text-lg text-yellow-400">{challenge} = ?</span></p>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-              className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/50"
-              placeholder="Your answer"
-              onKeyPress={(e) => e.key === 'Enter' && submitAnswer()}
-            />
-            <button
-              type="button"
-              onClick={submitAnswer}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-            >
-              Submit
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 // Validation schema
 const validationSchema = Yup.object({
@@ -209,7 +116,6 @@ const initialValues: FormValues = {
 export function RegistrationPageContent() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
-  const [isVerified, setIsVerified] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [registrationComplete, setRegistrationComplete] = useState(false)
   const { centers, loading: centersLoading } = useCenters()
@@ -283,7 +189,6 @@ export function RegistrationPageContent() {
         setRegistrationComplete(true)
         resetForm()
         setPhotoPreview(null)
-        setIsVerified(false)
       } else {
         setSubmitStatus('error')
         setSubmitMessage(result.error || 'Failed to submit registration')
@@ -660,10 +565,6 @@ export function RegistrationPageContent() {
                       </div>
                     </div>
 
-                    {/* Verification */}
-                    <div className="border-t border-white/10 pt-6">
-                      <VerificationButton onVerify={setIsVerified} isVerified={isVerified} />
-                    </div>
 
                     {/* Submit Button */}
                     {submitStatus !== 'idle' && (
@@ -685,7 +586,7 @@ export function RegistrationPageContent() {
                     <div className="pt-2 sm:pt-4">
                       <Button
                         type="submit"
-                        disabled={isSubmitting || !isVerified}
+                        disabled={isSubmitting}
                         className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                       >
                         {isSubmitting ? (
@@ -696,7 +597,7 @@ export function RegistrationPageContent() {
                         ) : (
                           <div className="flex items-center justify-center gap-2">
                             <Send className="h-4 w-4" />
-                            <span>{isVerified ? 'Submit Registration' : 'Complete Verification First'}</span>
+                            <span>Submit Registration</span>
                           </div>
                         )}
                       </Button>
