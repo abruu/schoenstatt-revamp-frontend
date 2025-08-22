@@ -12,6 +12,7 @@ interface ImageSliderProps {
   autoPlayInterval?: number
   className?: string
   showThumbnails?: boolean
+  fullView?: boolean
 }
 
 export function ImageSlider({
@@ -19,8 +20,9 @@ export function ImageSlider({
   altPrefix = "Image",
   autoPlay = true,
   autoPlayInterval = 4000,
-  className = "w-full aspect-[16/10] rounded-2xl",
+  className = "w-full aspect-[4/3] rounded-2xl",
   showThumbnails = true,
+  fullView = true,
 }: ImageSliderProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0)
@@ -64,7 +66,7 @@ export function ImageSlider({
       const currentIndex = currentImageIndex
       const startIndex = thumbnailStartIndex
       const endIndex = startIndex + thumbnailsPerView - 1
-      
+
       if (currentIndex < startIndex) {
         setThumbnailStartIndex(currentIndex)
       } else if (currentIndex > endIndex) {
@@ -89,7 +91,7 @@ export function ImageSlider({
             key={index}
             src={src || "/placeholder.svg"}
             alt={`${altPrefix} ${index + 1}`}
-            className={`w-full h-full object-contain absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            className={`w-full h-full ${fullView ? 'object-cover' : 'object-contain'} absolute inset-0 transition-opacity duration-700 ease-in-out ${
               currentImageIndex === index ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -151,7 +153,7 @@ export function ImageSlider({
               <ChevronLeft className="h-4 w-4" />
             </Button>
           )}
-          
+
           {/* Thumbnails Container */}
           <div
             ref={thumbnailContainerRef}
@@ -182,7 +184,7 @@ export function ImageSlider({
                 )
               })}
           </div>
-          
+
           {/* Right Arrow */}
           {images.length > thumbnailsPerView && thumbnailStartIndex + thumbnailsPerView < images.length && (
             <Button

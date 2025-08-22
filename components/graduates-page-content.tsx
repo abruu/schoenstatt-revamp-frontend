@@ -515,6 +515,7 @@ export function GraduatesPageContent() {
         )}
         <div className="w-full lg:w-9/12 mx-auto">
           <ImageSlider
+          fullView={false}
             key={'selectedBranch'}
             images={gallery}
             altPrefix={'Graduate'}

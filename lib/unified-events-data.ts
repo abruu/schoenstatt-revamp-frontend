@@ -343,7 +343,8 @@ export const unifiedEventsData: UnifiedEvent[] = [
         src: "/images/SLA cares/sla cares2.png",
         alt: "SLA Cares Initiative",
         title: "Caring Initiative",
-        description: "Our caring initiatives making a difference in the community",
+        description:
+          "Our caring initiatives making a difference in the community",
       },
       {
         id: 3,
@@ -392,7 +393,8 @@ export const unifiedEventsData: UnifiedEvent[] = [
         src: "/images/SLA cares/sla cares 9.png",
         alt: "SLA Social Impact",
         title: "Social Impact",
-        description: "Creating meaningful social impact through our initiatives",
+        description:
+          "Creating meaningful social impact through our initiatives",
       },
       {
         id: 10,
@@ -465,7 +467,130 @@ export const unifiedEventsData: UnifiedEvent[] = [
   //   showInNewsSection: false,
   //   showInNoticeBoard: false,
   //   showInRelatedArticles: true,
-  // },
+  {
+    id: 6,
+    title: "SLA PERAVOOR RENOVATED INSTITUTE",
+    description:
+      "Grand opening of our renovated state-of-the-art facility at Peravoor, Kannur with modern classrooms, advanced language labs, and comfortable student facilities.",
+    excerpt:
+      "We are excited to announce the opening of our renovated state-of-the-art facility at Peravoor, Kannur with modern classrooms and advanced learning equipment.",
+    date: "August 15, 2025",
+    // endDate: "March 15, 2025",
+    category: "Updates",
+    type: "New Building",
+    location: "Peravoor, Kannur",
+    image: "/images/locations/Image (7).jpeg",
+    icon: "Building",
+    gradient: "from-blue-400 to-blue-600",
+    priority: "high",
+    isNew: true,
+    gallery: [
+      "/images/locations/Image (1).jpeg",
+      "/images/locations/Image (2).jpeg",
+      "/images/locations/Image (3).jpeg",
+      "/images/locations/Image (4).jpeg",
+      "/images/locations/Image (5).jpeg",
+      "/images/locations/Image (6).jpeg",
+      "/images/locations/Image (7).jpeg",
+      "/images/locations/Image (8).jpeg",
+      "/images/locations/Image (9).jpeg",
+      "/images/locations/Image.jpeg",
+    ],
+    galleryItems: [
+      {
+        id: 1,
+        src: "/images/locations/Image (1).jpeg",
+        alt: "New SLA Building Exterior",
+        title: "Modern Building Exterior",
+        description: "The impressive facade of our renovated Peravoor facility",
+      },
+
+      {
+        id: 3,
+        src: "/images/locations/Image (3).jpeg",
+        alt: "Language Laboratory",
+        title: "Advanced Language Lab",
+        description: "State-of-the-art language learning laboratory",
+      },
+      {
+        id: 4,
+        src: "/images/locations/Image (4).jpeg",
+        alt: "Student Facilities",
+        title: "Student Common Area",
+        description: "Comfortable spaces for students to study and relax",
+      },
+      {
+        id: 5,
+        src: "/images/locations/Image (5).jpeg",
+        alt: "Modern Infrastructure",
+        title: "Modern Infrastructure",
+        description: "Updated infrastructure supporting quality education",
+      },
+      {
+        id: 6,
+        src: "/images/locations/Image (6).jpeg",
+        alt: "Learning Environment",
+        title: "Enhanced Learning Environment",
+        description: "Optimized spaces for effective language learning",
+      },
+      {
+        id: 7,
+        src: "/images/locations/Image (7).jpeg",
+        alt: "Renovated Facility",
+        title: "Renovated Facility",
+        description: "Complete renovation of the Peravoor institute",
+      },
+      {
+        id: 8,
+        src: "/images/locations/Image (8).jpeg",
+        alt: "Educational Spaces",
+        title: "Educational Spaces",
+        description: "Well-designed educational spaces for better learning",
+      },
+
+      {
+        id: 10,
+        src: "/images/locations/Image.jpeg",
+        alt: "SLA Peravoor Institute",
+        title: "SLA Peravoor Institute",
+        description: "The complete renovated SLA Peravoor institute",
+      },
+    ],
+    hasGallery: true,
+    galleryCount: 10,
+    author: "SLA Administration",
+    readTime: "3 min read",
+    fullContent: `
+      <p>We are thrilled to announce the grand opening of our renovated, state-of-the-art facility at Peravoor, Kannur. This milestone represents a significant step forward in our mission to provide world-class German language education in Kerala.</p>
+
+      <h3>Modern Infrastructure</h3>
+      <p>The renovated building features cutting-edge amenities designed specifically for language learning:</p>
+      <ul>
+        <li>Smart classrooms equipped with interactive whiteboards and audio-visual systems</li>
+        <li>Advanced language laboratory with individual workstations</li>
+        <li>Comfortable student lounge and study areas</li>
+        <li>Modern library with extensive German literature collection</li>
+        <li>High-speed internet connectivity throughout the building</li>
+      </ul>
+
+      <h3>Enhanced Learning Experience</h3>
+      <p>Our renovated facility is designed to create an immersive German learning environment. The classrooms are acoustically optimized for language instruction, and the technology integration allows for interactive lessons that engage students in new and exciting ways.</p>
+
+      <h3>Community Impact</h3>
+      <p>This renovation allows us to accommodate more students and offer additional programs, furthering our commitment to making quality German language education accessible to everyone in Kerala.</p>
+    `,
+    tags: [
+      "Infrastructure",
+      "Expansion",
+      "Kannur",
+      "Modern Facilities",
+      "Renovation",
+    ],
+    showInEventsPage: true,
+    showInNewsSection: true,
+    showInNoticeBoard: true,
+    showInRelatedArticles: true,
+  },
 ];
 
 // Helper functions to filter events for specific components
@@ -479,13 +604,13 @@ export const getEventsForNoticeBoard = () => {
   const currentDate = new Date();
   return unifiedEventsData.filter((event) => {
     if (!event.showInNoticeBoard) return false;
-    
+
     // If endDate is specified, check if it's still valid
     if (event.endDate) {
       const endDate = new Date(event.endDate);
       return endDate >= currentDate;
     }
-    
+
     // If no endDate specified, show the event
     return true;
   });
