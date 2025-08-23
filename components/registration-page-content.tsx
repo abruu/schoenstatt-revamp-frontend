@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik"
 import * as Yup from "yup"
+import imageCompression from 'browser-image-compression'
 import { User, Send, ArrowLeft, Home, Upload, Calendar, Mail, Phone, MapPin, Users, CreditCard, Building, BookOpen, CheckCircle, XCircle, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/layout/footer"
@@ -192,7 +193,7 @@ export function RegistrationPageContent() {
   const { centers, loading: centersLoading } = useCenters()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>, setFieldValue: any) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>, setFieldValue: any) => {
     const file = event.target.files?.[0]
     if (file) {
       // Check file size (5MB limit)
@@ -219,14 +220,40 @@ export function RegistrationPageContent() {
       setSubmitStatus('idle')
       setSubmitMessage('')
       
-      setFieldValue('photo', file)
-      
-      // Create preview URL
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string)
+      try {
+        // Show compression message
+        setSubmitStatus('success')
+        setSubmitMessage('Compressing image, please wait...')
+        
+        // Compress image to 999KB (0.999MB)
+        const options = {
+          maxSizeMB: 0.999, // 999KB
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          fileType: file.type
+        }
+        
+        const compressedFile = await imageCompression(file, options)
+        
+        // Clear compression message
+        setSubmitStatus('idle')
+        setSubmitMessage('')
+        
+        setFieldValue('photo', compressedFile)
+        
+        // Create preview URL from compressed file
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          setPhotoPreview(e.target?.result as string)
+        }
+        reader.readAsDataURL(compressedFile)
+        
+      } catch (error) {
+        console.error('Image compression error:', error)
+        setSubmitStatus('error')
+        setSubmitMessage('Failed to compress image. Please try a different image.')
+        event.target.value = ''
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -532,7 +559,22 @@ export function RegistrationPageContent() {
                           placeholder="DD/MM/YYYY"
                           maxLength={10}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            let value = e.target.value.replace(/\D/g, '') // Remove non-digits
+                            const inputValue = e.target.value
+                            const currentValue = values.dateOfBirth || ''
+                            
+                            // Handle backspace - if user is deleting and hits a slash, remove it too
+                            if (inputValue.length < currentValue.length) {
+                              // User is deleting
+                              if (inputValue.endsWith('/')) {
+                                setFieldValue('dateOfBirth', inputValue.slice(0, -1))
+                                return
+                              }
+                              setFieldValue('dateOfBirth', inputValue)
+                              return
+                            }
+                            
+                            // Handle forward typing - add slashes automatically
+                            let value = inputValue.replace(/\D/g, '') // Remove non-digits
                             if (value.length >= 2) {
                               value = value.substring(0, 2) + '/' + value.substring(2)
                             }
