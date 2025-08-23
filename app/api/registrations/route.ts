@@ -69,8 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Generate filename with format: firstname_lastname_dateOfRegistration.ext
     const fileExtension = photo.name.split('.').pop()
-    const registrationDate = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
-    const sanitizedFirstName = firstName.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const registrationDate = Math.floor(Date.now() / 1000);      const sanitizedFirstName = firstName.toLowerCase().replace(/[^a-z0-9]/g, '')
     const sanitizedLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '')
     const fileName = `${sanitizedFirstName}_${sanitizedLastName}_${registrationDate}.${fileExtension}`
     
@@ -300,9 +299,7 @@ export async function POST(request: NextRequest) {
               <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 20px; text-align: center; position: relative;">
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="success" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23success)"/></svg></div>
                 <img src="https://schoenstatt-six.vercel.app/images/logo/sla_logo.webp" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 20px; position: relative; z-index: 1;" />
-                <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;">
-                  <div style="font-size: 40px;">✅</div>
-                </div>
+                
                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; position: relative; z-index: 1;">Registration Confirmed!</h1>
                 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; position: relative; z-index: 1;">Thank you for joining Schoenstatt Language Academy</p>
               </div>
@@ -358,15 +355,15 @@ export async function POST(request: NextRequest) {
                   <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">🚀 What Happens Next?</h3>
                   <div style="position: relative; z-index: 1;">
                     <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">1</div>
+                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
                       <p style="margin: 0; color: #1e293b; font-weight: 500;">Our team will review your application</p>
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">2</div>
+                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
                       <p style="margin: 0; color: #1e293b; font-weight: 500;">You will be contacted within 2-3 business days</p>
                     </div>
                     <div style="display: flex; align-items: center;">
-                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">3</div>
+                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
                       <p style="margin: 0; color: #1e293b; font-weight: 500;">Please keep this email for your records</p>
                     </div>
                   </div>

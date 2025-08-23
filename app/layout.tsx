@@ -5,6 +5,7 @@ import "./globals.css"
 import { SITE_CONFIG } from "@/lib/constants"
 import { BackToTop } from "@/components/common/back-to-top"
 import { NavigationProvider } from "@/components/providers/navigation-provider"
+import { AdminAuthProvider } from "@/hooks/use-admin-auth"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -75,10 +76,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <NavigationProvider>
-          {children}
-          <BackToTop />
-        </NavigationProvider>
+        <AdminAuthProvider>
+          <NavigationProvider>
+            {children}
+            <BackToTop />
+          </NavigationProvider>
+        </AdminAuthProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

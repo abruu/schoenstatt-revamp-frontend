@@ -22,31 +22,23 @@ RESEND_FROM="Admissions <admissions@info.abru.fun>"
 # Supabase Setup:
 # - Create a new project at https://supabase.com
 # - Go to Settings > API to find your URL and keys
-# - Create the following tables in your database:
-#   
-#   Table: centers
-#   - id (text, primary key)
-#   - name (text)
-#   - email (text)
-#   
-#   Table: registrations
-#   - id (uuid, primary key, default: gen_random_uuid())
-#   - first_name (text)
-#   - last_name (text)
-#   - date_of_birth (date)
-#   - email (text)
-#   - phone (text)
-#   - address (text)
-#   - parent_name (text)
-#   - parent_contact (text)
-#   - aadhaar_number (text)
-#   - center (text, foreign key to centers.id)
-#   - course_level (text)
-#   - photo_path (text)
-#   - created_at (timestamptz, default: now())
-#
+# - Run the SQL commands in supabase-setup.sql to create all tables and policies
+# - Create admin users in Supabase Auth with these emails:
+#   - thrissur@sla.com (password: set in Supabase Auth dashboard)
+#   - chalakudy@sla.com (password: set in Supabase Auth dashboard)
+#   - peravoor@sla.com (password: set in Supabase Auth dashboard)
+#   - superadmin@sla.com (password: set in Supabase Auth dashboard)
 # - Create a storage bucket named 'photos' with private access
-# - Set up Row Level Security (RLS) policies as needed
+# - Set up storage policies for authenticated uploads
+
+# Admin Module Features:
+# - Institution-specific admin authentication
+# - Student registration management (CRUD operations)
+# - Photo upload and download functionality
+# - Print-friendly student forms
+# - CSV export of student data
+# - Audit logging for all changes
+# - Role-based access control (admin vs super_admin)
 
 # Resend Setup:
 # - Sign up at https://resend.com

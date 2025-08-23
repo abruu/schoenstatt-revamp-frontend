@@ -1,15 +1,40 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik"
-import * as Yup from "yup"
+import React, { useState, useEffect, useRef } from 'react'
+import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik'
+import * as Yup from 'yup'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Calendar, 
+  BookOpen, 
+  Users, 
+  CreditCard, 
+  Send,
+  Upload,
+  X,
+  CheckCircle,
+  Home,
+  ArrowLeft,
+  RotateCcw,
+  XCircle,
+  Building
+} from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { useCourseLevels } from '@/hooks/use-course-levels'
+import { useCenters } from '@/hooks/use-centers'
+import Image from 'next/image'
+import Link from 'next/link'
 import imageCompression from 'browser-image-compression'
-import { User, Send, ArrowLeft, Home, Upload, Calendar, Mail, Phone, MapPin, Users, CreditCard, Building, BookOpen, CheckCircle, XCircle, RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Footer } from "@/components/layout/footer"
-import { ParticleBackground } from "@/components/layout/particle-background"
-import { useCenters } from "@/hooks/use-centers"
-import Link from "next/link"
+import { ParticleBackground } from '@/components/layout/particle-background'
+import { Footer } from '@/components/layout/footer'
 
 // Form values interface
 interface FormValues {
@@ -191,6 +216,7 @@ export function RegistrationPageContent() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [registrationComplete, setRegistrationComplete] = useState(false)
   const { centers, loading: centersLoading } = useCenters()
+  const { courseLevels, loading: courseLevelsLoading } = useCourseLevels()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>, setFieldValue: any) => {
@@ -736,10 +762,15 @@ export function RegistrationPageContent() {
                           <option value="" disabled className="bg-black text-gray-400">
                             Select your level (A1, A2, B1, B2)
                           </option>
-                          <option value="a1" className="bg-black text-white">A1 - Beginner</option>
-                          <option value="a2" className="bg-black text-white">A2 - Elementary</option>
-                          <option value="b1" className="bg-black text-white">B1 - Intermediate</option>
-                          <option value="b2" className="bg-black text-white">B2 - Upper Intermediate</option>
+                          {courseLevelsLoading ? (
+                            <option disabled className="bg-black text-gray-400">Loading levels...</option>
+                          ) : (
+                            courseLevels.map((level) => (
+                              <option key={level.id} value={level.name} className="bg-black text-white">
+                                {level.name} - {level.description}
+                              </option>
+                            ))
+                          )}
                         </Field>
                         <ErrorMessage name="courseLevel" component="div" className="text-red-400 text-xs mt-1" />
                       </div>
