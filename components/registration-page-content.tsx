@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik"
 import * as Yup from "yup"
 import { User, Send, ArrowLeft, Home, Upload, Calendar, Mail, Phone, MapPin, Users, CreditCard, Building, BookOpen, CheckCircle, XCircle, RotateCcw } from "lucide-react"
@@ -27,6 +27,47 @@ interface FormValues {
 }
 
 
+// Aadhaar checksum validation using Verhoeff algorithm
+const verhoeffTable = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+  [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+  [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+  [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+  [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+  [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+  [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+  [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+  [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+]
+
+const permutationTable = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+  [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+  [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+  [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+  [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+  [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+  [7, 0, 4, 6, 9, 1, 3, 2, 5, 8]
+]
+
+const validateAadhaar = (aadhaar: string): boolean => {
+  if (!/^\d{12}$/.test(aadhaar)) return false
+  if (/^(\d)\1{11}$/.test(aadhaar)) return false // No repeated digits
+  
+  let checksum = 0
+  for (let i = 0; i < 12; i++) {
+    checksum = verhoeffTable[checksum][permutationTable[i % 8][parseInt(aadhaar[i])]]
+  }
+  return checksum === 0
+}
+
+// Input sanitization
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '')
+}
+
 // Validation schema
 const validationSchema = Yup.object({
   photo: Yup.mixed()
@@ -36,16 +77,22 @@ const validationSchema = Yup.object({
       const file = value as File
       return ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)
     })
-    .test("fileSize", "File size must be less than 5MB", (value) => {
+    .test("fileSize", "File size must be 5MB or less", (value) => {
       if (!value) return false
       const file = value as File
       return file.size <= 5 * 1024 * 1024
     }),
   firstName: Yup.string()
+    .transform((value) => sanitizeInput(value))
+    .matches(/^[a-zA-Z\s]+$/, "First name can only contain letters and spaces")
     .min(2, "First name must be at least 2 characters")
+    .max(50, "First name cannot exceed 50 characters")
     .required("First name is required"),
   lastName: Yup.string()
+    .transform((value) => sanitizeInput(value))
+    .matches(/^[a-zA-Z\s]+$/, "Last name can only contain letters and spaces")
     .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name cannot exceed 50 characters")
     .required("Last name is required"),
   dateOfBirth: Yup.string()
     .required("Date of birth is required")
@@ -75,21 +122,45 @@ const validationSchema = Yup.object({
       return birthDate <= new Date()
     }),
   email: Yup.string()
+    .transform((value) => value ? value.toLowerCase().trim() : value)
     .email("Please enter a valid email address")
     .required("Email is required"),
   phone: Yup.string()
-    .matches(/^[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number")
+    .transform((value) => value ? value.replace(/\D/g, '') : value)
+    .matches(/^(\+91)?[6-9]\d{9}$/, "Please enter a valid Indian phone number (10 digits, starting with 6-9, optionally with +91)")
+    .test("no-leading-zero", "Phone number cannot start with 0", (value) => {
+      if (!value) return true
+      const cleanNumber = value.replace(/^\+91/, '')
+      return !cleanNumber.startsWith('0')
+    })
     .required("Phone number is required"),
   address: Yup.string()
+    .transform((value) => sanitizeInput(value))
     .min(10, "Address must be at least 10 characters")
+    .max(250, "Address cannot exceed 250 characters")
     .required("Address is required"),
   parentName: Yup.string()
+    .transform((value) => sanitizeInput(value))
+    .matches(/^[a-zA-Z\s]+$/, "Parent name can only contain letters and spaces")
+    .min(2, "Parent name must be at least 2 characters")
+    .max(50, "Parent name cannot exceed 50 characters")
     .required("Parent/Guardian name is required"),
   parentContact: Yup.string()
-    .matches(/^[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number")
+    .transform((value) => value ? value.replace(/\D/g, '') : value)
+    .matches(/^(\+91)?[6-9]\d{9}$/, "Please enter a valid Indian phone number (10 digits, starting with 6-9, optionally with +91)")
+    .test("no-leading-zero", "Phone number cannot start with 0", (value) => {
+      if (!value) return true
+      const cleanNumber = value.replace(/^\+91/, '')
+      return !cleanNumber.startsWith('0')
+    })
     .required("Parent contact number is required"),
   aadhaarNumber: Yup.string()
+    .transform((value) => value ? value.replace(/\D/g, '') : value)
     .matches(/^\d{12}$/, "Aadhaar number must be exactly 12 digits")
+    // .test("valid-aadhaar", "Please enter a valid Aadhaar number", (value) => {
+    //   if (!value) return true
+    //   return validateAadhaar(value)
+    // })
     .required("Aadhaar number is required"),
   center: Yup.string()
     .required("Please select a training center"),
@@ -124,6 +195,30 @@ export function RegistrationPageContent() {
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>, setFieldValue: any) => {
     const file = event.target.files?.[0]
     if (file) {
+      // Check file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+      if (file.size > maxSize) {
+        // Clear the file input and show error
+        event.target.value = ''
+        setSubmitStatus('error')
+        setSubmitMessage('File size must be 5MB or less. Please choose a smaller image.')
+        return
+      }
+
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        // Clear the file input and show error
+        event.target.value = ''
+        setSubmitStatus('error')
+        setSubmitMessage('Please upload a valid image (JPG, PNG, WebP).')
+        return
+      }
+
+      // Clear any previous error messages
+      setSubmitStatus('idle')
+      setSubmitMessage('')
+      
       setFieldValue('photo', file)
       
       // Create preview URL
@@ -143,9 +238,18 @@ export function RegistrationPageContent() {
     }
   }
 
+  const clearPhotoPreview = () => {
+    setPhotoPreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+
   const handleSubmit = async (values: FormValues, { setSubmitting, resetForm }: FormikHelpers<FormValues>) => {
     try {
       setSubmitStatus('idle')
+      
       
       // Check for duplicates first
       const duplicateCheck = await fetch('/api/registrations/check-duplicate', {
@@ -188,7 +292,7 @@ export function RegistrationPageContent() {
         setSubmitMessage('Registration successful! You will be contacted by the institution.')
         setRegistrationComplete(true)
         resetForm()
-        setPhotoPreview(null)
+        clearPhotoPreview()
       } else {
         setSubmitStatus('error')
         setSubmitMessage(result.error || 'Failed to submit registration')
@@ -215,9 +319,33 @@ export function RegistrationPageContent() {
           
           <div className="space-y-4">
             <h1 className="text-3xl font-bold text-green-400">Registration Successful!</h1>
-            <p className="text-white/80 text-lg">You will be contacted by the institution.</p>
+            <p className="text-white/80 text-lg">A confirmation email has been sent to your registered email address.</p>
           </div>
-          
+          <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-white/10">
+                <div className="text-center space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">What happens next?</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
+                    <div className="space-y-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto">
+                        <span className="text-black font-bold text-xs sm:text-sm">1</span>
+                      </div>
+                      <p>We'll review your registration</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto">
+                        <span className="text-black font-bold text-xs sm:text-sm">2</span>
+                      </div>
+                      <p>Contact you with course details</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto">
+                        <span className="text-black font-bold text-xs sm:text-sm">3</span>
+                      </div>
+                      <p>Begin your German journey</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
           <Link
             href="/"
             className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-semibold rounded-lg hover:from-yellow-500 hover:to-yellow-700 transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -294,7 +422,7 @@ export function RegistrationPageContent() {
                 validationSchema={validationSchema}
                 onSubmit={handleSubmit}
               >
-                {({ setFieldValue, values, isSubmitting }) => (
+                {({ setFieldValue, values, isSubmitting, errors, touched, isValid }) => (
                   <Form className="space-y-6 sm:space-y-8">
                     {/* Photo Upload with Preview */}
                     <div className="space-y-2 sm:space-y-3">
@@ -346,6 +474,16 @@ export function RegistrationPageContent() {
                         />
                         <ErrorMessage name="photo" component="div" className="text-red-400 text-xs mt-1" />
                       </div>
+                      
+                      {/* File validation error messages */}
+                      {submitStatus === 'error' && submitMessage && (
+                        <div className="mt-3 p-3 rounded-lg border bg-red-500/10 border-red-500/30 text-red-400">
+                          <div className="flex items-center gap-2">
+                            <XCircle className="h-4 w-4" />
+                            <span className="text-sm">{submitMessage}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -586,7 +724,7 @@ export function RegistrationPageContent() {
                     <div className="pt-2 sm:pt-4">
                       <Button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !isValid}
                         className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                       >
                         {isSubmitting ? (

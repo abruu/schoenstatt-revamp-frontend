@@ -168,7 +168,7 @@ export function HeroSection() {
                   size="lg"
                   className=" bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105 group text-sm sm:text-base w-full sm:w-auto"
                 >
-                  Start Your Journey
+                  Register Now
                   <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
             </Link>
@@ -269,10 +269,10 @@ export function HeroSection() {
                         key={index}
                         className={`absolute inset-0 transition-all duration-700 ease-in-out ${
                           index === currentImageIndex
-                            ? 'opacity-100 scale-100 translate-x-0'
+                            ? 'opacity-100 translate-x-0'
                             : index < currentImageIndex
-                            ? 'opacity-0 scale-95 -translate-x-full'
-                            : 'opacity-0 scale-95 translate-x-full'
+                            ? 'opacity-0 -translate-x-full'
+                            : 'opacity-0 translate-x-full'
                         }`}
                       >
                         <div className="relative w-full h-full">

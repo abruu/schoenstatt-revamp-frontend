@@ -70,7 +70,7 @@ export function Header() {
           {/* CTA Button */}
           <Link href="/register">
             <Button className="hidden lg:flex bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold px-8 py-3 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105">
-              Get Started
+            Register Now
             </Button>
           </Link>
 
@@ -109,7 +109,7 @@ export function Header() {
             ))}
             <Link href="/register" className="block mt-8">
               <Button className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold px-8 py-3 rounded-full w-full">
-                Get Started
+              Register Now
               </Button>
             </Link>
           </nav>

@@ -67,9 +67,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate unique filename for photo
+    // Generate filename with format: firstname_lastname_dateOfRegistration.ext
     const fileExtension = photo.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`
+    const registrationDate = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    const sanitizedFirstName = firstName.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const sanitizedLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const fileName = `${sanitizedFirstName}_${sanitizedLastName}_${registrationDate}.${fileExtension}`
     
     // Convert file to buffer
     const buffer = Buffer.from(await photo.arrayBuffer())
