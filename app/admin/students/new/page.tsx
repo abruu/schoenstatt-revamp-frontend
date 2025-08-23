@@ -9,13 +9,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, Users, CreditCard, BookOpen, Upload, Plus } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, Users, CreditCard, BookOpen, Upload, Plus, X, Save, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
+import { supabase, logAuditAction } from '@/lib/supabase'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
 import { useCenters } from '@/hooks/use-centers'
 import { useCourseLevels } from '@/hooks/use-course-levels'
+import { AdminProtectedRoute } from '@/components/admin-protected-route'
 
 export default function NewStudentPage() {
   return (
