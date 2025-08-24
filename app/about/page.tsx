@@ -1,11 +1,9 @@
-"use client"
-
-import { useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ParticleBackground } from "@/components/layout/particle-background"
 import { AboutPageContent } from "@/components/about-page-content"
 import { ScrollAnimations } from "@/components/common/scroll-animations"
+import { PageEffects } from "@/components/common/page-effects"
 
 export const metadata = {
   title: 'About SLA - Premier German Language Institute in Kerala',
@@ -20,13 +18,10 @@ export const metadata = {
 }
 
 export default function AboutPage() {
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }, [])
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <PageEffects scrollToTop={true} />
       <ParticleBackground />
       <ScrollAnimations />
 

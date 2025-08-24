@@ -1,0 +1,11 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+# Host
+Host: https://sla-kerala.com
+
+# Sitemaps
+Sitemap: https://sla-kerala.com/sitemap.xml

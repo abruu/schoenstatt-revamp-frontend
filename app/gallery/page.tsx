@@ -1,10 +1,8 @@
-"use client"
-
-import { useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ParticleBackground } from "@/components/layout/particle-background"
 import { GalleryPageContent } from "@/components/gallery-page-content"
+import { PageEffects } from "@/components/common/page-effects"
 
 export const metadata = {
   title: 'Photo Gallery | Schoenstatt Language Academy Kerala Facilities & Life',
@@ -19,13 +17,10 @@ export const metadata = {
 }
 
 export default function GalleryPage() {
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }, [])
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <PageEffects scrollToTop={true} />
       <ParticleBackground />
 
       <div className="relative z-10">

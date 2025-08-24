@@ -1,11 +1,9 @@
-"use client"
-
-import { useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ParticleBackground } from "@/components/layout/particle-background"
 import { B2ExamContent } from "@/components/b2-exam-content"
 import { CourseSchema, BreadcrumbSchema } from "@/components/seo/structured-data"
+import { PageEffects } from "@/components/common/page-effects"
 
 export const metadata = {
   title: 'B2 German Exam Preparation | Telc Certification at SLA Kerala',
@@ -20,10 +18,6 @@ export const metadata = {
 }
 
 export default function B2ExamPage() {
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }, [])
 
   const breadcrumbItems = [
     { name: "Home", url: "/" },
@@ -32,6 +26,7 @@ export default function B2ExamPage() {
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <PageEffects scrollToTop={true} />
       <CourseSchema
         name="B2 German Exam Preparation Course"
         description="Comprehensive 16-week preparation program for Telc B2 German certification"

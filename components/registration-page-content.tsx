@@ -214,6 +214,7 @@ export function RegistrationPageContent() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
   const [registrationComplete, setRegistrationComplete] = useState(false)
   const { centers, loading: centersLoading } = useCenters()
   const { courseLevels, loading: courseLevelsLoading } = useCourseLevels()
@@ -242,15 +243,12 @@ export function RegistrationPageContent() {
         return
       }
 
-      // Clear any previous error messages
+      // Clear any previous error messages and start loading
       setSubmitStatus('idle')
       setSubmitMessage('')
+      setPhotoUploading(true)
       
       try {
-        // Show compression message
-        setSubmitStatus('success')
-        setSubmitMessage('Compressing image, please wait...')
-        
         // Compress image to 999KB (0.999MB)
         const options = {
           maxSizeMB: 0.999, // 999KB
@@ -261,16 +259,13 @@ export function RegistrationPageContent() {
         
         const compressedFile = await imageCompression(file, options)
         
-        // Clear compression message
-        setSubmitStatus('idle')
-        setSubmitMessage('')
-        
         setFieldValue('photo', compressedFile)
         
         // Create preview URL from compressed file
         const reader = new FileReader()
         reader.onload = (e) => {
           setPhotoPreview(e.target?.result as string)
+          setPhotoUploading(false)
         }
         reader.readAsDataURL(compressedFile)
         
@@ -278,6 +273,7 @@ export function RegistrationPageContent() {
         console.error('Image compression error:', error)
         setSubmitStatus('error')
         setSubmitMessage('Failed to compress image. Please try a different image.')
+        setPhotoUploading(false)
         event.target.value = ''
       }
     }
@@ -286,6 +282,7 @@ export function RegistrationPageContent() {
   const removePhoto = (setFieldValue: any) => {
     setFieldValue('photo', null)
     setPhotoPreview(null)
+    setPhotoUploading(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -293,6 +290,7 @@ export function RegistrationPageContent() {
 
   const clearPhotoPreview = () => {
     setPhotoPreview(null)
+    setPhotoUploading(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -484,7 +482,15 @@ export function RegistrationPageContent() {
                         Upload Photo *
                       </label>
                       <div className="relative">
-                        {photoPreview ? (
+                        {photoUploading ? (
+                          <div className="border-2 border-dashed border-yellow-400/30 rounded-lg p-6 text-center bg-yellow-400/5">
+                            <div className="flex flex-col items-center space-y-3">
+                              <div className="w-8 h-8 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin"></div>
+                              <p className="text-yellow-400 font-medium">Processing image...</p>
+                              <p className="text-xs text-gray-400">Compressing and preparing your photo</p>
+                            </div>
+                          </div>
+                        ) : photoPreview ? (
                           <div className="space-y-3">
                             <div className="relative w-32 h-32 mx-auto">
                               <img
@@ -523,7 +529,8 @@ export function RegistrationPageContent() {
                           type="file"
                           accept="image/jpeg,image/jpg,image/png,image/webp"
                           onChange={(event) => handlePhotoChange(event, setFieldValue)}
-                          className={photoPreview ? "hidden" : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"}
+                          disabled={photoUploading}
+                          className={photoPreview || photoUploading ? "hidden" : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"}
                         />
                         <ErrorMessage name="photo" component="div" className="text-red-400 text-xs mt-1" />
                       </div>

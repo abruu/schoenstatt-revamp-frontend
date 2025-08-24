@@ -1,6 +1,3 @@
-"use client"
-
-import { useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { HeroSection } from "@/components/hero-section"
 import { CoursesSection } from "@/components/courses-section"
@@ -18,6 +15,7 @@ import { NoticeBoard } from "@/components/common/notice-board"
 import { ScrollAnimations } from "@/components/common/scroll-animations"
 import { GallerySection } from "@/components/gallery-section"
 import { OrganizationSchema, FAQSchema } from "@/components/seo/structured-data"
+import { PageEffects } from "@/components/common/page-effects"
 // import { GallerySection } from "@/components/gallery-section" // Empty component file
 // Using EnhancedGallerySection instead which is already imported above
 
@@ -34,34 +32,6 @@ export const metadata = {
 }
 
 export default function HomePage() {
-  // Handle hash navigation on component mount
-  useEffect(() => {
-    const handleHashScroll = () => {
-      const hash = window.location.hash.substring(1)
-      if (hash) {
-        // Wait for components to render
-        setTimeout(() => {
-          const element = document.getElementById(hash)
-          if (element) {
-            element.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            })
-          }
-        }, 500) // Increased delay to ensure all components are rendered
-      }
-    }
-
-    // Handle initial load
-    handleHashScroll()
-
-    // Handle hash changes
-    window.addEventListener("hashchange", handleHashScroll)
-
-    return () => {
-      window.removeEventListener("hashchange", handleHashScroll)
-    }
-  }, [])
 
   const faqData = [
     {
@@ -80,6 +50,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <PageEffects handleHashNavigation={true} />
       <OrganizationSchema
         name="Schoenstatt Language Academy"
         description="Premier German language institute in Kerala offering A1-B2 courses with Telc certification"
