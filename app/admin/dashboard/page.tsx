@@ -41,7 +41,11 @@ import {
   GraduationCap,
   RefreshCw,
   Mail,
-  Shield
+  Shield,
+  Check,
+  X,
+  HelpCircle,
+  FileSpreadsheet
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -63,9 +67,11 @@ function DashboardContent() {
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [courseFilter, setCourseFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [institutionFilter, setInstitutionFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
   const studentsPerPage = 10
 
   // Debounce search term with 3 second delay
@@ -79,7 +85,7 @@ function DashboardContent() {
 
   useEffect(() => {
     fetchStudents()
-  }, [currentPage, debouncedSearchTerm, courseFilter, institutionFilter])
+  }, [currentPage, debouncedSearchTerm, courseFilter, statusFilter, institutionFilter])
 
   const fetchStudents = async () => {
     setLoading(true)
@@ -97,6 +103,11 @@ function DashboardContent() {
       // Apply course filter
       if (courseFilter !== 'all') {
         query = query.eq('course_level', courseFilter)
+      }
+
+      // Apply status filter
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter)
       }
 
       // Apply institution filter for super admin
@@ -147,11 +158,33 @@ function DashboardContent() {
     }
   }
 
+  const handleStatusUpdate = async (studentId: string, newStatus: 'accepted' | 'rejected' | 'enquired') => {
+    setUpdatingStatus(studentId)
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .update({ status: newStatus })
+        .eq('id', studentId)
+
+      if (error) throw error
+
+      // Update the local state immediately
+      setStudents(prev => prev.map(student => 
+        student.id === studentId ? { ...student, status: newStatus } : student
+      ))
+    } catch (error) {
+      console.error('Error updating student status:', error)
+      alert('Failed to update student status')
+    } finally {
+      setUpdatingStatus(null)
+    }
+  }
+
   const exportToCSV = () => {
     const headers = [
       'First Name', 'Last Name', 'Email', 'Phone', 'Date of Birth',
       'Address', 'Parent Name', 'Parent Contact', 'Aadhaar Number',
-      'Center', 'Course Level', 'Registration Date'
+      'Center', 'Course Level', 'Status', 'Registration Date'
     ]
 
     const csvContent = [
@@ -168,6 +201,7 @@ function DashboardContent() {
         student.aadhaar_number,
         student.center,
         student.course_level,
+        student.status,
         format(new Date(student.created_at), 'yyyy-MM-dd')
       ].join(','))
     ].join('\n')
@@ -179,6 +213,44 @@ function DashboardContent() {
     a.download = `students-${adminUser?.center_id}-${format(new Date(), 'yyyy-MM-dd')}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
+  }
+
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx')
+      const worksheet = XLSX.utils.json_to_sheet(students.map(student => ({
+        'First Name': student.first_name,
+        'Last Name': student.last_name,
+        'Email': student.email,
+        'Phone': student.phone,
+        'Date of Birth': student.date_of_birth,
+        'Address': student.address,
+        'Parent Name': student.parent_name,
+        'Parent Contact': student.parent_contact,
+        'Aadhaar Number': student.aadhaar_number,
+        'Center': student.center,
+        'Course Level': student.course_level,
+        'Status': student.status,
+        'Registration Date': format(new Date(student.created_at), 'yyyy-MM-dd')
+      })))
+      
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
+      
+      XLSX.writeFile(workbook, `students-${adminUser?.center_id}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      alert('Failed to export to Excel. Please try CSV export instead.')
+    }
+  }
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'accepted': return 'bg-green-500/20 text-green-300 border-green-500/30'
+      case 'rejected': return 'bg-red-500/20 text-red-300 border-red-500/30'
+      case 'enquired': return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+      default: return 'bg-yellow-400/20 text-yellow-300 border-yellow-400/30'
+    }
   }
 
   const totalPages = Math.ceil(totalCount / studentsPerPage)
@@ -292,10 +364,24 @@ function DashboardContent() {
                   </div>
                 </div>
                 <div className="flex gap-4">
+                  {/* Status Filter */}
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[150px] bg-slate-700/50 border-blue-600/30 text-white">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="accepted">Accepted</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="enquired">Enquired</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                   {/* Institution Filter - Only for Super Admin */}
                   {adminUser?.role === 'super_admin' && (
                     <Select value={institutionFilter} onValueChange={setInstitutionFilter}>
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[180px] bg-slate-700/50 border-blue-600/30 text-white">
                         <SelectValue placeholder="Filter by institution" />
                       </SelectTrigger>
                       <SelectContent>
@@ -308,7 +394,7 @@ function DashboardContent() {
                   )}
                   
                   <Select value={courseFilter} onValueChange={setCourseFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[180px] bg-slate-700/50 border-blue-600/30 text-white">
                       <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
@@ -318,6 +404,28 @@ function DashboardContent() {
                       ))}
                     </SelectContent>
                   </Select>
+
+                  {/* Download Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={exportToCSV}
+                      variant="outline"
+                      size="sm"
+                      className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      CSV
+                    </Button>
+                    <Button
+                      onClick={exportToExcel}
+                      variant="outline"
+                      size="sm"
+                      className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400"
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Excel
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -352,17 +460,18 @@ function DashboardContent() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Email</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Phone</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Course Level</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Status</th>
                       {adminUser?.role === 'super_admin' && (
                         <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Institution</th>
                       )}
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Registration Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider sticky right-0 bg-gradient-to-r from-slate-700 to-blue-800 border-l border-blue-600/30">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-slate-800/50 divide-y divide-blue-700/30">
                     {loading ? (
                       <tr>
-                        <td colSpan={adminUser?.role === 'super_admin' ? 8 : 7} className="px-6 py-8 text-center">
+                        <td colSpan={adminUser?.role === 'super_admin' ? 9 : 8} className="px-6 py-8 text-center">
                           <div className="flex items-center justify-center">
                             <Loader2 className="h-6 w-6 animate-spin text-yellow-400 mr-2" />
                             <span className="text-blue-300">Loading students...</span>
@@ -371,7 +480,7 @@ function DashboardContent() {
                       </tr>
                     ) : students.length === 0 ? (
                       <tr>
-                        <td colSpan={adminUser?.role === 'super_admin' ? 8 : 7} className="px-6 py-8 text-center text-blue-300">
+                        <td colSpan={adminUser?.role === 'super_admin' ? 9 : 8} className="px-6 py-8 text-center text-blue-300">
                           No students found
                         </td>
                       </tr>
@@ -394,6 +503,11 @@ function DashboardContent() {
                               {student.course_level}
                             </span>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusBadgeColor(student.status)}`}>
+                              {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
+                            </span>
+                          </td>
                           {adminUser?.role === 'super_admin' && (
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-blue-300 capitalize">SLA - {student.center}</div>
@@ -404,13 +518,74 @@ function DashboardContent() {
                               {format(new Date(student.created_at), 'MMM dd, yyyy')}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <Link href={`/admin/students/${student.id}`}>
-                              <Button variant="outline" size="sm" className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 mr-2">
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Button>
-                            </Link>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium sticky right-0 bg-slate-800 border-l border-blue-700/30">
+                            <div className="flex items-center gap-2">
+                              {/* Status Action Buttons */}
+                              <div className="flex gap-1">
+                                <Button
+                                  onClick={() => handleStatusUpdate(student.id, 'accepted')}
+                                  disabled={updatingStatus === student.id || student.status === 'accepted'}
+                                  variant="outline"
+                                  size="sm"
+                                  className={`h-8 w-8 p-0 ${
+                                    student.status === 'accepted'
+                                      ? 'bg-green-500/20 text-green-300 border-green-500/50'
+                                      : 'text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400'
+                                  }`}
+                                  title="Accept Student"
+                                >
+                                  {updatingStatus === student.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Check className="h-3 w-3" />
+                                  )}
+                                </Button>
+                                <Button
+                                  onClick={() => handleStatusUpdate(student.id, 'rejected')}
+                                  disabled={updatingStatus === student.id || student.status === 'rejected'}
+                                  variant="outline"
+                                  size="sm"
+                                  className={`h-8 w-8 p-0 ${
+                                    student.status === 'rejected'
+                                      ? 'bg-red-500/20 text-red-300 border-red-500/50'
+                                      : 'text-red-400 hover:text-black hover:bg-red-400 border-red-400/50 hover:border-red-400'
+                                  }`}
+                                  title="Reject Student"
+                                >
+                                  {updatingStatus === student.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <X className="h-3 w-3" />
+                                  )}
+                                </Button>
+                                <Button
+                                  onClick={() => handleStatusUpdate(student.id, 'enquired')}
+                                  disabled={updatingStatus === student.id}
+                                  variant="outline"
+                                  size="sm"
+                                  className={`h-8 w-8 p-0 ${
+                                    student.status === 'enquired'
+                                      ? 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                                      : 'text-blue-400 hover:text-black hover:bg-blue-400 border-blue-400/50 hover:border-blue-400'
+                                  }`}
+                                  title="Mark Student as Enquired"
+                                >
+                                  {updatingStatus === student.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <HelpCircle className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </div>
+                              
+                              {/* View Button */}
+                              <Link href={`/admin/students/${student.id}`}>
+                                <Button variant="outline" size="sm" className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400">
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                              </Link>
+                            </div>
                           </td>
                         </tr>
                       ))

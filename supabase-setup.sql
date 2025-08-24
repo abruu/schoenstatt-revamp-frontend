@@ -46,6 +46,7 @@ CREATE TABLE registrations (
   center TEXT NOT NULL REFERENCES centers(id),
   course_level TEXT NOT NULL,
   photo_path TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'enquired')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -63,6 +64,7 @@ INSERT INTO registrations (
 -- 4. Create indexes and unique constraints for better performance and data integrity
 CREATE INDEX IF NOT EXISTS idx_registrations_center ON registrations(center);
 CREATE INDEX IF NOT EXISTS idx_registrations_created_at ON registrations(created_at);
+CREATE INDEX IF NOT EXISTS idx_registrations_status ON registrations(status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_email_unique ON registrations(email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_phone_unique ON registrations(phone);
 

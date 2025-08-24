@@ -17,8 +17,21 @@ import { LoadingScreen } from "@/components/common/loading-screen"
 import { NoticeBoard } from "@/components/common/notice-board"
 import { ScrollAnimations } from "@/components/common/scroll-animations"
 import { GallerySection } from "@/components/gallery-section"
+import { OrganizationSchema, FAQSchema } from "@/components/seo/structured-data"
 // import { GallerySection } from "@/components/gallery-section" // Empty component file
 // Using EnhancedGallerySection instead which is already imported above
+
+export const metadata = {
+  title: 'German Language Courses Kerala | Schoenstatt Language Academy',
+  description: 'Learn German in Kerala with certified instructors. A1-B2 courses, Telc certification, 95% success rate. Join 500+ students at SLA Thrissur, Chalakudy, Peravoor.',
+  keywords: 'German language courses Kerala, German classes Thrissur, Telc certification India, German language academy, B2 German course',
+  openGraph: {
+    title: 'German Language Courses Kerala | Schoenstatt Language Academy',
+    description: 'Premier German language institute in Kerala offering A1-B2 courses with Telc certification. Expert faculty, modern facilities, proven results.',
+    images: ['/og/homepage-hero.jpg']
+  },
+  alternates: { canonical: '/' }
+}
 
 export default function HomePage() {
   // Handle hash navigation on component mount
@@ -50,8 +63,41 @@ export default function HomePage() {
     }
   }, [])
 
+  const faqData = [
+    {
+      question: "How long does it take to complete B2 German course?",
+      answer: "Our comprehensive program takes approximately 10 months, covering A1 (2 months), A2 (2 months), B1 (2 months), B2 (3 months), plus 1 month exam preparation."
+    },
+    {
+      question: "Is Telc certification accepted in Germany?",
+      answer: "Yes, Telc certification is internationally recognized and accepted by German universities, employers, and immigration authorities."
+    },
+    {
+      question: "What is the success rate at SLA?",
+      answer: "We maintain a 95% success rate with over 500 students successfully certified in German language proficiency."
+    }
+  ]
+
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <OrganizationSchema
+        name="Schoenstatt Language Academy"
+        description="Premier German language institute in Kerala offering A1-B2 courses with Telc certification"
+        url="https://sla-kerala.com"
+        logo="https://sla-kerala.com/logo.png"
+        address={[
+          {
+            addressLocality: "Thrissur",
+            addressRegion: "Kerala",
+            addressCountry: "IN"
+          }
+        ]}
+        contactPoint={{
+          telephone: "+91-XXX-XXX-XXXX",
+          contactType: "customer service"
+        }}
+      />
+      <FAQSchema questions={faqData} />
       <LoadingScreen />
       <ParticleBackground />
       <NoticeBoard />

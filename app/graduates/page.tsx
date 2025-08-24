@@ -4,6 +4,18 @@ import { GraduatesPageContent } from "@/components/graduates-page-content"
 import { ParticleBackground } from "@/components/layout/particle-background"
 import { LoadingScreen } from "@/components/common/loading-screen"
 
+export const metadata = {
+  title: 'Our Graduates | Success Stories from SLA Kerala',
+  description: 'Meet our successful German language graduates from Schoenstatt Language Academy Kerala. B2 certified students now working and studying in Germany.',
+  keywords: 'SLA graduates, German language success stories, B2 graduates Kerala, students in Germany, SLA alumni',
+  openGraph: {
+    title: 'SLA Graduates | Success Stories Kerala',
+    description: 'Discover the success stories of our German language graduates who are now thriving in Germany.',
+    images: ['/og/sla-graduates-success.jpg']
+  },
+  alternates: { canonical: '/graduates' }
+}
+
 export default function GraduatesPage() {
   return (
     <>

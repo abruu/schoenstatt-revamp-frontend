@@ -27,6 +27,7 @@ export interface Student {
   center: string
   course_level: string
   photo_path: string
+  status: 'pending' | 'accepted' | 'rejected' | 'enquired'
   created_at: string
 }
 
