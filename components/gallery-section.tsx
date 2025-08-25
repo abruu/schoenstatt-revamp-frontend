@@ -39,6 +39,15 @@ export function GallerySection() {
       description: "State-of-the-art interactive learning environment",
     },
     {
+      id: 29,
+      src: "/images/Gallery/about.webp",
+      alt: "SLA - Staff",
+      category: "classrooms",
+      title: "SLA Staff with Smart Classroom Technology",
+      description: "SLA Staff ",
+
+    },
+    {
       id: 2,
       src: "/images/Gallery/PHOTO-2024-08-01-02-29-37.jpg",
       alt: "Students in Class",

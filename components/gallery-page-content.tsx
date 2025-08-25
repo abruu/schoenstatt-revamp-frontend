@@ -46,6 +46,16 @@ export function GalleryPageContent() {
       tags: ["technology", "modern", "interactive"],
     },
     {
+      id: 29,
+      src: "/images/Gallery/about.webp",
+      alt: "SLA - Staff",
+      category: "classrooms",
+      title: "SLA Staff with Smart Classroom Technology",
+      description: "SLA Staff .",
+      date: "January 2025",
+      location: "Thrissur Center"
+    },
+    {
       id: 2,
       src: "/images/Gallery/Our-Courses.webp",
       alt: "Students in Class",

@@ -41,6 +41,18 @@ export function EnhancedGallerySection() {
       location: "Thrissur Center",
     },
     {
+
+  id: 29,
+  src: "images/Gallery/about.webp",
+  alt: "SLA - Staff",
+  category: "classrooms",
+  title: "SLA Staff with Smart Classroom Technology",
+  description: "SLA Staff showcasing a state-of-the-art smart classroom with interactive digital boards and modern seating arrangements for an enhanced learning experience.",
+  date: "January 2025",
+  location: "Thrissur Center"
+}
+    },
+    {
       id: 2,
       src: "/placeholder.svg?height=800&width=1200",
       alt: "Students in Class",
