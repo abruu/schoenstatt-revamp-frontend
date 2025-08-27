@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
-  ArrowLeft, 
-  Edit, 
-  Trash2, 
-  Download, 
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Download,
   Printer,
   User,
   Mail,
@@ -77,7 +77,7 @@ function StudentDetailContent() {
 
   const handleDeleteStudent = async () => {
     if (!student) return
-    
+
     if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
       return
     }
@@ -106,7 +106,7 @@ function StudentDetailContent() {
     try {
       // Use public URL for download since bucket is now public
       const publicUrl = `${supabase.supabaseUrl}/storage/v1/object/public/photos/${student.photo_path}`
-      
+
       // Create download link
       const a = document.createElement('a')
       a.href = publicUrl
@@ -125,7 +125,7 @@ function StudentDetailContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
+      <div className="min-h-screen  flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-yellow-400 mx-auto"></div>
           <p className="mt-4 text-blue-300">Loading student details...</p>
@@ -148,7 +148,7 @@ function StudentDetailContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br ">
       {/* Header */}
       <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 shadow-xl border-b border-blue-800/30 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -196,8 +196,8 @@ function StudentDetailContent() {
                   Edit
                 </Button>
               </Link> */}
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={handleDeleteStudent}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
@@ -249,8 +249,8 @@ function StudentDetailContent() {
                   )}
                 </div>
                 {student.photo_path && (
-                  <Button 
-                    onClick={downloadPhoto} 
+                  <Button
+                    onClick={downloadPhoto}
                     className="w-full mt-4 print:hidden"
                     variant="outline"
                   >

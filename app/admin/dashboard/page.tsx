@@ -10,31 +10,31 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { 
-  Search, 
-  Eye, 
-  Edit, 
+import {
+  Search,
+  Eye,
+  Edit,
   Trash2,
   MapPin,
   Loader2,
   ChevronLeft,
-  ChevronRight, 
-  Download, 
+  ChevronRight,
+  Download,
   Plus,
   LogOut,
   Users,
@@ -169,7 +169,7 @@ function DashboardContent() {
       if (error) throw error
 
       // Update the local state immediately
-      setStudents(prev => prev.map(student => 
+      setStudents(prev => prev.map(student =>
         student.id === studentId ? { ...student, status: newStatus } : student
       ))
     } catch (error) {
@@ -233,10 +233,10 @@ function DashboardContent() {
         'Status': student.status,
         'Registration Date': format(new Date(student.created_at), 'yyyy-MM-dd')
       })))
-      
+
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
-      
+
       XLSX.writeFile(workbook, `students-${adminUser?.center_id}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
     } catch (error) {
       console.error('Error exporting to Excel:', error)
@@ -256,7 +256,7 @@ function DashboardContent() {
   const totalPages = Math.ceil(totalCount / studentsPerPage)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+    <div className="min-h-screen ">
       {/* Header */}
       <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 shadow-xl border-b border-blue-800/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -285,8 +285,8 @@ function DashboardContent() {
                 </p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={signOut}
               disabled={signingOut}
               className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-300 disabled:opacity-50"
@@ -323,7 +323,7 @@ function DashboardContent() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Admin User Info Card - Visible to all admins */}
             <Card className="bg-gradient-to-br from-slate-800/90 via-purple-900/90 to-slate-700/90 border border-purple-600/30 shadow-xl shadow-purple-900/50 backdrop-blur-sm">
               <CardContent className="p-6">
@@ -402,7 +402,7 @@ function DashboardContent() {
                       </SelectContent>
                     </Select>
                   )}
-                  
+
                   <Select value={courseFilter} onValueChange={setCourseFilter}>
                     <SelectTrigger className="w-[180px] bg-slate-700/50 border-blue-600/30 text-white">
                       <SelectValue placeholder="Filter by course" />
@@ -587,7 +587,7 @@ function DashboardContent() {
                                   )}
                                 </Button>
                               </div>
-                              
+
                               {/* View Button */}
                               <Link href={`/admin/students/${student.id}`}>
                                 <Button variant="outline" size="sm" className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400">

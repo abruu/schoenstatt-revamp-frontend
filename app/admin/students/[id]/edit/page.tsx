@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -17,8 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Save,
   Loader2,
   Upload,
@@ -203,7 +203,7 @@ function EditStudentContent() {
       )
 
       setSuccess('Student updated successfully!')
-      
+
       // Redirect after a short delay
       setTimeout(() => {
         router.push(`/admin/students/${params.id}`)
@@ -228,7 +228,7 @@ function EditStudentContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen  from-slate-50 via-blue-50 to-slate-100">
       {/* Header */}
       <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 shadow-xl border-b border-blue-800/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -473,8 +473,8 @@ function EditStudentContent() {
                     </SelectTrigger>
                     <SelectContent>
                       {centers.map(center => (
-                        <SelectItem 
-                          key={center} 
+                        <SelectItem
+                          key={center}
                           value={center}
                           disabled={adminUser?.role !== 'super_admin' && adminUser?.center_id !== center}
                         >
