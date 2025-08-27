@@ -15,7 +15,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const { signIn, user, adminUser, loading } = useAdminAuth()
   const router = useRouter()
 
@@ -64,11 +64,11 @@ export default function AdminLoginPage() {
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[url('/images/Gallery/header_pic.jpg')] bg-cover bg-center opacity-10"></div>
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-black/80"></div>
-      
+
       {/* Animated Background Elements */}
       <div className="absolute top-20 left-20 w-32 h-32 bg-yellow-400/10 rounded-full blur-xl animate-pulse"></div>
       <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-400/10 rounded-full blur-xl animate-pulse delay-1000"></div>
-      
+
       <Card className="w-full max-w-md relative z-10 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl">
         <CardHeader className="text-center pb-6">
           {/* Logo matching website */}
@@ -80,14 +80,14 @@ export default function AdminLoginPage() {
             </div>
             <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-20"></div>
           </div>
-          
+
           <div className="mb-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
               SCHOENSTATT
             </h1>
             <p className="text-sm text-yellow-600 font-medium tracking-wider">LANGUAGE ACADEMY</p>
           </div>
-          
+
           <CardTitle className="text-xl font-bold text-slate-800">Admin Portal</CardTitle>
           <CardDescription className="text-slate-600">
             Sign in to manage student registrations
@@ -100,7 +100,7 @@ export default function AdminLoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -113,7 +113,7 @@ export default function AdminLoginPage() {
                 disabled={isLoading}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -126,10 +126,10 @@ export default function AdminLoginPage() {
                 disabled={isLoading}
               />
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold py-3 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105" 
+
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold py-3 rounded-full shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -142,8 +142,8 @@ export default function AdminLoginPage() {
               )}
             </Button>
           </form>
-          
-          <div className="mt-6 text-center text-sm text-gray-600">
+
+          {/* <div className="mt-6 text-center text-sm text-gray-600">
             <p className="font-medium mb-2">Demo Accounts:</p>
             <div className="space-y-1 text-xs">
               <p>thrissur@sla.com</p>
@@ -151,7 +151,7 @@ export default function AdminLoginPage() {
               <p>peravoor@sla.com</p>
               <p>superadmin@sla.com</p>
             </div>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>

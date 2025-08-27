@@ -67,6 +67,7 @@ export function Footer() {
                 { name: "Events", href: "/events" },
                 { name: "Gallery", href: "/gallery" },
                 { name: "Contact Us", href: "#contact" },
+                { name: "Admin Login", href: "/admin/login" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link

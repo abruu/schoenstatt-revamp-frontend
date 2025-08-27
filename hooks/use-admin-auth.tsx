@@ -8,6 +8,7 @@ interface AdminAuthContextType {
   user: User | null
   adminUser: AdminUser | null
   loading: boolean
+  signingOut: boolean
   signIn: (email: string, password: string) => Promise<{ error?: string; success?: boolean; user?: User; admin?: AdminUser | null }>
   signOut: () => Promise<void>
 }
@@ -18,6 +19,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [signingOut, setSigningOut] = useState(false)
 
   // Load admin user from localStorage
   const loadAdminFromStorage = () => {
@@ -149,13 +151,27 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    setSigningOut(true)
     try {
-      await supabase.auth.signOut()
+      // Clear all session data
+      await supabase.auth.signOut({ scope: 'global' })
+      
+      // Clear local state
       setUser(null)
       setAdminUser(null)
       saveAdminToStorage(null)
+      
+      // Clear any other localStorage items
+      localStorage.removeItem('admin_user')
+      
+      // Force redirect to login page
+      window.location.href = '/admin/login'
     } catch (error) {
       console.error('Error signing out:', error)
+      // Even if there's an error, still redirect to login
+      window.location.href = '/admin/login'
+    } finally {
+      setSigningOut(false)
     }
   }
 
@@ -164,6 +180,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       user,
       adminUser,
       loading,
+      signingOut,
       signIn,
       signOut,
     }}>

@@ -59,7 +59,7 @@ export default function AdminDashboard() {
 }
 
 function DashboardContent() {
-  const { adminUser, signOut } = useAdminAuth()
+  const { adminUser, signOut, signingOut } = useAdminAuth()
   const { courseLevels, loading: courseLevelsLoading } = useCourseLevels()
   const { centers, loading: centersLoading } = useCenters()
   const [students, setStudents] = useState<Student[]>([])
@@ -288,10 +288,20 @@ function DashboardContent() {
             <Button 
               variant="outline" 
               onClick={signOut}
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-300"
+              disabled={signingOut}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-300 disabled:opacity-50"
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              {signingOut ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Signing Out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </>
+              )}
             </Button>
           </div>
         </div>
