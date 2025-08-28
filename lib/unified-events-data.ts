@@ -587,6 +587,99 @@ export const unifiedEventsData: UnifiedEvent[] = [
       "Renovation",
     ],
     showInEventsPage: true,
+    showInNewsSection: false,
+    showInNoticeBoard: false,
+    showInRelatedArticles: true,
+  },
+
+  {
+    id: 8,
+    title: "SLA New S1 Batch Commencement",
+    description:
+      "We are excited to announce the commencement of our new S1 batch at SLA. This batch brings together enthusiastic learners ready to begin their journey into mastering the German language with the support of our expert faculty and modern facilities.",
+    excerpt:
+      "The new S1 batch has officially started at SLA, marking the beginning of a fresh learning journey in German language education.",
+    date: "August 28, 2025",
+    category: "Events",
+    type: "Batch Opening",
+    location: "SLA Campus",
+    image: "/images/events/news1(28_25)/Image (1).jpeg",
+    icon: "Users",
+    gradient: "from-green-400 to-green-600",
+    priority: "medium",
+    isNew: true,
+    gallery: [
+      "/images/events/news1(28_25)/Image (1).jpeg",
+      "/images/events/news1(28_25)/Image (2).jpeg",
+      "/images/events/news1(28_25)/Image (3).jpeg",
+      "/images/events/news1(28_25)/Image (4).jpeg",
+      "/images/events/news1(28_25)/Image.jpeg",
+    ],
+    galleryItems: [
+      {
+        id: 1,
+        src: "/images/events/news1(28_25)/Image (1).jpeg",
+        alt: "New S1 Batch",
+        title: "New S1 Batch Kickoff",
+        description:
+          "Students of the new S1 batch beginning their German language journey",
+      },
+      {
+        id: 2,
+        src: "/images/events/news1(28_25)/Image (2).jpeg",
+        alt: "New S1 Batch",
+        title: "New S1 Batch Kickoff",
+        description:
+          "Students of the new S1 batch beginning their German language journey",
+      },
+      {
+        id: 3,
+        src: "/images/events/news1(28_25)/Image (3).jpeg",
+        alt: "New S1 Batch",
+        title: "New S1 Batch Kickoff",
+        description:
+          "Students of the new S1 batch beginning their German language journey",
+      },
+      {
+        id: 4,
+        src: "/images/events/news1(28_25)/Image (4).jpeg",
+        alt: "New S1 Batch",
+        title: "New S1 Batch Kickoff",
+        description:
+          "Students of the new S1 batch beginning their German language journey",
+      },
+      {
+        id: 5,
+        src: "/images/events/news1(28_25)/Image.jpeg",
+        alt: "New S1 Batch",
+        title: "New S1 Batch Kickoff",
+        description:
+          "Students of the new S1 batch beginning their German language journey",
+      },
+    ],
+    hasGallery: true,
+    galleryCount: 1,
+    author: "SLA Administration",
+    readTime: "2 min read",
+    fullContent: `
+      <p>We are proud to welcome our new S1 batch to SLA. This marks an important milestone for our institute as we continue to expand opportunities for students eager to learn German language and culture.</p>
+
+      <h3>About the S1 Batch</h3>
+      <p>The S1 batch is designed for beginners who are just starting their German learning journey. Our structured curriculum, modern classrooms, and experienced faculty will provide students with the skills and confidence they need to succeed.</p>
+
+      <h3>What Students Can Expect</h3>
+      <ul>
+        <li>Interactive and engaging language sessions</li>
+        <li>Access to our advanced language lab</li>
+        <li>Regular assessments and progress tracking</li>
+        <li>Supportive community of peers and mentors</li>
+      </ul>
+
+      <h3>Looking Ahead</h3>
+      <p>This batch reflects our ongoing mission to provide high-quality German language education to more students across Kerala. We look forward to seeing our S1 learners grow and achieve their goals.</p>
+    `,
+    tags: ["New Batch", "S1", "Education", "German Language", "Students"],
+    showInEventsPage: true,
     showInNewsSection: true,
     showInNoticeBoard: true,
     showInRelatedArticles: true,
