@@ -49,6 +49,18 @@ export function HeroSection() {
       alt: "Global Certification",
       badge: "German Certification",
       icon: Globe
+    },
+    {
+      src: "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.30 PM (1).jpeg", // Replace with actual image paths
+      alt: "Global Certification",
+      badge: "German Certification",
+      icon: Globe
+    },
+    {
+      src: "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.31 PM.jpeg", // Replace with actual image paths
+      alt: "Global Certification",
+      badge: "German Certification",
+      icon: Globe
     }
   ]
 
