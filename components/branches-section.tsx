@@ -47,7 +47,9 @@ export function BranchesSection() {
       facebook: "https://www.facebook.com/people/Sla-German-Chalakudy/",
       location: "https://www.google.com/maps?q=Schoenstatt+Language+Academy,+Alur+-+Cherukunnu+Rd,+near+St+Thomas+Church,+Alur,+Kerala+680683&ftid=0x3ba7f92f1b0bff95:0x90ada14d0862e435&entry=gps&lucs=,94215790,47071704,94206166,47069508,94218635,94203019,47084304,94208458,94208447&g_ep=CAISDTYuMTE0LjMuNTkxOTAYACCenQoqUSw5NDIxNTc5MCw0NzA3MTcwNCw5NDIwNjE2Niw0NzA2OTUwOCw5NDIxODYzNSw5NDIwMzAxOSw0NzA4NDMwNCw5NDIwODQ1OCw5NDIwODQ0N0ICSU4%3DChalakudy",
       images: [
-        "images/locations/Chalakudy.webp"
+
+        "/images/locations/aloornew.jpeg",
+        "images/locations/Chalakudy.webp",
       ],
     },
     {

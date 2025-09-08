@@ -165,7 +165,10 @@ const gallery = [
   "/images/SLA gratuates/PHOTO-2025-06-23-21-08-10.jpg",
   "/images/SLA gratuates/PHOTO-2025-06-26-16-02-31.jpg",
   "/images/SLA gratuates/connects1.png",
-  "/images/SLA gratuates/connects2.png"
+  "/images/SLA gratuates/connects2.png",
+  "/images/SLA gratuates/sep_8_25/WhatsApp Image 2025-09-08 at 10.38.12 AM.jpeg",
+  "/images/SLA gratuates/sep_8_25/WhatsApp Image 2025-09-08 at 10.38.31 AM.jpeg",
+  "/images/SLA gratuates/sep_8_25/WhatsApp Image 2025-09-08 at 10.38.44 AM.jpeg",
 ]
 
 export function GraduatesPageContent() {
