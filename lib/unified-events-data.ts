@@ -63,7 +63,7 @@ export const unifiedEventsData: UnifiedEvent[] = [
     icon: "Building",
     gradient: "from-blue-400 to-blue-600",
     priority: "high",
-    isNew: true,
+    isNew: false,
     gallery: [
       "/images/events/sla_newbulding.webp",
       "/images/events/buliding-support.webp",
@@ -109,8 +109,8 @@ export const unifiedEventsData: UnifiedEvent[] = [
     `,
     tags: ["Infrastructure", "Expansion", "Thrissur", "Modern Facilities"],
     showInEventsPage: true,
-    showInNewsSection: true,
-    showInNoticeBoard: true,
+    showInNewsSection: false,
+    showInNoticeBoard: false,
     showInRelatedArticles: true,
   },
   {
@@ -469,60 +469,7 @@ export const unifiedEventsData: UnifiedEvent[] = [
     showInNoticeBoard: true,
     showInRelatedArticles: true,
   },
-  // {
-  //   id: 5,
-  //   title: "Digital Learning Initiative Launch",
-  //   description:
-  //     "SLA introduces cutting-edge digital learning platforms and AI-powered language tools to enhance the German learning experience for all students.",
-  //   excerpt:
-  //     "SLA introduces cutting-edge digital learning platforms and AI-powered language tools to enhance the German learning experience.",
-  //   date: "January 8, 2025",
-  //   category: "Technology",
-  //   type: "Innovation",
-  //   location: "All Centers",
-  //   image: "/placeholder.svg?height=250&width=350",
-  //   icon: "BookOpen",
-  //   gradient: "from-purple-400 to-pink-500",
-  //   priority: "medium",
-  //   isNew: true,
-  //   gallery: [],
-  //   hasGallery: false,
-  //   galleryCount: 0,
-  //   author: "Technology Team",
-  //   readTime: "5 min read",
-  //   showInEventsPage: true,
-  //   showInNewsSection: true,
-  //   showInNoticeBoard: false,
-  //   showInRelatedArticles: true,
-  // },
-  // {
-  //   id: 6,
-  //   title: "A2 Level Graduation Ceremony",
-  //   description:
-  //     "Proud celebration of our A2 level course completers who have successfully mastered the elementary level of German language with dedication and hard work.",
-  //   excerpt:
-  //     "Celebrating our A2 level graduates who have successfully completed their elementary German language certification.",
-  //   date: "November 25, 2024",
-  //   category: "Graduation",
-  //   type: "Certificate Ceremony",
-  //   location: "All Centers",
-  //   image: "/placeholder.svg?height=300&width=400",
-  //   icon: "Award",
-  //   gradient: "from-orange-400 to-red-500",
-  //   priority: "low",
-  //   isNew: false,
-  //   gallery: [
-  //     "/placeholder.svg?height=400&width=600",
-  //     "/placeholder.svg?height=400&width=600",
-  //   ],
-  //   hasGallery: true,
-  //   galleryCount: 2,
-  //   author: "Academic Department",
-  //   readTime: "3 min read",
-  //   showInEventsPage: true,
-  //   showInNewsSection: false,
-  //   showInNoticeBoard: false,
-  //   showInRelatedArticles: true,
+ 
   {
     id: 6,
     title: "SLA PERAVOOR RENOVATED INSTITUTE",
@@ -647,7 +594,164 @@ export const unifiedEventsData: UnifiedEvent[] = [
     showInNoticeBoard: false,
     showInRelatedArticles: true,
   },
-
+  {
+    "id": 9,
+    "title": "SLA Aloor Celebration",
+    "description": "We are delighted to announce the grand Aloor Celebration at SLA. This festive occasion brings together our students, faculty, and community to enjoy cultural programs, traditional performances, and shared happiness.",
+    "excerpt": "The Aloor Celebration at SLA was filled with vibrant cultural programs, traditional performances, and joyful participation from the entire SLA family.",
+    "date": "August 28, 2025",
+    "category": "Events",
+    "type": "Celebration",
+    "location": "SLA Campus, Aloor",
+    "image": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.29 PM.jpeg",
+    "icon": "PartyPopper",
+    "gradient": "from-yellow-400 to-orange-600",
+    "priority": "high",
+    "isNew": true,
+    "gallery": [
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.18 PM (1).jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.18 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.19 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.20 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.21 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.22 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.25 PM (1).jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.25 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.26 PM (1).jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.26 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.27 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.28 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.29 PM.jpeg",
+      "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.30 PM.jpeg"
+    ],
+    "galleryItems": [
+      {
+        "id": 1,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.18 PM (1).jpeg",
+        "alt": "Aloor Celebration",
+        "title": "SLA Aloor Celebration 2025",
+        "description": "Students and faculty enjoying the festive programs at SLA Aloor."
+      },
+      {
+        "id": 2,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.18 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Cultural Performance",
+        "description": "Vibrant cultural dances and performances during the celebration."
+      },
+      {
+        "id": 3,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.19 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Traditional Arts Showcase",
+        "description": "Students showcasing traditional Kerala art and culture."
+      },
+      {
+        "id": 4,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.20 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Community Participation",
+        "description": "Joyful participation from students, staff, and the community."
+      },
+      {
+        "id": 5,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.21 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Festive Moments",
+        "description": "Capturing the festive spirit and joy of Aloor Celebration."
+      },
+      {
+        "id": 6,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.22 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Group Activities",
+        "description": "Students participating in group activities and games."
+      },
+      {
+        "id": 7,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.25 PM (1).jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Cultural Display",
+        "description": "Beautiful cultural displays and decorations at the event."
+      },
+      {
+        "id": 8,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.25 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Performance Highlights",
+        "description": "Memorable performance moments from the celebration."
+      },
+      {
+        "id": 9,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.26 PM (1).jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Student Engagement",
+        "description": "Active student engagement in cultural activities."
+      },
+      {
+        "id": 10,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.26 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Traditional Costumes",
+        "description": "Students in beautiful traditional costumes and attire."
+      },
+      {
+        "id": 11,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.27 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Dance Performance",
+        "description": "Energetic dance performances by SLA students."
+      },
+      {
+        "id": 12,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.28 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Cultural Unity",
+        "description": "Celebrating cultural unity and diversity at SLA."
+      },
+      {
+        "id": 13,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.29 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Celebration Highlights",
+        "description": "Key highlights and memorable moments from the event."
+      },
+      {
+        "id": 14,
+        "src": "/images/events/aloor_8_25/WhatsApp Image 2025-08-29 at 2.24.30 PM.jpeg",
+        "alt": "Aloor Celebration",
+        "title": "Grand Finale",
+        "description": "Grand finale capturing the festive spirit of Aloor Celebration."
+      }
+    ],
+    "hasGallery": true,
+    "galleryCount": 14,
+    "author": "SLA Administration",
+    "readTime": "2 min read",
+    "fullContent":  `
+        <p>The SLA Aloor Celebration was a memorable event filled with joy, unity, and cultural richness. This celebration brought together students, faculty, and the wider community to showcase traditions and talent.</p>
+  
+        <h3>Highlights of the Celebration</h3>
+        <p>The event featured a variety of performances and activities, creating a lively and festive atmosphere across the campus.</p>
+  
+        <h3>What Participants Enjoyed</h3>
+        <ul>
+          <li>Traditional Kerala dance and music performances</li>
+          <li>Festive decorations and cultural displays</li>
+          <li>Interactive games and fun activities</li>
+          <li>Community bonding and joyful experiences</li>
+        </ul>
+  
+        <h3>Looking Ahead</h3>
+        <p>This celebration reflects SLA’s commitment to fostering cultural values and community spirit alongside academic excellence. We look forward to hosting many more such events in the future.</p>
+     `,
+    "tags": ["Celebration", "Aloor", "Cultural Event", "Students", "Community"],
+    "showInEventsPage": true,
+    "showInNewsSection": true,
+    "showInNoticeBoard": true,
+    "showInRelatedArticles": true
+  }
+,  
   {
     id: 8,
     title: "SLA New S1 Batch Commencement",
@@ -740,6 +844,7 @@ export const unifiedEventsData: UnifiedEvent[] = [
     showInNoticeBoard: true,
     showInRelatedArticles: true,
   },
+  
 ];
 
 // Helper functions to filter events for specific components

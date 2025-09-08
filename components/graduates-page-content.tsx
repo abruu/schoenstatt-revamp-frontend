@@ -169,6 +169,14 @@ const gallery = [
   "/images/SLA gratuates/sep_8_25/WhatsApp Image 2025-09-08 at 10.38.12 AM.jpeg",
   "/images/SLA gratuates/sep_8_25/WhatsApp Image 2025-09-08 at 10.38.31 AM.jpeg",
   "/images/SLA gratuates/sep_8_25/WhatsApp Image 2025-09-08 at 10.38.44 AM.jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.16 PM.jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.17 PM (1).jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.17 PM (2).jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.17 PM.jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.18 PM.jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.30 PM (1).jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.30 PM (2).jpeg",
+  "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.31 PM.jpeg"
 ]
 
 export function GraduatesPageContent() {
