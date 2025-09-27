@@ -10,7 +10,7 @@ export const SITE_CONFIG = {
     // youtube: "#",
   },
 };
-
+// s
 export const NAVIGATION_ITEMS = [
   { name: "Home", href: "#home" },
   // { name: "Courses", href: "#courses" },
