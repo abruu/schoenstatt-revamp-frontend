@@ -1,0 +1,346 @@
+"use client"
+
+import Image from "next/image"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+    Target,
+    Eye,
+    Users,
+    HelpCircle,
+    GraduationCap,
+    HeartHandshake,
+    ShieldCheck,
+    TrendingUp,
+    Computer,
+    LifeBuoy,
+    Quote,
+    CheckCircle
+  } from "lucide-react"
+
+export function AboutPageContent() {
+
+
+  type FaqItem = {
+    question: string;
+    answer: string;
+    isHtml?: boolean;
+  }
+
+  const faqItems: FaqItem[] = [
+    {
+      question: "How long do I have to learn German in order to pass B2?",
+      answer:
+        "It starts with basic level A1, which lasts for 2 months(8 weeks), then A2 for 2 months (8 weeks), followed by B1 for 2 months(9 weeks), then B2 for 3 months(12 weeks). After one months preparation course, you will be eligible to appear for the B2 Exam. Altogether it comes around 10 months.",
+      isHtml: false
+    },
+    {
+      question: "Can I directly join B1 or B2?",
+      answer:
+        "Yes, provided you need to have sufficient knowledge of levels A1 and A2, if necessary, the institute will conduct an exam to find out your current knowledge level in order to assign you the right course.",
+      isHtml: false
+    },
+    {
+      question: "Do you give placement in Germany?",
+      answer:
+        "We will provide you with all the help in order to find a placement in Germany, as possible as we could.",
+      isHtml: false
+    },
+    {
+      question: "Do we need to study one year 'Studienkolleg' in Germany, if we aspire to do Nursing in Germany after Plus Two studies?",
+      answer:
+        "No, You are eligible to apply for diploma in Nursing with your Plus Two Certificate and your B2 certificate.",
+      isHtml: false
+    },
+    {
+      question: "Can I apply for Nursing course in Germany with a NIOS certificate?",
+      answer:
+        "No, you need to have a regular Plus Two certificate",
+      isHtml: false
+    },
+
+    {
+      question: "Which certification does SLA have?",
+      answer:
+        "SLA conducts Telc exams in cooperation with 'Sprachforum Augsburg' (Telc- Certified Centre) with language Lab. The German officials come here and conduct the exams regularly here. However, due to the current corona crisis, they haven't come last year. When the condition becomes better, then it will take place regularly. During this time, we help the students to appear for the Goethe exams.",
+      isHtml: false
+    },
+
+    {
+      question: "Is Telc Certificate different from Goethe?",
+      answer:
+        "No, both certificates have got same value. The pattern of both the exams are more or less the same.",
+      isHtml: false
+    },
+
+
+    {
+      question: "Do I need to show a huge amount in the bank account as we apply for Visa to do Nursing in Germany?",
+      answer:
+        "No.",
+      isHtml: false
+    },
+
+    {
+      question: "How much does the course cost?",
+      answer:
+        "A1 – 13,000/- + 18% GST\nA2 – 13,000/- + 18% GST\nB1 – 16,000/- + 18% GST\nB2 – 22,000/- + 18% GST\nB2 Exam Preparation – 10,000/- + 18% GST",
+      isHtml: true
+    },
+  ]
+  const differentItems = [
+    {
+      icon: GraduationCap,
+      title: "We Educate",
+      description:
+        "Empowering Minds, Building Futures.",
+      gradient: "from-cyan-400 to-blue-600",
+    },
+    {
+      icon: HeartHandshake,
+      title: "We Help​",
+      description:
+        "Our Commitment to Your Journey at SLA",
+      gradient: "from-green-400 to-teal-600",
+    },
+    {
+      icon: ShieldCheck,
+      title: "We Inspire",
+      description: "Dream. Believe. Achieve: Inspiration at SLA.",
+      gradient: "from-purple-400 to-violet-600",
+    },
+    {
+      icon: TrendingUp,
+      title: "We Empower​",
+      description: "Achieving Dreams, Ambitions Transformed",
+      gradient: "from-amber-400 to-orange-600",
+    },
+    // {
+    //   icon: Computer,
+    //   title: "Modern Infrastructure",
+    //   description: "Learn in a state-of-the-art environment with smart classrooms and advanced learning tools.",
+    //   gradient: "from-rose-400 to-red-600",
+    // },
+    // {
+    //   icon: LifeBuoy,
+    //   title: "End-to-End Support",
+    //   description: "From admissions to placements, we provide comprehensive guidance for your entire journey.",
+    //   gradient: "from-sky-400 to-indigo-600",
+    // },
+  ]
+  return (
+    <div className="container mx-auto px-4 py-16 space-y-24">
+      {/* About Us Hero */}
+       <section className="grid lg:grid-cols-5 gap-12 items-center scroll-animate fade-up">
+          <div className="lg:col-span-3 space-y-6 text-left">
+            <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border border-yellow-400/30 backdrop-blur-sm">
+              <Users className="h-5 w-5 text-yellow-400 mr-2" />
+              <span className="text-yellow-400 font-medium">ABOUT US</span>
+            </div>
+            <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
+              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Pioneering German Language Education
+              </span>
+            </h1>
+            <p className="text-xl text-gray-400 max-w-2xl leading-relaxed">
+            At SLA, we specialize in German language education and cultural immersion. Founded with a commitment to renewal, our experienced faculty offers courses from A1 to B2 levels.
+            </p>
+          </div>
+          <div className="lg:col-span-2 relative w-full h-full min-h-[300px] lg:min-h-[500px]">
+            <div className="absolute -inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl blur-2xl opacity-30"></div>
+            <div className="relative w-full h-full">
+              <Image
+                src="images/Gallery/aboutuse.jpg"
+                alt="SLA Team and Students"
+                layout="fill"
+                objectFit="cover"
+                className="rounded-3xl border border-white/10 shadow-2xl shadow-black/40"
+              />
+            </div>
+          </div>
+        </section>
+
+      {/* Mission & Vision */}
+      <section className="grid md:grid-cols-2 gap-16 items-start scroll-animate fade-up">
+          <div className="space-y-6">
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Target className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                Our Mission
+              </h2>
+            </div>
+            <p className="text-lg text-gray-300 leading-relaxed border-l-2 border-blue-500 pl-6">
+              To empower individuals with superior German language proficiency and deep cultural understanding, enabling
+              them to achieve their academic and professional aspirations in Germany and beyond. We are committed to
+              providing an immersive, supportive, and technologically advanced learning environment.
+            </p>
+          </div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Eye className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                Our Vision
+              </h2>
+            </div>
+            <p className="text-lg text-gray-300 leading-relaxed border-l-2 border-yellow-500 pl-6">
+              To be the leading center for German language education in India, recognized for our innovative teaching
+              methodologies, high success rates, and our commitment to the holistic development of our students,
+              fostering a global community of proficient and culturally aware individuals.
+            </p>
+          </div>
+        </section>
+
+      {/* What We Do */}
+      <section className="grid lg:grid-cols-2 gap-12 items-center scroll-animate fade-right">
+          <div className="space-y-6">
+            <p className="text-sm font-bold tracking-widest text-yellow-400 uppercase">What We Do</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-white">Unlocking German Language And Culture</h2>
+            <p className="text-gray-300 leading-relaxed">
+              It starts with basic level A1, which lasts for 2 months (8 weeks), then A2 for 2 months (8 weeks),
+              followed by B1 for 2 months (9 weeks), then B2 for 3 months (12 weeks). After one month's preparation
+              course, you will be eligible to appear for the B2 exam. Altogether it comes to around 10 months.
+            </p>
+          </div>
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500"></div>
+            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 lg:p-12">
+              <Quote className="h-12 w-12 text-yellow-400 mb-6" />
+              <blockquote className="text-xl text-gray-200 italic leading-loose">
+                “Under the protection of Mary, we want to learn to educate ourselves to become firm, free, priestly
+                personalities.”
+              </blockquote>
+              <footer className="mt-8 text-right">
+                <p className="text-lg font-bold text-white">Fr. Joseph Kentenich</p>
+                <p className="text-gray-400">Founder of Schoenstatt Movement</p>
+              </footer>
+            </div>
+          </div>
+        </section>
+
+        {/* What Makes Us Different */}
+        <section className="space-y-16 scroll-animate fade-up">
+          <div className="text-center space-y-4">
+          <p className="text-sm font-bold tracking-widest text-center text-yellow-400 uppercase">OUR CAUSES​
+          </p>
+
+            <h2 className="text-3xl lg:text-4xl font-bold text-white">What Makes Us Different</h2>
+            <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+            At SLA, our causes define us. We’re committed to promoting language proficiency and embracing cultural diversity. Join us and see the difference.            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {differentItems.map((item, index) => (
+              <div key={index} className="relative group">
+                <div
+                  className={`absolute -inset-1 bg-gradient-to-r ${item.gradient} rounded-3xl blur-xl opacity-0 group-hover:opacity-30 transition-all duration-500`}
+                ></div>
+                <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 h-full">
+                  <div
+                    className={`w-16 h-16 bg-gradient-to-r ${item.gradient} rounded-2xl flex items-center justify-center mb-6`}
+                  >
+                    <item.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+                  <p className="text-gray-400">{item.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+      {/* What Makes Us Different */}
+      {/* <section className="grid lg:grid-cols-2 gap-12 items-center scroll-animate fade-right">
+        <div className="space-y-8">
+          <h2 className="text-3xl lg:text-4xl font-bold text-white">What Makes Us Different</h2>
+          <p className="text-lg text-gray-400">
+            Our unique approach sets us apart, ensuring our students receive the best possible education and support.
+          </p>
+          <ul className="space-y-4">
+            {[
+              "Faculty with German Training & Experience",
+              "Holistic Approach: Language & Culture",
+              "Official Telc Exam Partner",
+              "Proven Track Record of Success",
+              "State-of-the-Art Infrastructure",
+              "End-to-End Student Support System",
+            ].map((item, index) => (
+              <li key={index} className="flex items-center gap-3">
+                <CheckCircle className="h-6 w-6 text-green-400 flex-shrink-0" />
+                <span className="text-lg text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="relative">
+          <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-3xl blur-xl opacity-20"></div>
+          <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+            <Image
+              src="/placeholder.svg?height=600&width=500"
+              alt="Students collaborating"
+              width={500}
+              height={600}
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        </div>
+      </section> */}
+
+      {/* FAQ Section */}
+      <section className="max-w-4xl mx-auto space-y-12 scroll-animate fade-up">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-400/20 to-purple-500/20 border border-blue-400/30 backdrop-blur-sm">
+            <HelpCircle className="h-5 w-5 text-blue-400 mr-2" />
+            <span className="text-blue-400 font-medium">FAQ</span>
+          </div>
+          <h2 className="text-3xl lg:text-4xl font-bold text-white">Frequently Asked Questions</h2>
+          <p className="text-lg text-gray-400">Whether you’re curious about our teaching methods or need guidance on which course to choose, our FAQ provides all the essential information to help you navigate your language learning journey with SLA. (<a href="/pdf/Schoenstatt-Language-Academy-Malayalam0.pdf" target="_blank" className="text-yellow-400 hover:underline underline">View Malayalam Version</a>)</p>
+        </div>
+        <Accordion type="single" collapsible defaultValue="item-0" className="w-full">
+          {faqItems.map((item, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl mb-4 px-6"
+            >
+              <AccordionTrigger className="text-lg text-start font-semibold text-white text hover:no-underline">
+                {item.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-gray-300 text-base leading-relaxed pt-2">
+                {item.isHtml ? (
+                  <ul className="list-disc pl-5 space-y-1">
+                    {item.answer.split('\n').filter(line => line.trim()).map((line, i) => (
+                      <li key={i}>{line.trim()}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <>{item.answer}</>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </section>
+      <section className="py-16 scroll-animate fade-up">
+        <div className="relative max-w-5xl mx-auto">
+          <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl blur-2xl opacity-20"></div>
+          <div className="relative">
+            <Image
+              src="images/about.webp"
+              alt="SLA team on a mission"
+              width={1280}
+              height={720}
+              className="rounded-2xl w-full h-auto"
+            />
+            <div className="absolute inset-0 bg-black/30 rounded-2xl"></div>
+            <div className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-auto md:w-2/5 p-4 md:p-8 bg-black/60 backdrop-blur-lg border border-white/10 rounded-2xl">
+              <p className="text-xs md:text-sm font-semibold tracking-widest text-yellow-400 uppercase">Our Mission</p>
+              <h3 className="mt-2 text-lg md:text-2xl lg:text-3xl font-bold text-white leading-tight">We're On A Mission Of Big Changes.</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
