@@ -283,7 +283,7 @@ export class StrapiUtils {
     if (url.startsWith('http')) return url;
     
     // Otherwise, prepend the Strapi base URL
-    const strapiBaseUrl = baseUrl || process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+    const strapiBaseUrl = baseUrl || process.env.NEXT_PUBLIC_STRAPI_URL ;
     return `${strapiBaseUrl}${url}`;
   }
 

@@ -95,7 +95,7 @@ export class StrapiApiClient {
   private responseInterceptors: Array<(response: any) => any> = [];
 
   constructor(baseURL?: string, defaultHeaders?: Record<string, string>) {
-    this.baseURL = baseURL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api';
+    this.baseURL = baseURL || process.env.NEXT_PUBLIC_STRAPI_URL;
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       ...defaultHeaders,
