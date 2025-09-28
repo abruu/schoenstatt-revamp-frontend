@@ -8,9 +8,12 @@ CREATE TABLE centers (
 
 -- Insert sample centers data
 INSERT INTO centers (id, name, email) VALUES
-  ('thrissur', 'SLA-Thrissur Center', 'thrissur@sla.com'),
-  ('chalakudy', 'SLA-Chalakudy Center', 'chalakudy@sla.com'),
-  ('peravoor', 'SLA-Peravoor Center', 'peravoor@sla.com');
+  ('thrissur', 'SLA-Thrissur Center', 'languageacademyschoenstatt@gmail.com'),
+  ('chalakudy', 'SLA-Chalakudy Center', 'slaaloor2000@gmail.com'),
+  ('peravoor', 'SLA-Peravoor Center', 'peravoorsla@gmail.com');
+
+-- Verify centers data
+SELECT * FROM centers;
 
 -- Create course_levels table for standardized course levels
 CREATE TABLE course_levels (
@@ -28,8 +31,6 @@ INSERT INTO course_levels (id, name, description, display_order) VALUES
   ('b1', 'B1', 'Intermediate', 3),
   ('b2', 'B2', 'Upper Intermediate', 4);
 
--- Verify centers data
-SELECT * FROM centers;
 
 -- Create registrations table with explicit references
 CREATE TABLE registrations (
@@ -48,7 +49,7 @@ CREATE TABLE registrations (
   photo_path TEXT NOT NULL,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'enquired')),
   created_at TIMESTAMPTZ DEFAULT NOW()
-);
+);  
 
 -- Test inserting a registration to verify foreign key constraint
 INSERT INTO registrations (
@@ -65,6 +66,7 @@ INSERT INTO registrations (
 CREATE INDEX IF NOT EXISTS idx_registrations_center ON registrations(center);
 CREATE INDEX IF NOT EXISTS idx_registrations_created_at ON registrations(created_at);
 CREATE INDEX IF NOT EXISTS idx_registrations_status ON registrations(status);
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_email_unique ON registrations(email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_phone_unique ON registrations(phone);
 
@@ -90,11 +92,10 @@ CREATE TABLE admin_users (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Insert admin users for each center
 INSERT INTO admin_users (email, center_id, role) VALUES
-  ('thrissur@sla.com', 'thrissur', 'admin'),
-  ('chalakudy@sla.com', 'chalakudy', 'admin'),
-  ('peravoor@sla.com', 'peravoor', 'admin'),
+  ('languageacademyschoenstatt@gmail.com', 'thrissur', 'admin'),
+  ('slaaloor2000@gmail.com', 'chalakudy', 'admin'),
+  ('peravoorsla@gmail.com', 'peravoor', 'admin'),
   ('superadmin@sla.com', 'thrissur', 'super_admin');
 
 -- Enable RLS for admin_users
@@ -192,3 +193,11 @@ CREATE POLICY "Admin can view own audit logs" ON audit_logs
 -- SELECT * FROM centers;
 -- SELECT COUNT(*) FROM registrations;
 -- \d registrations  -- Shows table structure
+
+
+
+
+
+-- superbase
+-- resend
+-- railway

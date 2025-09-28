@@ -88,7 +88,7 @@ export default function AdminLoginPage() {
             <p className="text-sm text-yellow-600 font-medium tracking-wider">LANGUAGE ACADEMY</p>
           </div>
 
-          <CardTitle className="text-xl font-bold text-slate-800">Admin Portal</CardTitle>
+          <CardTitle className="text-xl font-bold  text-slate-800">Admin Portal</CardTitle>
           <CardDescription className="text-slate-600">
             Sign in to manage student registrations
           </CardDescription>
@@ -102,7 +102,7 @@ export default function AdminLoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label className=' text-slate-800' htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -115,8 +115,8 @@ export default function AdminLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
+              <Label className=' text-slate-800' htmlFor="password">Password</Label>
+              <Input 
                 id="password"
                 type="password"
                  placeholder="Password"
