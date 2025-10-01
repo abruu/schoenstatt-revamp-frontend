@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { getEventsForNoticeBoard, UnifiedEvent } from "@/lib/unified-events-data"
 import { getIconComponent } from "@/lib/icon-mapping"
+import { DateDisplay } from "./date-display"
 
 // Using UnifiedEvent interface from unified-events-data
 
@@ -116,7 +117,7 @@ export function NoticeBoard() {
                   <span className="sm:hidden">All</span>
                 </Button>
               </Link>
-              <Button onClick={handleClose} size="icon" className="w-6 h-6 bg-white/10 hover:bg-white/20 border-none">
+              <Button onClick={handleClose} size="icon" className="w-6 h-6 bg-white hover:bg-white/20 border-none">
                 <X className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
@@ -125,14 +126,14 @@ export function NoticeBoard() {
           {/* Notice Content */}
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div
+              {/* <div
                 className={`w-10 h-10 bg-gradient-to-r ${currentNoticeData?.gradient?.className} rounded-lg flex items-center justify-center flex-shrink-0`}
               >
                 {(() => {
                   const IconComponent = getIconComponent(currentNoticeData.icon)
                   return <IconComponent className="h-5 w-5 text-white" />
                 })()}
-              </div>
+              </div> */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className={`bg-gradient-to-r ${currentNoticeData?.gradient?.className} text-white text-xs`}>
@@ -146,8 +147,8 @@ export function NoticeBoard() {
                 <p className="text-gray-300 text-xs leading-relaxed mb-3 line-clamp-3">{currentNoticeData.description}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-gray-400 text-xs">
-                    <Calendar className="h-3 w-3" />
-                    {currentNoticeData.date}
+                    {/* <Calendar className="h-3 w-3" /> */}
+                    <DateDisplay date={currentNoticeData.date} />
                   </div>
                   <Link href={`/events/${currentNoticeData.id}`}>
                     <Button

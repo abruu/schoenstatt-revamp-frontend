@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Calendar, MapPin, Users, Award, Building, Camera, Filter, Search, ChevronRight, Share2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Calendar, MapPin, Users, Award, Building, Camera, Filter, Search, ChevronRight, Share2, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -9,17 +9,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from "next/link"
 import { getEventsForEventsPage } from "@/lib/unified-events-data"
 import { getIconComponent } from "@/lib/icon-mapping"
+import { useApiStore } from "@/lib/stores/api-store"
+import { SkeletonLoader } from "@/components/common/skeleton-loader"
 
 export function EventsPageContent() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
 
+  const { 
+    events: apiEvents, 
+    eventsLoading, 
+    eventsError, 
+    fetchEvents, 
+    clearError 
+  } = useApiStore();
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
   const events = getEventsForEventsPage()
 
   const categories = [
     { id: "all", name: "All Events", count: events.length },
-,
     { id: "Updates", name: "SLA Updates", count: events.filter((e) => e.category === "Updates").length },
     {
       id: "Connect",
@@ -120,116 +133,148 @@ export function EventsPageContent() {
         </div>
       </div>
 
-      {/* Events Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredEvents.map((event, index) => (
-          <Link href={`/events/${event.id}`} key={event.id} className="relative group">
-            <div
-              className={`absolute -inset-1 bg-gradient-to-r ${event.gradient} rounded-3xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500`}
-            ></div>
-
-            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full flex flex-col cursor-pointer">
-              {/* Event Image */}
-              <div className="aspect-video relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
-                <img
-                  src={event.image}
-                  alt={event.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Fallback to gradient background if image fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 items-center justify-center hidden">
-                  <Camera className="h-16 w-16 text-gray-600" />
-                </div>
-
-                {/* Badges */}
-                <div className="absolute top-4 left-4 z-20 flex gap-2">
-                  <Badge className={`bg-gradient-to-r ${event.gradient} text-white`}>{event.type}</Badge>
-                  {event.isNew && <Badge className="bg-red-500 text-white animate-pulse">New</Badge>}
-                </div>
-
-                {/* Gallery indicator */}
-                <div className="absolute bottom-4 right-4 z-20">
-                  <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                    {(() => {
-                      const IconComponent = getIconComponent(event.icon)
-                      return <IconComponent className="h-5 w-5 text-white" />
-                    })()}
-                    <span className="text-xs text-white">{event.gallery.length}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="space-y-3 flex-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <Badge variant="outline" className="border-white/20 text-gray-300">
-                      {event.category}
-                    </Badge>
-                    <div className="flex items-center gap-1 text-gray-400">
-                      <Calendar className="h-4 w-4" />
-                      {event.date}
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-white leading-tight">{event.title}</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed">{event.description}</p>
-
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <MapPin className="h-4 w-4" />
-                    {event.location}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 mt-4 pt-4 border-t border-white/10">
-                  <Link href={`/events/${event.id}`} className="flex-1">
-                    <Button
-                      className={`w-full bg-gradient-to-r ${event.gradient} text-white hover:scale-105 transition-all duration-300`}
-                    >
-                      View Details
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </Link>
-                  <Button size="icon" className="bg-white/10 hover:bg-white/20 border border-white/20">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Load More */}
-      {filteredEvents.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="h-12 w-12 text-gray-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-white mb-2">No events found</h3>
-          <p className="text-gray-400">Try adjusting your search or filter criteria</p>
+      {/* Error state */}
+      {eventsError && (
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <div className="text-red-500 font-medium">Error loading events: {eventsError}</div>
+          <Button onClick={() => {
+            clearError();
+            fetchEvents();
+          }} variant="outline">
+            Try Again
+          </Button>
         </div>
       )}
 
-      {/* {filteredEvents.length > 0 && (
-        <div className="text-center">
-          <Button
-            variant="outline"
-            size="lg"
-            className="border-2 border-blue-400/30 text-blue-400 hover:bg-blue-400/10 bg-transparent backdrop-blur-sm px-8 py-4 rounded-full hover:border-blue-400/50 transition-all duration-300 hover:scale-105"
-          >
-            Load More Events
-          </Button>
+    {/* Loading skeleton */}
+{eventsLoading ? (
+  <SkeletonLoader 
+    count={6} 
+    show={eventsLoading} 
+    variant="event-card"
+    className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+  />
+) : !eventsError && filteredEvents.length === 0 && !eventsLoading ? (
+  <div className="flex flex-col items-center justify-center py-12 space-y-4">
+    <div className="p-6 rounded-full bg-white/5 border border-white/10">
+      <Search className="h-12 w-12 text-gray-400" />
+    </div>
+    <div className="text-gray-400 font-medium text-lg">No events found</div>
+    <p className="text-gray-500 text-center max-w-md">
+      Try adjusting your search or filter criteria, or check back later for new events.
+    </p>
+    <Button 
+      onClick={() => {
+        clearError();
+        fetchEvents();
+      }} 
+      variant="outline" 
+      className="mt-2"
+    >
+      Refresh
+    </Button>
+  </div>
+) : !eventsError && !eventsLoading ? (
+  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {filteredEvents.map((event, index) => (
+      <Link href={`/events/${event.id}`} key={event.id} className="relative group">
+        <div
+          className={`absolute -inset-1 bg-gradient-to-r ${event.gradient.className} rounded-3xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500`}
+        ></div>
+
+        <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105 h-full flex flex-col cursor-pointer">
+          {/* Event Image */}
+          <div className="aspect-video relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
+            <img
+              src={event.image}
+              alt={event.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to gradient background if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
+              }}
+            />
+            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 items-center justify-center hidden">
+              <Camera className="h-16 w-16 text-gray-600" />
+            </div>
+
+            {/* Badges */}
+            <div className="absolute top-4 left-4 z-20 flex gap-2">
+              <Badge className={`bg-gradient-to-r ${event.gradient.className} text-white`}>
+                {event.type}
+              </Badge>
+              {event.isNew && (
+                <Badge className="bg-red-500 text-white animate-pulse">New</Badge>
+              )}
+            </div>
+
+            {/* Gallery indicator */}
+            <div className="absolute bottom-4 right-4 z-20">
+              <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
+                {(() => {
+                  
+                  return <Camera className="h-5 w-5 text-white" />
+                })()}
+                <span className="text-xs text-white">{event.GalleryItems.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 flex-1 flex flex-col">
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center justify-between text-sm">
+                <Badge variant="outline" className="border-white/20 text-gray-300">
+                  {event.category}
+                </Badge>
+                <div className="flex items-center gap-1 text-gray-400">
+                  <Calendar className="h-4 w-4" />
+                  {event.date}
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold text-white leading-tight">
+                {event.title}
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {event.description}
+              </p>
+
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <MapPin className="h-4 w-4" />
+                {event.branch?.header}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 mt-4 pt-4 border-t border-white/10">
+              <Link href={`/events/${event.documentId}`} className="flex-1">
+                <Button
+                  className={`w-full bg-gradient-to-r ${event.gradient.className} text-white hover:scale-105 transition-all duration-300`}
+                >
+                  View Details 
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+              <Button 
+                size="icon" 
+                className="bg-white/10 hover:bg-white/20 border border-white/20"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
-      )} */}
+      </Link>
+    ))}
+  </div>
+) : null}
+
+    
     </div>
   )
 }

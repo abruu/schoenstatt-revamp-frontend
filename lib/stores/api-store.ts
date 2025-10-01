@@ -42,12 +42,18 @@ interface ApiState {
   eventsLoading: boolean;
   eventsError: string | null;
   
+  // Single event data
+  currentEvent: Event | null;
+  currentEventLoading: boolean;
+  currentEventError: string | null;
+  
   // Generic loading states
   loading: boolean;
   error: string | null;
   
   // Actions
   fetchEvents: (params?: Record<string, any>) => Promise<void>;
+  fetchEventByDocumentId: (documentId: string) => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -91,6 +97,9 @@ export const useApiStore = create<ApiState>((set, get) => ({
   events: [],
   eventsLoading: false,
   eventsError: null,
+  currentEvent: null,
+  currentEventLoading: false,
+  currentEventError: null,
   loading: false,
   error: null,
 
@@ -148,8 +157,65 @@ export const useApiStore = create<ApiState>((set, get) => ({
     }
   },
 
+  fetchEventByDocumentId: async (documentId: string) => {
+    set({ currentEventLoading: true, currentEventError: null });
+    
+    try {
+      // Build the query parameters for single event fetch
+      const params = {
+        filters: {
+          documentId: {
+            $eq: documentId
+          }
+        },
+        populate: {
+          tags: { fields: ['name'] },
+          category: { fields: ['name'] },
+          gradient: { fields: ['name', 'className'] },
+          branch: { fields: ['header'] },
+          coverImage: { populate: '*' },
+          GalleryItems: {
+            populate: ['src'],
+            fields: ['alt', 'title', 'description']
+          }
+        },
+        sort: 'date:desc',
+        pagination: {
+          page: 1,
+          pageSize: 10
+        }
+      };
+
+      // Convert params to query string using qs
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Event[]>>(`/events?${queryString}`);
+      
+      // Since we're filtering by documentId, we should get exactly one result
+      const event = response.data.data[0] || null;
+      
+      set({ 
+        currentEvent: event,
+        currentEventLoading: false,
+        currentEventError: null 
+      });
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error?.message || error.message
+        : 'An unexpected error occurred';
+      
+      set({ 
+        currentEvent: null,
+        currentEventLoading: false,
+        currentEventError: errorMessage 
+      });
+    }
+  },
+
   clearError: () => {
-    set({ error: null, eventsError: null });
+    set({ error: null, eventsError: null, currentEventError: null });
   },
 
   setLoading: (loading: boolean) => {

@@ -17,28 +17,41 @@ import {
   ZoomIn,
   Download,
   BookOpen,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { UnifiedEvent, getRelatedArticles } from "@/lib/unified-events-data"
+import { UnifiedEvent, getRelatedArticles, mapApiEventsToUnifiedFormat } from "@/lib/unified-events-data"
 import { getIconComponent } from "@/lib/icon-mapping"
+import { useApiStore } from "@/lib/stores/api-store"
+import { SkeletonLoader } from "@/components/common/skeleton-loader"
+import { notFound } from "next/navigation"
 
 interface EventDetailContentProps {
-  event: UnifiedEvent
+  documentId: string
 }
 
-export function EventDetailContent({ event }: EventDetailContentProps) {
+export function EventDetailContent({ documentId }: EventDetailContentProps) {
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isClient, setIsClient] = useState(false)
 
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
+  // API store integration
+  const { 
+    currentEvent, 
+    currentEventLoading, 
+    currentEventError, 
+    fetchEventByDocumentId, 
+    clearError 
+  } = useApiStore();
 
+  // Convert API event to UnifiedEvent format
+  const event: UnifiedEvent | null = currentEvent ? mapApiEventsToUnifiedFormat([currentEvent])[0] : null;
+
+  // Define functions before they're used in useEffect
   const openLightbox = (index: number) => {
     setSelectedImage(index)
     setImageLoaded(false)
@@ -51,23 +64,35 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
     setIsVisible(false)
     setTimeout(() => {
       setIsLightboxOpen(false)
+      setSelectedImage(null)
       document.body.style.overflow = "unset"
     }, 300)
   }
 
   const nextImage = () => {
-    if (selectedImage !== null && event.galleryItems) {
+    if (selectedImage !== null && event?.galleryItems) {
       setImageLoaded(false)
       setSelectedImage((selectedImage + 1) % event.galleryItems.length)
     }
   }
 
   const prevImage = () => {
-    if (selectedImage !== null && event.galleryItems) {
+    if (selectedImage !== null && event?.galleryItems) {
       setImageLoaded(false)
       setSelectedImage((selectedImage - 1 + event.galleryItems.length) % event.galleryItems.length)
     }
   }
+
+  // Effects after function definitions
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
+    if (documentId) {
+      fetchEventByDocumentId(documentId);
+    }
+  }, [documentId, fetchEventByDocumentId]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -80,7 +105,62 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
     return () => document.removeEventListener("keydown", handleKeyPress)
   }, [isLightboxOpen, selectedImage])
 
-  const currentImage = selectedImage !== null && event.galleryItems ? event.galleryItems[selectedImage] : null
+  const currentImage = selectedImage !== null && event?.galleryItems ? event.galleryItems[selectedImage] : null
+
+  // Handle loading state
+  if (currentEventLoading) {
+    return (
+      <SkeletonLoader 
+        show={currentEventLoading} 
+        variant="event-detail"
+      />
+    );
+  }
+
+  // Handle error state
+  if (currentEventError) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <div className="text-red-500 font-medium">Error loading event: {currentEventError}</div>
+            <Button onClick={() => {
+              clearError();
+              fetchEventByDocumentId(documentId);
+            }} variant="outline">
+              Try Again
+            </Button>
+            <Link href="/events">
+              <Button variant="ghost">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Events
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle not found state
+  if (!event) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <div className="text-gray-400 font-medium text-lg">Event not found</div>
+            <p className="text-gray-500">The event you're looking for doesn't exist or has been removed.</p>
+            <Link href="/events">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Events
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl">

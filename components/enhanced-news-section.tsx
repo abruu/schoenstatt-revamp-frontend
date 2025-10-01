@@ -9,6 +9,7 @@ import { getEventsForNewsSection } from "@/lib/unified-events-data"
 import { useApiStore } from "@/lib/stores/api-store"
 import { DateDisplay } from "@/components/common/date-display"
 import { AdaptiveImage } from "@/components/common/adaptive-image"
+import { SkeletonLoader } from "@/components/common/skeleton-loader"
 
 export function EnhancedNewsSection() {
   const { 
@@ -28,19 +29,6 @@ export function EnhancedNewsSection() {
 
   // Get news articles from unified events data
   const newsArticles = getEventsForNewsSection()
-  // Loading state
-  if(eventsLoading) return (
-    <div className="flex items-center justify-center py-8">
-      <Loader2 className="w-8 h-8 animate-spin mr-2" />
-      <span className="text-lg">Loading events...</span>
-      <Button onClick={() => {
-        clearError();
-        fetchEvents();
-      }} variant="outline">
-        Try Again
-      </Button>
-    </div>
-  )
   
   // Error state
   if(eventsError) return (
@@ -72,8 +60,30 @@ export function EnhancedNewsSection() {
       </p>
     </div>
 
-    <div className="grid md:grid-cols-2 gap-8">
-      {newsArticles.map((article, index) => (
+    {/* Loading skeleton */}
+    {eventsLoading ? (
+      <SkeletonLoader 
+        count={4} 
+        show={eventsLoading} 
+        variant="news-card"
+      />
+    ) : newsArticles.length === 0 ? (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="p-6 rounded-full bg-white/5 border border-white/10">
+          <Zap className="h-12 w-12 text-gray-400" />
+        </div>
+        <div className="text-gray-400 font-medium text-lg">No news articles available at the moment</div>
+        <p className="text-gray-500 text-center max-w-md">There are currently no news or updates to display. Please check back later for the latest information.</p>
+        <Button onClick={() => {
+          clearError();
+          fetchEvents();
+        }} variant="outline" className="mt-2">
+          Refresh
+        </Button>
+      </div>
+    ) : (
+      <div className="grid md:grid-cols-2 gap-8">
+        {newsArticles.map((article, index) => (
        <div
        key={article.id}
        className="relative group"
@@ -156,8 +166,9 @@ export function EnhancedNewsSection() {
          </div>
        </div>
      </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    )}
 
     <div className="text-center">
       <Link href="/events">
