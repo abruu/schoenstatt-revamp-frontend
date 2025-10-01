@@ -91,7 +91,7 @@ export function NoticeBoard() {
       <div className="relative">
         {/* Glowing background */}
         <div
-          className={`absolute -inset-1 bg-gradient-to-r ${currentNoticeData.gradient} rounded-2xl blur-lg opacity-30 animate-pulse`}
+          className={`absolute -inset-1 bg-gradient-to-r ${currentNoticeData?.gradient?.className} rounded-2xl blur-lg opacity-30 animate-pulse`}
         ></div>
 
         {/* Main notice board */}
@@ -100,7 +100,7 @@ export function NoticeBoard() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div
-                className={`w-8 h-8 bg-gradient-to-r ${currentNoticeData.gradient} rounded-full flex items-center justify-center`}
+                className={`w-8 h-8 bg-gradient-to-r ${currentNoticeData?.gradient?.className} rounded-full flex items-center justify-center`}
               >
                 <Bell className="h-4 w-4 text-white animate-bounce" />
               </div>
@@ -126,7 +126,7 @@ export function NoticeBoard() {
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <div
-                className={`w-10 h-10 bg-gradient-to-r ${currentNoticeData.gradient} rounded-lg flex items-center justify-center flex-shrink-0`}
+                className={`w-10 h-10 bg-gradient-to-r ${currentNoticeData?.gradient?.className} rounded-lg flex items-center justify-center flex-shrink-0`}
               >
                 {(() => {
                   const IconComponent = getIconComponent(currentNoticeData.icon)
@@ -135,7 +135,7 @@ export function NoticeBoard() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className={`bg-gradient-to-r ${currentNoticeData.gradient} text-white text-xs`}>
+                  <Badge className={`bg-gradient-to-r ${currentNoticeData?.gradient?.className} text-white text-xs`}>
                     {currentNoticeData.type}
                   </Badge>
                   {currentNoticeData.isNew && (
@@ -152,7 +152,7 @@ export function NoticeBoard() {
                   <Link href={`/events/${currentNoticeData.id}`}>
                     <Button
                       size="sm"
-                      className={`bg-gradient-to-r ${currentNoticeData.gradient} text-white text-xs px-2 sm:px-3 py-1 h-auto`}
+                      className={`bg-gradient-to-r ${currentNoticeData?.gradient?.className} text-white text-xs px-2 sm:px-3 py-1 h-auto`}
                     >
                       <span className="hidden sm:inline">Read More</span>
                       <span className="sm:hidden">Read</span>
@@ -172,7 +172,7 @@ export function NoticeBoard() {
                 onClick={() => setCurrentNotice(index)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === currentNotice
-                    ? `bg-gradient-to-r ${currentNoticeData.gradient}`
+                    ? `bg-gradient-to-r ${currentNoticeData?.gradient?.className}`
                     : "bg-white/20 hover:bg-white/40"
                 }`}
               />

@@ -1,5 +1,6 @@
 // Icons are now stored as strings and mapped to components in client components
 // This avoids serialization issues with React components
+import { useApiStore } from "./stores/api-store";
 
 export interface GalleryItem {
   id: number;
@@ -46,7 +47,8 @@ export interface UnifiedEvent {
   showInRelatedArticles: boolean;
 }
 
-export const unifiedEventsData: UnifiedEvent[] = [
+// Static fallback data in case API fails
+export const staticEventsData: UnifiedEvent[] = [
   {
     id: 1,
     title: "New SLA Building at Kuttur, Thrissur",
@@ -847,16 +849,37 @@ export const unifiedEventsData: UnifiedEvent[] = [
   
 ];
 
-// Helper functions to filter events for specific components
-export const getEventsForEventsPage = () =>
-  unifiedEventsData.filter((event) => event.showInEventsPage);
+// Function to convert API events to UnifiedEvent format
+export const mapApiEventsToUnifiedFormat = (apiEvents: any[]): UnifiedEvent[] => {
+  if (!apiEvents || apiEvents.length === 0) return [];
+  
+  return apiEvents
+};
 
-export const getEventsForNewsSection = () =>
-  unifiedEventsData.filter((event) => event.showInNewsSection);
+// Get the current events data - either from API or fallback to static data
+export const getUnifiedEventsData = (): UnifiedEvent[] => {
+  const { events } = useApiStore.getState();
+  
+  // If API has data, use it; otherwise use static data
+  return events.length > 0 ? mapApiEventsToUnifiedFormat(events) : staticEventsData;
+};
+
+// Helper functions to filter events for specific components
+export const getEventsForEventsPage = () => {
+  const eventsData = getUnifiedEventsData();
+  return eventsData.filter((event) => event.showInEventsPage);
+};
+
+export const getEventsForNewsSection = () => {
+  const eventsData = getUnifiedEventsData();
+  return eventsData.filter((event) => event.showInNewsSection);
+};
 
 export const getEventsForNoticeBoard = () => {
+  const eventsData = getUnifiedEventsData();
   const currentDate = new Date();
-  return unifiedEventsData.filter((event) => {
+  
+  return eventsData.filter((event) => {
     if (!event.showInNoticeBoard) return false;
 
     // If endDate is specified, check if it's still valid
@@ -871,20 +894,27 @@ export const getEventsForNoticeBoard = () => {
 };
 
 // Get events by priority
-export const getEventsByPriority = (priority: "high" | "medium" | "low") =>
-  unifiedEventsData.filter((event) => event.priority === priority);
+export const getEventsByPriority = (priority: "high" | "medium" | "low") => {
+  const eventsData = getUnifiedEventsData();
+  return eventsData.filter((event) => event.priority === priority);
+};
 
 // Get new events
-export const getNewEvents = () =>
-  unifiedEventsData.filter((event) => event.isNew);
+export const getNewEvents = () => {
+  const eventsData = getUnifiedEventsData();
+  return eventsData.filter((event) => event.isNew);
+};
 
 // Get events by category
-export const getEventsByCategory = (category: string) =>
-  unifiedEventsData.filter((event) => event.category === category);
+export const getEventsByCategory = (category: string) => {
+  const eventsData = getUnifiedEventsData();
+  return eventsData.filter((event) => event.category === category);
+};
 
 // Get event by ID for detail pages
 export const getEventById = (id: number): UnifiedEvent | undefined => {
-  return unifiedEventsData.find((event) => event.id === id);
+  const eventsData = getUnifiedEventsData();
+  return eventsData.find((event) => event.id === id);
 };
 
 // Get related articles for an event (excludes the current event)
@@ -892,7 +922,9 @@ export const getRelatedArticles = (
   currentEventId: number,
   limit: number = 3
 ): UnifiedEvent[] => {
-  return unifiedEventsData
+  const eventsData = getUnifiedEventsData();
+  
+  return eventsData
     .filter(
       (event) => event.showInRelatedArticles && event.id !== currentEventId
     )
