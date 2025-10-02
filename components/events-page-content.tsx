@@ -177,7 +177,7 @@ export function EventsPageContent() {
 ) : !eventsError && !eventsLoading ? (
   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
     {filteredEvents.map((event, index) => (
-      <Link href={`/events/${event.id}`} key={event.id} className="relative group">
+      <Link href={`/events/${event.documentId}`} key={event.documentId} className="relative group">
         <div
           className={`absolute -inset-1 bg-gradient-to-r ${event.gradient.className} rounded-3xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500`}
         ></div>

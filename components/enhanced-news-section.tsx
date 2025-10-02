@@ -84,8 +84,10 @@ export function EnhancedNewsSection() {
     ) : (
       <div className="grid md:grid-cols-2 gap-8">
         {newsArticles.map((article, index) => (
+            <Link href={`/events/${article.documentId}`} className="flex-1">
        <div
        key={article.id}
+       
        className="relative group"
        onMouseEnter={() => setHoveredCard(index)}
        onMouseLeave={() => setHoveredCard(null)}
@@ -154,7 +156,7 @@ export function EnhancedNewsSection() {
 
            {/* Action Button */}
            <div className="mt-4 pt-4 border-t border-white/10">
-             <Link href={`/events/${article.id}`}>
+             <Link href={`/events/${article.documentId}`}>
                <Button
                  className={`w-full justify-between text-white hover:bg-gradient-to-r hover:${article.gradient.className} hover:text-black transition-all duration-300 group/btn bg-white/5 hover:bg-white/10 border border-white/10`}
                >
@@ -165,7 +167,7 @@ export function EnhancedNewsSection() {
            </div>
          </div>
        </div>
-     </div>
+     </div></Link>
         ))}
       </div>
     )}

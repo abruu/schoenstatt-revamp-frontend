@@ -127,7 +127,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
         sort: 'date:desc',
         pagination: {
           page: 1,
-          pageSize: 10,
+        pageSize: 10,
         },
         ...params,
       };
@@ -174,6 +174,9 @@ export const useApiStore = create<ApiState>((set, get) => ({
           gradient: { fields: ['name', 'className'] },
           branch: { fields: ['header'] },
           coverImage: { populate: '*' },
+          related_articles: {
+            populate: '*'
+          },
           GalleryItems: {
             populate: ['src'],
             fields: ['alt', 'title', 'description']

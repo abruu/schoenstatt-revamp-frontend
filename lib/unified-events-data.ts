@@ -39,8 +39,11 @@ export interface UnifiedEvent {
   readTime: string;
 
   // Detail page specific
-  fullContent?: string; // HTML content for detail pages
+  fullContent?: string | any; // HTML content for detail pages (can be Strapi blocks)
   tags?: string[]; // Tags for categorization
+  
+  // Related articles
+  related_articles?: UnifiedEvent[]; // Related articles from API
 
   // Component visibility flags
   showInEventsPage: boolean;
@@ -886,7 +889,7 @@ export const mapApiEventsToUnifiedFormat = (apiEvents: any[]): UnifiedEvent[] =>
       createdAt: event.createdAt || '',
       endDate: event.endDate || '',
       category: event.category?.name || 'Updates',
-      type: event.type || 'News',
+      type: event.eventType || 'News',
       location: event.location || 'All Centers',
       image: coverImageUrl,
       coverImage: {
@@ -896,7 +899,16 @@ export const mapApiEventsToUnifiedFormat = (apiEvents: any[]): UnifiedEvent[] =>
       icon: event.icon || 'Zap',
       gradient: event.gradient || { className: 'from-blue-400 to-blue-600' },
       priority: event.priority || 'medium',
-      isNew: event.isNew || false,
+      isNew: (() => {
+        // Derive isNew from endDate - if endDate is in the future, it's considered new
+        if (event.endDate) {
+          const endDate = new Date(event.endDate);
+          const currentDate = new Date();
+          return endDate >= currentDate;
+        }
+        // If no endDate, fall back to API value or false
+        return event.isNew || false;
+      })(),
       gallery: galleryItems.map((item: any) => item.src),
       galleryItems: galleryItems,
       GalleryItems: galleryItems,
@@ -904,13 +916,14 @@ export const mapApiEventsToUnifiedFormat = (apiEvents: any[]): UnifiedEvent[] =>
       galleryCount: galleryItems.length,
       author: event.author || 'SLA Team',
       readTime: event.readTime || '3 min read',
-      fullContent: typeof event.fullContent === 'string' ? event.fullContent : event.description || '',
+      fullContent: event.fullContent,
       tags: tags,
       branch: event.branch || { header: 'All Centers' },
       showInEventsPage: event.showInEventsPage !== false,
       showInNewsSection: event.showInNewsSection !== false,
       showInNoticeBoard: event.showInNoticeBoard !== false,
-      showInRelatedArticles: event.showInRelatedArticles !== false
+      showInRelatedArticles: event.showInRelatedArticles !== false,
+      related_articles: event.related_articles || []
     };
   });
 };
@@ -930,6 +943,15 @@ export const getUnifiedEventsData = (): UnifiedEvent[] => {
   });
 };
 
+// Helper function to check if an event is still valid based on endDate
+const isEventValid = (event: UnifiedEvent): boolean => {
+  if (!event.endDate) return true; // No endDate means always valid
+  
+  const endDate = new Date(event.endDate);
+  const currentDate = new Date();
+  return endDate >= currentDate;
+};
+
 // Helper functions to filter events for specific components
 export const getEventsForEventsPage = () => {
   const eventsData = getUnifiedEventsData();
@@ -938,24 +960,19 @@ export const getEventsForEventsPage = () => {
 
 export const getEventsForNewsSection = () => {
   const eventsData = getUnifiedEventsData();
-  return eventsData.filter((event) => event.showInNewsSection);
+  
+  return eventsData.filter((event) => {
+    // Check if the event should show in news section and is still valid
+    return event.showInNewsSection && isEventValid(event);
+  });
 };
 
 export const getEventsForNoticeBoard = () => {
   const eventsData = getUnifiedEventsData();
-  const currentDate = new Date();
   
   return eventsData.filter((event) => {
-    if (!event.showInNoticeBoard) return false;
-
-    // If endDate is specified, check if it's still valid
-    if (event.endDate) {
-      const endDate = new Date(event.endDate);
-      return endDate >= currentDate;
-    }
-
-    // If no endDate specified, show the event
-    return true;
+    // Check if the event should show in notice board and is still valid
+    return event.showInNoticeBoard && isEventValid(event);
   });
 };
 
@@ -965,10 +982,37 @@ export const getEventsByPriority = (priority: "high" | "medium" | "low") => {
   return eventsData.filter((event) => event.priority === priority);
 };
 
-// Get new events
+// Get new events (now derived from endDate)
 export const getNewEvents = () => {
   const eventsData = getUnifiedEventsData();
   return eventsData.filter((event) => event.isNew);
+};
+
+// Test function to demonstrate date filtering logic
+export const testDateFiltering = () => {
+  const currentDate = new Date();
+  const futureDate = new Date();
+  futureDate.setDate(currentDate.getDate() + 10); // 10 days from now
+  
+  const pastDate = new Date();
+  pastDate.setDate(currentDate.getDate() - 5); // 5 days ago
+  
+  console.log('Date Filtering Test:');
+  console.log('Current Date:', currentDate.toISOString().split('T')[0]);
+  console.log('Future Date (valid):', futureDate.toISOString().split('T')[0]);
+  console.log('Past Date (expired):', pastDate.toISOString().split('T')[0]);
+  
+  // Test events
+  const testEvents = [
+    { endDate: futureDate.toISOString().split('T')[0], title: 'Future Event' },
+    { endDate: pastDate.toISOString().split('T')[0], title: 'Past Event' },
+    { endDate: undefined, title: 'No End Date Event' }
+  ];
+  
+  testEvents.forEach(event => {
+    const isValid = isEventValid(event as any);
+    console.log(`${event.title} (endDate: ${event.endDate || 'none'}): ${isValid ? 'VALID' : 'EXPIRED'}`);
+  });
 };
 
 // Get events by category
@@ -990,9 +1034,19 @@ export const getRelatedArticles = (
 ): UnifiedEvent[] => {
   const eventsData = getUnifiedEventsData();
   
+  // Find the current event
+  const currentEvent = eventsData.find(event => event.id === currentEventId);
+  
+  // If the event has related_articles from API, use those
+  if (currentEvent?.related_articles && currentEvent.related_articles.length > 0) {
+    // Return the related articles, limited to the specified number
+    return currentEvent.related_articles.slice(0, limit);
+  }
+  
+  // Fallback to the old filtering method if no related_articles are available
   return eventsData
     .filter(
-      (event) => event.showInRelatedArticles && event.id !== currentEventId
+      (event) =>  event.id !== currentEventId
     )
     .sort((a, b) => {
       // Sort by priority first (high > medium > low), then by date (newest first)

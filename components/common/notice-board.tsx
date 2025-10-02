@@ -150,7 +150,7 @@ export function NoticeBoard() {
                     {/* <Calendar className="h-3 w-3" /> */}
                     <DateDisplay date={currentNoticeData.date} />
                   </div>
-                  <Link href={`/events/${currentNoticeData.id}`}>
+                  <Link href={`/events/${currentNoticeData.documentId}`}>
                     <Button
                       size="sm"
                       className={`bg-gradient-to-r ${currentNoticeData?.gradient?.className} text-white text-xs px-2 sm:px-3 py-1 h-auto`}
