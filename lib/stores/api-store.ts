@@ -24,6 +24,85 @@ interface Event {
   };
 }
 
+interface Category {
+  id: number;
+  documentId: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  name: string;
+  slug: string;
+  WhichPage: string;
+}
+
+interface GalleryImage {
+  id: number;
+  documentId: string;
+  name: string;
+  alternativeText?: string;
+  caption?: string;
+  width: number;
+  height: number;
+  formats: {
+    large?: { url: string; width: number; height: number; };
+    medium?: { url: string; width: number; height: number; };
+    small?: { url: string; width: number; height: number; };
+    thumbnail?: { url: string; width: number; height: number; };
+  };
+  hash: string;
+  ext: string;
+  mime: string;
+  size: number;
+  url: string;
+  previewUrl?: string;
+  provider: string;
+  provider_metadata?: any;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
+interface Gallery {
+  id: number;
+  documentId: string;
+  title: string;
+  description: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  category: Category;
+  tags: Array<{
+    id: number;
+    documentId: string;
+    name: string;
+    slug: string;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string;
+  }>;
+  branch: {
+    id: number;
+    documentId: string;
+    name: string;
+    header: string;
+    phone: string;
+    callno: string;
+    email: string;
+    timings: string;
+    students: string;
+    established: string;
+    instagram: string;
+    facebook: string;
+    location: string;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string;
+    address: string;
+  };
+  image: GalleryImage[];
+}
+
 interface ApiResponse<T> {
   data: T;
   meta: {
@@ -41,21 +120,46 @@ interface ApiState {
   events: Event[];
   eventsLoading: boolean;
   eventsError: string | null;
+  eventsPage: number;
+  eventsHasMore: boolean;
+  eventsLoadingMore: boolean;
   
   // Single event data
   currentEvent: Event | null;
   currentEventLoading: boolean;
   currentEventError: string | null;
   
+  // Categories data
+  categories: Category[];
+  categoriesLoading: boolean;
+  categoriesError: string | null;
+  
+  // Galleries data
+  galleries: Gallery[];
+  galleriesLoading: boolean;
+  galleriesError: string | null;
+  galleriesPage: number;
+  galleriesHasMore: boolean;
+  galleriesLoadingMore: boolean;
+  
   // Generic loading states
   loading: boolean;
   error: string | null;
   
+  // Cache management
+  lastFetchTime: number | null;
+  galleriesLastFetchTime: number | null;
+  cacheExpiry: number; // Cache expiry time in milliseconds (default: 5 minutes)
+  
   // Actions
-  fetchEvents: (params?: Record<string, any>) => Promise<void>;
+  fetchEvents: (params?: Record<string, any>, forceRefresh?: boolean) => Promise<void>;
+  loadMoreEvents: () => Promise<void>;
   fetchEventByDocumentId: (documentId: string) => Promise<void>;
+  fetchCategories: (forceRefresh?: boolean) => Promise<void>;
+  loadMoreGalleries: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  clearCache: () => void;
 }
 
 // Create axios instance with base configuration
@@ -97,15 +201,51 @@ export const useApiStore = create<ApiState>((set, get) => ({
   events: [],
   eventsLoading: false,
   eventsError: null,
+  eventsPage: 1,
+  eventsHasMore: true,
+  eventsLoadingMore: false,
   currentEvent: null,
   currentEventLoading: false,
   currentEventError: null,
+  categories: [],
+  categoriesLoading: false,
+  categoriesError: null,
+  galleries: [],
+  galleriesLoading: false,
+  galleriesError: null,
+  galleriesPage: 1,
+  galleriesHasMore: true,
+  galleriesLoadingMore: false,
   loading: false,
   error: null,
+  
+  // Cache management
+  lastFetchTime: null,
+  categoriesLastFetchTime: null,
+  galleriesLastFetchTime: null,
+  cacheExpiry: 5 * 60 * 1000, // 5 minutes in milliseconds
 
   // Actions
-  fetchEvents: async (params = {}) => {
-    set({ eventsLoading: true, eventsError: null });
+  fetchEvents: async (params = {}, forceRefresh = false) => {
+    const state = get();
+    const currentTime = Date.now();
+    
+    // Check if we have cached data and it's still valid
+    const isCacheValid = state.lastFetchTime && 
+                        (currentTime - state.lastFetchTime) < state.cacheExpiry;
+    
+    // If we have valid cached data and not forcing refresh, return early
+    if (!forceRefresh && isCacheValid && state.events.length > 0) {
+      console.log('Using cached events data');
+      return;
+    }
+    
+    set({ 
+      eventsLoading: true, 
+      eventsError: null,
+      eventsPage: 1,
+      eventsHasMore: true
+    });
     
     try {
       // Default parameters for Strapi with detailed population
@@ -113,21 +253,19 @@ export const useApiStore = create<ApiState>((set, get) => ({
         // Detailed population parameters
         populate: {
           tags: { fields: ['name'] },
-          category: { fields: ['name'] },
+          category: { fields: ['name','slug','WhichPage'] },
           gradient: { fields: ['name','className'] },
           branch: { fields: ['header'] },
-          coverImage: { fields: ['formats', 'name'] },
+          coverImage: { populate: '*' },
           GalleryItems: {
             populate: ['src'],
             fields: ['alt', 'title', 'description']
           },
-          // Include any other relations that need to be populated
-          coverImage: { populate: '*' },
         },
         sort: 'date:desc',
         pagination: {
           page: 1,
-        pageSize: 10,
+          pageSize: 9, // Load 9 events per page for better performance
         },
         ...params,
       };
@@ -138,11 +276,15 @@ export const useApiStore = create<ApiState>((set, get) => ({
       });
 
       const response = await api.get<ApiResponse<Event[]>>(`/events?${queryString}`);
+      const { data, meta } = response.data;
       
       set({ 
-        events: response.data.data,
+        events: data,
         eventsLoading: false,
-        eventsError: null 
+        eventsError: null,
+        eventsPage: 1,
+        eventsHasMore: meta.pagination.page < meta.pagination.pageCount,
+        lastFetchTime: Date.now() // Update cache timestamp
       });
     } catch (error) {
       const errorMessage = error instanceof AxiosError 
@@ -152,7 +294,67 @@ export const useApiStore = create<ApiState>((set, get) => ({
       set({ 
         events: [],
         eventsLoading: false,
-        eventsError: errorMessage 
+        eventsError: errorMessage,
+        eventsHasMore: false
+      });
+    }
+  },
+
+  loadMoreEvents: async () => {
+    const state = get();
+    
+    // Don't load more if already loading or no more data available
+    if (state.eventsLoadingMore || !state.eventsHasMore) {
+      return;
+    }
+    
+    set({ eventsLoadingMore: true, eventsError: null });
+    
+    try {
+      const nextPage = state.eventsPage + 1;
+      
+      // Build query parameters for next page
+      const params = {
+        populate: {
+          tags: { fields: ['name'] },
+          category: { fields: ['name','slug','WhichPage'] },
+          gradient: { fields: ['name','className'] },
+          branch: { fields: ['header'] },
+          coverImage: { populate: '*' },
+          GalleryItems: {
+            populate: ['src'],
+            fields: ['alt', 'title', 'description']
+          },
+        },
+        sort: 'date:desc',
+        pagination: {
+          page: nextPage,
+          pageSize: 9
+        }
+      };
+
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Event[]>>(`/events?${queryString}`);
+      const { data, meta } = response.data;
+      
+      set({ 
+        events: [...state.events, ...data], // Append new events
+        eventsLoadingMore: false,
+        eventsError: null,
+        eventsPage: nextPage,
+        eventsHasMore: meta.pagination.page < meta.pagination.pageCount
+      });
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error?.message || error.message
+        : 'An unexpected error occurred while loading more events';
+      
+      set({ 
+        eventsLoadingMore: false,
+        eventsError: errorMessage
       });
     }
   },
@@ -170,7 +372,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
         },
         populate: {
           tags: { fields: ['name'] },
-          category: { fields: ['name'] },
+          category: { fields: ['name','slug','WhichPage'] },
           gradient: { fields: ['name', 'className'] },
           branch: { fields: ['header'] },
           coverImage: { populate: '*' },
@@ -217,12 +419,195 @@ export const useApiStore = create<ApiState>((set, get) => ({
     }
   },
 
+  fetchCategories: async (forceRefresh = false) => {
+    const state = get();
+    const currentTime = Date.now();
+    
+    // Check if we have cached categories data and it's still valid
+    const isCacheValid = state.categoriesLastFetchTime && 
+                        (currentTime - state.categoriesLastFetchTime) < state.cacheExpiry;
+    
+    // If we have valid cached data and not forcing refresh, return early
+    if (!forceRefresh && isCacheValid && state.categories.length > 0) {
+      console.log('Using cached categories data');
+      return;
+    }
+    
+    set({ categoriesLoading: true, categoriesError: null });
+    
+    try {
+      // Build query parameters without WhichPage filter to get all categories
+      const params = {
+        sort: 'name:asc',
+        pagination: {
+          page: 1,
+          pageSize: 50 // Increased page size to get all categories
+        }
+      };
+
+      // Convert params to query string using qs
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Category[]>>(`/categories?${queryString}`);
+      
+      set({ 
+        categories: response.data.data,
+        categoriesLoading: false,
+        categoriesError: null,
+        categoriesLastFetchTime: Date.now() // Update cache timestamp
+      });
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error?.message || error.message
+        : 'An unexpected error occurred while fetching categories';
+      
+      set({ 
+        categories: [],
+        categoriesLoading: false,
+        categoriesError: errorMessage 
+      });
+    }
+  },
+
+  fetchGalleries: async (forceRefresh = false) => {
+    const state = get();
+    const currentTime = Date.now();
+    
+    // Check if we have cached galleries data and it's still valid
+    const isCacheValid = state.galleriesLastFetchTime && 
+                        (currentTime - state.galleriesLastFetchTime) < state.cacheExpiry;
+    
+    // If we have valid cached data and not forcing refresh, return early
+    if (!forceRefresh && isCacheValid && state.galleries.length > 0) {
+      console.log('Using cached galleries data');
+      return;
+    }
+    
+    set({ 
+      galleriesLoading: true, 
+      galleriesError: null,
+      galleriesPage: 1,
+      galleriesHasMore: true
+    });
+    
+    try {
+      // Build query parameters for galleries with full population
+      const params = {
+        populate: '*', // Populate all relations
+        sort: 'date:desc',
+        pagination: {
+          page: 1,
+          pageSize: 12 // Load 12 items per page for better performance
+        }
+      };
+
+      // Convert params to query string using qs
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Gallery[]>>(`/galleries?${queryString}`);
+      const { data, meta } = response.data;
+      
+      set({ 
+        galleries: data,
+        galleriesLoading: false,
+        galleriesError: null,
+        galleriesPage: 1,
+        galleriesHasMore: meta.pagination.page < meta.pagination.pageCount,
+        galleriesLastFetchTime: Date.now() // Update cache timestamp
+      });
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error?.message || error.message
+        : 'An unexpected error occurred while fetching galleries';
+      
+      set({ 
+        galleries: [],
+        galleriesLoading: false,
+        galleriesError: errorMessage,
+        galleriesHasMore: false
+      });
+    }
+  },
+
+  loadMoreGalleries: async () => {
+    const state = get();
+    
+    // Don't load more if already loading or no more data available
+    if (state.galleriesLoadingMore || !state.galleriesHasMore) {
+      return;
+    }
+    
+    set({ galleriesLoadingMore: true, galleriesError: null });
+    
+    try {
+      const nextPage = state.galleriesPage + 1;
+      
+      // Build query parameters for next page
+      const params = {
+        populate: '*',
+        sort: 'date:desc',
+        pagination: {
+          page: nextPage,
+          pageSize: 12
+        }
+      };
+
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Gallery[]>>(`/galleries?${queryString}`);
+      const { data, meta } = response.data;
+      
+      set({ 
+        galleries: [...state.galleries, ...data], // Append new galleries
+        galleriesLoadingMore: false,
+        galleriesError: null,
+        galleriesPage: nextPage,
+        galleriesHasMore: meta.pagination.page < meta.pagination.pageCount
+      });
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error?.message || error.message
+        : 'An unexpected error occurred while loading more galleries';
+      
+      set({ 
+        galleriesLoadingMore: false,
+        galleriesError: errorMessage
+      });
+    }
+  },
+
   clearError: () => {
-    set({ error: null, eventsError: null, currentEventError: null });
+    set({ error: null, eventsError: null, currentEventError: null, categoriesError: null, galleriesError: null });
   },
 
   setLoading: (loading: boolean) => {
     set({ loading });
+  },
+
+  clearCache: () => {
+    set({ 
+      events: [], 
+      categories: [],
+      galleries: [],
+      lastFetchTime: null,
+      categoriesLastFetchTime: null,
+      galleriesLastFetchTime: null,
+      eventsError: null,
+      categoriesError: null,
+      galleriesError: null,
+      galleriesPage: 1,
+      galleriesHasMore: true,
+      galleriesLoadingMore: false,
+      eventsPage: 1,
+      eventsHasMore: true,
+      eventsLoadingMore: false
+    });
   },
 }));
 
@@ -286,7 +671,7 @@ export const apiHelpers = {
       };
     }
 
-    return useApiStore.getState().fetchEvents(params);
+    return useApiStore.getState().fetchEvents(params, false); // Use cache by default
   },
 
   // Get single event by ID

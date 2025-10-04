@@ -115,20 +115,21 @@ export function ImageLightbox({
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-7xl h-full max-h-[90vh] bg-black/50 border border-white/10 rounded-2xl flex flex-col lg:flex-row overflow-hidden"
+        className="relative w-full max-w-7xl h-full overflow-auto max-h-[90vh] bg-black/50 border border-white/10 rounded-2xl flex flex-col lg:flex-row "
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <Button
-          onClick={handleClose}
-          className="absolute top-3 right-3 z-[51] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20"
-          size="icon"
-        >
-          <X className="h-5 w-5" />
-        </Button>
+  onClick={handleClose}
+  className="absolute top-3 right-3 z-[51] w-10 h-10 rounded-full text-white bg-white/10 hover:bg-white/20"
+  size="icon"
+>
+  <X className="h-5 w-5 text-white" />
+</Button>
+
 
         {/* Main Image Area */}
-        <div className="flex-grow flex items-center justify-center p-4 lg:p-8 relative">
+        <div className="flex-grow mt-4 flex items-center justify-center p-4 lg:p-8 relative">
           {/* Previous Button - Only show if multiple images */}
           {hasMultipleImages && (
             <Button
@@ -136,7 +137,7 @@ export function ImageLightbox({
               className="absolute left-2 top-1/2 -translate-y-1/2 z-[51] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 lg:w-12 lg:h-12"
               size="icon"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-6 w-6 text-white" />
             </Button>
           )}
 
@@ -165,14 +166,14 @@ export function ImageLightbox({
               className="absolute right-2 top-1/2 -translate-y-1/2 z-[51] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 lg:w-12 lg:h-12"
               size="icon"
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-6 w-6 text-white" />
             </Button>
           )}
         </div>
 
         {/* Sidebar - Only show if showImageInfo is true or has multiple images with thumbnails */}
         {(showImageInfo || (hasMultipleImages && showThumbnails)) && (
-          <div className="w-full lg:w-[350px] flex-shrink-0 bg-black/30 border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col">
+          <div className="w-full mt-7 lg:w-[350px] flex-shrink-0 bg-black/30 border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col">
             {/* Image Info */}
             {showImageInfo && (currentImage.title || currentImage.description) && (
               <div className="p-6 border-b border-white/10">
@@ -188,7 +189,7 @@ export function ImageLightbox({
             {/* Thumbnails - Only show if multiple images and showThumbnails is true */}
             {hasMultipleImages && showThumbnails && (
               <div className="flex-grow overflow-y-auto p-6 pt-0">
-                <h4 className="text-lg font-semibold text-white mb-4">
+                <h4 className="text-lg mt-4 font-semibold text-white mb-4">
                   More Photos ({currentIndex + 1} / {images.length})
                 </h4>
                 <div className="grid grid-cols-3 gap-2">

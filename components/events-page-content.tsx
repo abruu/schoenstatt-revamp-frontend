@@ -11,6 +11,7 @@ import { getEventsForEventsPage } from "@/lib/unified-events-data"
 import { getIconComponent } from "@/lib/icon-mapping"
 import { useApiStore } from "@/lib/stores/api-store"
 import { SkeletonLoader } from "@/components/common/skeleton-loader"
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
 
 export function EventsPageContent() {
   const [selectedCategory, setSelectedCategory] = useState("all")
@@ -21,34 +22,73 @@ export function EventsPageContent() {
     events: apiEvents, 
     eventsLoading, 
     eventsError, 
+    eventsHasMore,
+    eventsLoadingMore,
     fetchEvents, 
+    loadMoreEvents,
+    categories: apiCategories,
+    categoriesLoading,
+    categoriesError,
+    fetchCategories,
     clearError 
   } = useApiStore();
+  
+  // Initialize infinite scroll
+  const { loadingRef } = useInfiniteScroll({
+    hasMore: eventsHasMore,
+    isLoading: eventsLoadingMore,
+    onLoadMore: loadMoreEvents,
+    threshold: 300
+  });
 
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents]);
+    fetchCategories(false); // Fetch all categories with forceRefresh=false
+  }, [fetchEvents, fetchCategories]);
 
   const events = getEventsForEventsPage()
 
-  const categories = [
-    { id: "all", name: "All Events", count: events.length },
-    { id: "Updates", name: "SLA Updates", count: events.filter((e) => e.category === "Updates").length },
-    {
-      id: "Connect",
-      name: "SLA Connect",
-      count: events.filter((e) => e.category === "Connect").length,
-    },
-    {
-      id: "Care",
-      name: "SLA Cares",
-      count: events.filter((e) => e.category === "Care").length,
-    },
-
-  ]
+  // Build dynamic categories from API data with client-side filtering
+  const buildCategories = () => {
+    const allCategory = { id: "all", name: "All Events", count: events.length };
+    
+    if (categoriesLoading || apiCategories.length === 0) {
+      // Show loading or fallback categories
+      return [
+        allCategory,
+        { id: "Updates", name: "SLA Updates", count: events.filter((e) => e.category === "Updates").length },
+        { id: "Connect", name: "SLA Connect", count: events.filter((e) => e.category === "Connect").length },
+        { id: "Care", name: "SLA Cares", count: events.filter((e) => e.category === "Care").length },
+      ];
+    }
+    
+    // Filter categories by WhichPage='events' on the client side
+    const eventsCategories = apiCategories.filter(category => category.WhichPage === 'events');
+    
+    // Build categories from filtered API data
+    const dynamicCategories = eventsCategories.map(category => ({
+      id: category.slug,
+      name: category.name,
+      count: events.filter((e) => e.category === category.name).length
+    }));
+    
+    return [allCategory, ...dynamicCategories];
+  };
+  
+  const categories = buildCategories();
 
   const filteredEvents = events
-    .filter((event) => selectedCategory === "all" || event.category === selectedCategory)
+    .filter((event) => {
+      if (selectedCategory === "all") return true;
+      
+      // Find the selected category from API data
+      const selectedCategoryData = apiCategories.find(cat => cat.slug === selectedCategory);
+      
+      // If we found the category, filter by name; otherwise use the selectedCategory directly
+      const categoryToMatch = selectedCategoryData ? selectedCategoryData.name : selectedCategory;
+      
+      return event.category === categoryToMatch;
+    })
     .filter(
       (event) =>
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,20 +132,32 @@ export function EventsPageContent() {
       <div className="space-y-6">
         {/* Category Filters */}
         <div className="flex flex-wrap justify-center gap-3">
-          {categories.map((category) => (
-            <Button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 ${
-                selectedCategory === category.id
-                  ? "bg-gradient-to-r from-blue-400 to-purple-500 text-white shadow-lg"
-                  : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/10"
-              }`}
-            >
-              {category.name}
-              <Badge className="bg-white/20 text-xs">{category.count}</Badge>
-            </Button>
-          ))}
+          {categoriesLoading ? (
+            // Show skeleton buttons while loading categories
+            Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="px-4 py-2 rounded-full bg-white/5 border border-white/10 animate-pulse"
+              >
+                <div className="h-4 w-20 bg-white/10 rounded"></div>
+              </div>
+            ))
+          ) : (
+            categories.map((category) => (
+              <Button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 ${
+                  selectedCategory === category.id
+                    ? "bg-gradient-to-r from-blue-400 to-purple-500 text-white shadow-lg"
+                    : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/10"
+                }`}
+              >
+                {category.name}
+                <Badge className="bg-white/20 text-xs">{category.count}</Badge>
+              </Button>
+            ))
+          )}
         </div>
 
         {/* Search and Sort */}
@@ -134,12 +186,18 @@ export function EventsPageContent() {
       </div>
 
       {/* Error state */}
-      {eventsError && (
+      {(eventsError || categoriesError) && (
         <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <div className="text-red-500 font-medium">Error loading events: {eventsError}</div>
+          {eventsError && (
+            <div className="text-red-500 font-medium">Error loading events: {eventsError}</div>
+          )}
+          {categoriesError && (
+            <div className="text-red-500 font-medium">Error loading categories: {categoriesError}</div>
+          )}
           <Button onClick={() => {
             clearError();
             fetchEvents();
+            fetchCategories(true); // Force refresh
           }} variant="outline">
             Try Again
           </Button>
@@ -167,6 +225,7 @@ export function EventsPageContent() {
       onClick={() => {
         clearError();
         fetchEvents();
+        fetchCategories(true); // Force refresh
       }} 
       variant="outline" 
       className="mt-2"
@@ -275,6 +334,24 @@ export function EventsPageContent() {
 ) : null}
 
     
+ 
+      {eventsHasMore && (
+        <div ref={loadingRef} className="flex justify-center py-8">
+          {eventsLoadingMore && (
+            <div className="flex items-center space-x-2 text-gray-400">
+              <div className="w-6 h-6 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"></div>
+              <span>Loading more events...</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* End of Events Indicator */}
+      {!eventsHasMore && apiEvents.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-400">You've reached the end of the events</p>
+        </div>
+      )}
     </div>
   )
 }
