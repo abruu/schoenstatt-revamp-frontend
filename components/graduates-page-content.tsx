@@ -1,5 +1,9 @@
 "use client"
 import { ImageSlider } from "@/components/common/image-slider"
+import { SkeletonLoader } from "@/components/common/skeleton-loader"
+import { GraduateCard } from "@/components/common/graduate-card"
+import { useGraduates } from "@/hooks/use-graduates"
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
 
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
@@ -21,130 +25,29 @@ import {
   Share2,
   ChevronLeft,
   ChevronRight,
+  Loader2,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react"
 
-interface Graduate {
-  id: string
-  name: string
-  course: string
-  level: string
-  batch: string
-  year: string
-  center: string
-  score: string
-  certification: string
-  currentStatus: string
-  image: string
-  achievement: string
-  testimonial: string
-  gradient: string
-  icon: any
-}
-
-const graduatesData: Graduate[] = [
-  {
-    id: "1",
-    name: "Maria Joseph",
-    course: "German B2",
-    level: "B2",
-    batch: "June 2025",
-    year: "2025",
-    center: "Thrissur",
-    score: "95%",
-    certification: "Telc B2",
-    currentStatus: "Working in Germany",
-    image: "images/SLA gratuates/grad_pics/maria_joseph.png",
-    achievement: "Highest Score in B2 Telc Exam",
-    testimonial: "SLA provided excellent training that helped me achieve my dream of working in Germany.",
-    gradient: "from-yellow-400 to-orange-500",
-    icon: Trophy,
-  },
-  {
-    id: "2",
-    name: "Aleena Varky",
-    course: "German B2",
-    level: "B2",
-    batch: "June 2025",
-    year: "2025",
-    center: "Chalakudy",
-    score: "92%",
-    certification: "Telc B2",
-    currentStatus: "Studying in Germany",
-    image: "images/SLA gratuates/grad_pics/aleena.png",
-    achievement: "Outstanding Performance",
-    testimonial: "The faculty at SLA are exceptional. They made learning German enjoyable and effective.",
-    gradient: "from-blue-400 to-purple-500",
-    icon: Award,
-  },
-  {
-    id: "3",
-    name: "Ebinamol Sunny",
-    course: "German A2",
-    level: "A2",
-    batch: "April 2025",
-    year: "2025",
-    center: "Peravoor",
-    score: "89%",
-    certification: "Course Completion",
-    currentStatus: "Preparing for B1",
-    image: "images/SLA gratuates/grad_pics/ebinamol.png",
-    achievement: "Best Student Award",
-    testimonial: "SLA's teaching methodology is outstanding. I'm now confident in German communication.",
-    gradient: "from-green-400 to-teal-500",
-    icon: Medal,
-  },
-  {
-    id: "4",
-    name: "Sabin Paulson",
-    course: "German B1",
-    level: "B1",
-    batch: "March 2025",
-    year: "2025",
-    center: "Thrissur",
-    score: "91%",
-    certification: "Telc B1",
-    currentStatus: "Job Training in Germany",
-    image: "images/SLA gratuates/grad_pics/sabin.png",
-    achievement: "Excellence in Speaking",
-    testimonial: "The practical approach at SLA helped me communicate effectively in German workplace.",
-    gradient: "from-purple-400 to-pink-500",
-    icon: Star,
-  },
-  {
-    id: "5",
-    name: "Anna Elizabeth",
-    course: "German A1",
-    level: "A1",
-    batch: "February 2025",
-    year: "2025",
-    center: "Chalakudy",
-    score: "87%",
-    certification: "Course Completion",
-    currentStatus: "Continuing to A2",
-    image: "images/SLA gratuates/grad_pics/anna.png",
-    achievement: "Most Improved Student",
-    testimonial: "Starting from zero, SLA helped me build a strong foundation in German language.",
-    gradient: "from-red-400 to-orange-500",
-    icon: GraduationCap,
-  },
-  {
-    id: "6",
-    name: "Stefin Babu",
-    course: "German B2",
-    level: "B2",
-    batch: "January 2025",
-    year: "2025",
-    center: "Peravoor",
-    score: "94%",
-    certification: "Telc B2",
-    currentStatus: "Employed in Munich",
-    image: "images/SLA gratuates/grad_pics/stefin.png",
-    achievement: "Perfect Grammar Score",
-    testimonial: "SLA's comprehensive curriculum prepared me perfectly for life and work in Germany.",
-    gradient: "from-indigo-400 to-blue-500",
-    icon: Trophy,
-  },
-]
+// Add fade-in animation styles
+const fadeInStyles = `
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
+    opacity: 0;
+  }
+`
 
 const gallery = [
   "/images/SLA gratuates/SLA gratuates 1.jpg",
@@ -187,38 +90,38 @@ export function GraduatesPageContent() {
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [selectedCenter, setSelectedCenter] = useState("all")
   const [selectedYear, setSelectedYear] = useState("all")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedGraduate, setSelectedGraduate] = useState<Graduate | null>(null)
+  const [selectedGraduate, setSelectedGraduate] = useState<any>(null)
 
-  const itemsPerPage = 6
+  // Use the custom hook for data management
+  const {
+    graduates,
+    loading,
+    error,
+    hasMore,
+    loadingMore,
+    filteredGraduates,
+    stats,
+    actions
+  } = useGraduates({
+    searchTerm,
+    selectedLevel,
+    selectedCenter,
+    selectedYear,
+    autoFetch: true
+  })
 
-  const filteredGraduates = useMemo(() => {
-    return graduatesData.filter((graduate) => {
-      const matchesSearch =
-        graduate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        graduate.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        graduate.achievement.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesLevel = selectedLevel === "all" || graduate.level === selectedLevel
-      const matchesCenter = selectedCenter === "all" || graduate.center === selectedCenter
-      const matchesYear = selectedYear === "all" || graduate.year === selectedYear
-
-      return matchesSearch && matchesLevel && matchesCenter && matchesYear
-    })
-  }, [searchTerm, selectedLevel, selectedCenter, selectedYear])
-
-  const totalPages = Math.ceil(filteredGraduates.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedGraduates = filteredGraduates.slice(startIndex, startIndex + itemsPerPage)
-
-  const stats = {
-    total: graduatesData.length,
-    b2: graduatesData.filter((g) => g.level === "B2").length,
-    employed: graduatesData.filter((g) => g.currentStatus.includes("Germany")).length,
-    avgScore: Math.round(graduatesData.reduce((acc, g) => acc + Number.parseInt(g.score), 0) / graduatesData.length),
-  }
+  // Infinite scroll setup
+  const { loadingRef } = useInfiniteScroll({
+    hasMore,
+    isLoading: loadingMore,
+    onLoadMore: actions.loadMore,
+    threshold: 300
+  })
 
   return (
     <div className="pt-24 pb-16">
+      {/* Inject fade-in animation styles */}
+      <style jsx>{fadeInStyles}</style>
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="text-center space-y-6 mb-16">
@@ -273,23 +176,23 @@ export function GraduatesPageContent() {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-12">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-6 mb-12">
+          <div className="flex flex-col gap-4">
+            <div className="w-full">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search graduates by name, course, or achievement..."
+                  placeholder="Search graduates..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 h-10 text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger className="w-full sm:w-32 bg-white/10 border-white/20 text-white">
+                <SelectTrigger className="bg-white/10 border-white/20 text-white h-10 text-sm">
                   <SelectValue placeholder="Level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -302,7 +205,7 @@ export function GraduatesPageContent() {
               </Select>
 
               <Select value={selectedCenter} onValueChange={setSelectedCenter}>
-                <SelectTrigger className="w-full sm:w-36 bg-white/10 border-white/20 text-white">
+                <SelectTrigger className="bg-white/10 border-white/20 text-white h-10 text-sm">
                   <SelectValue placeholder="Center" />
                 </SelectTrigger>
                 <SelectContent>
@@ -314,7 +217,7 @@ export function GraduatesPageContent() {
               </Select>
 
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-full sm:w-28 bg-white/10 border-white/20 text-white">
+                <SelectTrigger className="bg-white/10 border-white/20 text-white h-10 text-sm">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -327,142 +230,152 @@ export function GraduatesPageContent() {
           </div>
         </div>
 
-        {/* Graduates Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {paginatedGraduates.map((graduate) => (
-            <div
-              key={graduate.id}
-              className="relative group cursor-pointer"
-              onClick={() => setSelectedGraduate(graduate)}
-            >
-              {/* Glowing background */}
-              <div
-                className={`absolute -inset-1 bg-gradient-to-r ${graduate.gradient} rounded-3xl blur-xl opacity-0 group-hover:opacity-30 transition-all duration-500`}
-              ></div>
+        {/* Loading State */}
+        {loading && (
+          <SkeletonLoader 
+            count={10} 
+            show={loading} 
+            variant="graduate-card"
+            className="mb-12"
+          />
+        )}
 
-              {/* Main card */}
-              <Card className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105">
-                <CardContent className="p-0">
-                  {/* Header with gradient */}
-                  <div className={`bg-gradient-to-r ${graduate.gradient} p-6 relative overflow-hidden`}>
-                    <div className="absolute inset-0 bg-black/20"></div>
-                    <div className="relative z-10 text-center">
-                      <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
-                        <img
-                          src={graduate.image || "/placeholder.svg"}
-                          alt={graduate.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <h3 className="text-xl font-bold text-white mb-2">{graduate.name}</h3>
-                      <div className="flex justify-center gap-2">
-                        <Badge className="bg-white/20 text-white border-white/30 text-xs">{graduate.level}</Badge>
-                        <Badge className="bg-white/20 text-white border-white/30 text-xs">{graduate.center}</Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <graduate.icon className="h-4 w-4 text-yellow-400" />
-                        <span className="text-sm text-gray-300">{graduate.achievement}</span>
-                      </div>
-                      <Badge variant="outline" className="border-green-400/30 text-green-400 text-xs">
-                        {graduate.score}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2 text-sm text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{graduate.batch}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4" />
-                        <span>{graduate.certification}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-white/10">
-                      <p className="text-sm text-gray-300 font-medium">{graduate.currentStatus}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-16 mb-12">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md mx-auto">
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-8 w-8 text-red-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Unable to Load Graduates</h3>
+              <p className="text-gray-400 mb-6">{error}</p>
+              <Button 
+                onClick={actions.refresh}
+                className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
             </div>
-          ))}
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-
-            <div className="flex gap-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(page)}
-                  className={
-                    currentPage === page
-                      ? "bg-yellow-400 text-black hover:bg-yellow-500"
-                      : "border-white/20 text-white hover:bg-white/10"
-                  }
-                >
-                  {page}
-                </Button>
-              ))}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
           </div>
         )}
 
+        {/* Empty State */}
+        {!loading && !error && filteredGraduates.length === 0 && graduates.length > 0 && (
+          <div className="text-center py-16 mb-12">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md mx-auto">
+              <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">No Graduates Found</h3>
+              <p className="text-gray-400 mb-6">
+                No graduates match your current search and filter criteria. Try adjusting your filters.
+              </p>
+              <Button 
+                onClick={() => {
+                  setSearchTerm("")
+                  setSelectedLevel("all")
+                  setSelectedCenter("all")
+                  setSelectedYear("all")
+                }}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* No Data State */}
+        {!loading && !error && graduates.length === 0 && (
+          <div className="text-center py-16 mb-12">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md mx-auto">
+              <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <GraduationCap className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">No Graduates Available</h3>
+              <p className="text-gray-400 mb-6">
+                There are no graduate records available at the moment. Please check back later.
+              </p>
+              <Button 
+                onClick={actions.refresh}
+                className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Graduates Grid */}
+        {!loading && !error && filteredGraduates.length > 0 && (
+          <div className="space-y-8 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+              {filteredGraduates.map((graduate, index) => (
+                <div
+                  key={graduate.documentId}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <GraduateCard
+                    graduate={graduate}
+                    onClick={setSelectedGraduate}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Infinite Scroll Loading Indicator */}
+            {hasMore && (
+              <div ref={loadingRef} className="flex justify-center py-8">
+                {loadingMore ? (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading more graduates...</span>
+                  </div>
+                ) : (
+                  <div className="h-8" /> // Invisible trigger element
+                )}
+              </div>
+            )}
+
+            {/* End of Content Message */}
+            {!hasMore && filteredGraduates.length > 10 && (
+              <div className="text-center py-8">
+                <p className="text-gray-400">You've reached the end of the graduates list</p>
+              </div>
+            )}
+          </div>
+        )}
+
+
         {/* Graduate Detail Modal */}
         {selectedGraduate && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gray-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className={`bg-gradient-to-r ${selectedGraduate.gradient} p-8 relative overflow-hidden`}>
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 pt-20 md:pt-4 overflow-y-auto">
+            <div className="bg-gray-900 rounded-3xl max-w-2xl w-full max-h-[80vh] md:max-h-[90vh] overflow-y-auto my-auto">
+              <div className={`bg-gradient-to-r ${selectedGraduate.gradient?.className || 'from-blue-400 to-purple-500'} p-4 sm:p-8 relative overflow-hidden`}>
                 <div className="absolute inset-0 bg-black/20"></div>
                 <div className="relative z-10">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden">
                         <img
-                          src={selectedGraduate.image || "/placeholder.svg"}
-                          alt={selectedGraduate.name}
+                          src={selectedGraduate.StudentProfileImage?.url || selectedGraduate.StudentProfileImage?.formats?.thumbnail?.url || "/placeholder.svg"}
+                          alt={selectedGraduate.StudenName}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div>
-                        <h2 className="text-3xl font-bold text-white mb-2">{selectedGraduate.name}</h2>
-                        <div className="flex gap-2">
-                          <Badge className="bg-white/20 text-white border-white/30">{selectedGraduate.course}</Badge>
+                      <div className="text-center sm:text-left mt-2 sm:mt-0">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">{selectedGraduate.StudenName}</h2>
+                        <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                           <Badge className="bg-white/20 text-white border-white/30">
-                            {selectedGraduate.center} Center
+                            {selectedGraduate.language_certification_level.LabelFull}
                           </Badge>
+                          {/* <Badge className="bg-white/20 text-white border-white/30">
+                            {selectedGraduate.branch.header}
+                          </Badge> */}
                         </div>
                       </div>
                     </div>
@@ -470,7 +383,7 @@ export function GraduatesPageContent() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setSelectedGraduate(null)}
-                      className="text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20 absolute top-2 right-2"
                     >
                       ✕
                     </Button>
@@ -478,50 +391,62 @@ export function GraduatesPageContent() {
                 </div>
               </div>
 
-              <div className="p-8 space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+              <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Achievement</h4>
-                      <p className="text-white">{selectedGraduate.achievement}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Score</h4>
-                      <p className="text-green-400 font-bold">{selectedGraduate.score}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Certification</h4>
-                      <p className="text-white">{selectedGraduate.certification}</p>
-                    </div>
+                    {selectedGraduate.achievement && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">Achievement</h4>
+                        <p className="text-white">{selectedGraduate.achievement}</p>
+                      </div>
+                    )}
+                    {selectedGraduate.score_percentage > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">Score</h4>
+                        <p className="text-green-400 font-bold">{selectedGraduate.score_percentage}%</p>
+                      </div>
+                    )}
+                    {selectedGraduate.certification && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">Certification</h4>
+                        <p className="text-white">{selectedGraduate.certification}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Batch</h4>
-                      <p className="text-white">{selectedGraduate.batch}</p>
+                      <h4 className="text-sm font-medium text-gray-400 mb-1">Graduate Date</h4>
+                      <p className="text-white">{new Date(selectedGraduate.GraduateDate).toLocaleDateString()}</p>
                     </div>
+                    {selectedGraduate.currentStatus && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">Current Status</h4>
+                        <p className="text-white">{selectedGraduate.currentStatus}</p>
+                      </div>
+                    )}
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Current Status</h4>
-                      <p className="text-white">{selectedGraduate.currentStatus}</p>
+                      <h4 className="text-sm font-medium text-gray-400 mb-1">Center</h4>
+                      <p className="text-white">{selectedGraduate.branch.name}</p>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-3">Testimonial</h4>
-                  <blockquote className="text-gray-300 italic border-l-4 border-yellow-400 pl-4">
-                    "{selectedGraduate.testimonial}"
-                  </blockquote>
-                </div>
+                {selectedGraduate.testimonial && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-400 mb-3">Testimonial</h4>
+                    <blockquote className="text-gray-300 italic border-l-4 border-yellow-400 pl-4">
+                      "{selectedGraduate.testimonial}"
+                    </blockquote>
+                  </div>
+                )}
 
-                <div className="flex gap-4 pt-4">
-                  <Button className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Certificate
-                  </Button>
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 bg-transparent">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
+                <div className="flex justify-center sm:justify-start pt-4">
+                  {selectedGraduate.certificate && (
+                    <Button className="w-full sm:w-auto bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Certificate
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

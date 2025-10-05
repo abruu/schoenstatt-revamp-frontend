@@ -33,7 +33,7 @@ interface SkeletonLoaderProps {
   /** Additional CSS classes */
   className?: string
   /** Variant of skeleton (news-card, event-card, etc.) */
-  variant?: 'news-card' | 'event-card' | 'notice-card' | 'event-detail'
+  variant?: 'news-card' | 'event-card' | 'notice-card' | 'event-detail' | 'graduate-card'
 }
 
 interface SkeletonProps {
@@ -195,6 +195,64 @@ const NoticeCardSkeleton = () => (
   </div>
 )
 
+// Graduate card skeleton that matches the GraduatesPageContent card design
+const GraduateCardSkeleton = () => (
+  <div className="relative group">
+    {/* Glowing background placeholder */}
+    <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 rounded-3xl blur-xl opacity-20"></div>
+
+    {/* Main card */}
+    <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden h-full flex flex-col">
+      {/* Header with gradient skeleton */}
+      <div className="bg-gradient-to-r from-yellow-400/30 to-orange-500/30 p-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative z-10 text-center">
+          {/* Profile image skeleton */}
+          <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mx-auto mb-4 overflow-hidden">
+            <Skeleton className="w-full h-full rounded-full" />
+          </div>
+          {/* Name skeleton */}
+          <Skeleton className="h-6 w-32 mx-auto mb-2" />
+          {/* Badges skeleton */}
+          <div className="flex justify-center gap-2">
+            <Skeleton className="h-5 w-12 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Content skeleton */}
+      <div className="p-6 space-y-4 flex-1">
+        {/* Achievement and score skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4 rounded-full" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-5 w-12 rounded-full" />
+        </div>
+
+        {/* Details skeleton */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4 rounded-full" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4 rounded-full" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+        </div>
+
+        {/* Current status skeleton */}
+        <div className="pt-2 border-t border-white/10">
+          <Skeleton className="h-4 w-36" />
+        </div>
+      </div>
+    </div>
+  </div>
+)
+
 // Event detail skeleton that matches the EventDetailContent structure
 const EventDetailSkeleton = () => (
   <div className="container mx-auto px-4 py-16 max-w-4xl">
@@ -346,6 +404,8 @@ export function SkeletonLoader({
         return <NoticeCardSkeleton />
       case 'event-detail':
         return <EventDetailSkeleton />
+      case 'graduate-card':
+        return <GraduateCardSkeleton />
       default:
         return <NewsCardSkeleton />
     }
@@ -357,7 +417,12 @@ export function SkeletonLoader({
   }
 
   return (
-    <div className={cn("grid md:grid-cols-2 gap-8", className)}>
+    <div className={cn(
+      variant === 'graduate-card' 
+        ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8" 
+        : "grid md:grid-cols-2 gap-8", 
+      className
+    )}>
       {Array.from({ length: count }, (_, index) => (
         <div key={`skeleton-${index}`}>
           {renderSkeleton()}

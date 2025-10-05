@@ -103,6 +103,62 @@ interface Gallery {
   image: GalleryImage[];
 }
 
+interface Graduate {
+  id: number;
+  documentId: string;
+  StudenName: string;
+  course?: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  GraduateDate: string;
+  score_percentage: number;
+  certification: string;
+  currentStatus: string;
+  achievement: string;
+  testimonial: string;
+  language_certification_level: {
+    id: number;
+    documentId: string;
+    LabelFull: string;
+    LabelShort: string;
+    slug: string;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string;
+  };
+  branch: {
+    id: number;
+    documentId: string;
+    name: string;
+    header: string;
+    phone: string;
+    callno: string;
+    email: string;
+    timings: string;
+    students: string;
+    established: string;
+    instagram: string;
+    facebook: string;
+    location: string;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string;
+    address: string;
+  };
+  StudentProfileImage?: GalleryImage;
+  gradient?: {
+    id: number;
+    documentId: string;
+    name: string;
+    className: string;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string;
+  };
+  certificate?: GalleryImage;
+}
+
 interface ApiResponse<T> {
   data: T;
   meta: {
@@ -142,13 +198,23 @@ interface ApiState {
   galleriesHasMore: boolean;
   galleriesLoadingMore: boolean;
   
+  // Graduates data
+  graduates: Graduate[];
+  graduatesLoading: boolean;
+  graduatesError: string | null;
+  graduatesPage: number;
+  graduatesHasMore: boolean;
+  graduatesLoadingMore: boolean;
+  
   // Generic loading states
   loading: boolean;
   error: string | null;
   
   // Cache management
   lastFetchTime: number | null;
+  categoriesLastFetchTime: number | null;
   galleriesLastFetchTime: number | null;
+  graduatesLastFetchTime: number | null;
   cacheExpiry: number; // Cache expiry time in milliseconds (default: 5 minutes)
   
   // Actions
@@ -156,7 +222,10 @@ interface ApiState {
   loadMoreEvents: () => Promise<void>;
   fetchEventByDocumentId: (documentId: string) => Promise<void>;
   fetchCategories: (forceRefresh?: boolean) => Promise<void>;
+  fetchGalleries: (forceRefresh?: boolean) => Promise<void>;
   loadMoreGalleries: () => Promise<void>;
+  fetchGraduates: (forceRefresh?: boolean) => Promise<void>;
+  loadMoreGraduates: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
   clearCache: () => void;
@@ -216,6 +285,12 @@ export const useApiStore = create<ApiState>((set, get) => ({
   galleriesPage: 1,
   galleriesHasMore: true,
   galleriesLoadingMore: false,
+  graduates: [],
+  graduatesLoading: false,
+  graduatesError: null,
+  graduatesPage: 1,
+  graduatesHasMore: true,
+  graduatesLoadingMore: false,
   loading: false,
   error: null,
   
@@ -223,6 +298,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
   lastFetchTime: null,
   categoriesLastFetchTime: null,
   galleriesLastFetchTime: null,
+  graduatesLastFetchTime: null,
   cacheExpiry: 5 * 60 * 1000, // 5 minutes in milliseconds
 
   // Actions
@@ -582,8 +658,119 @@ export const useApiStore = create<ApiState>((set, get) => ({
     }
   },
 
+  fetchGraduates: async (forceRefresh = false) => {
+    const state = get();
+    const currentTime = Date.now();
+    
+    // Check if we have cached graduates data and it's still valid
+    const isCacheValid = state.graduatesLastFetchTime && 
+                        (currentTime - state.graduatesLastFetchTime) < state.cacheExpiry;
+    
+    // If we have valid cached data and not forcing refresh, return early
+    if (!forceRefresh && isCacheValid && state.graduates.length > 0) {
+      console.log('Using cached graduates data');
+      return;
+    }
+    
+    set({ 
+      graduatesLoading: true, 
+      graduatesError: null,
+      graduatesPage: 1,
+      graduatesHasMore: true
+    });
+    
+    try {
+      // Build query parameters for graduates with full population
+      const params = {
+        populate: '*', // Populate all relations
+        sort: 'GraduateDate:desc',
+        pagination: {
+          page: 1,
+          pageSize: 10 // Load 10 graduates per page for better performance
+        }
+      };
+
+      // Convert params to query string using qs
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Graduate[]>>(`/graduates?${queryString}`);
+      const { data, meta } = response.data;
+      
+      set({ 
+        graduates: data,
+        graduatesLoading: false,
+        graduatesError: null,
+        graduatesPage: 1,
+        graduatesHasMore: meta.pagination.page < meta.pagination.pageCount,
+        graduatesLastFetchTime: Date.now() // Update cache timestamp
+      });
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error?.message || error.message
+        : 'An unexpected error occurred while fetching graduates';
+      
+      set({ 
+        graduates: [],
+        graduatesLoading: false,
+        graduatesError: errorMessage,
+        graduatesHasMore: false
+      });
+    }
+  },
+
+  loadMoreGraduates: async () => {
+    const state = get();
+    
+    // Don't load more if already loading or no more data available
+    if (state.graduatesLoadingMore || !state.graduatesHasMore) {
+      return;
+    }
+    
+    set({ graduatesLoadingMore: true, graduatesError: null });
+    
+    try {
+      const nextPage = state.graduatesPage + 1;
+      
+      // Build query parameters for next page
+      const params = {
+        populate: '*',
+        sort: 'GraduateDate:desc',
+        pagination: {
+          page: nextPage,
+          pageSize: 10
+        }
+      };
+
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Graduate[]>>(`/graduates?${queryString}`);
+      const { data, meta } = response.data;
+      
+      set({ 
+        graduates: [...state.graduates, ...data], // Append new graduates
+        graduatesLoadingMore: false,
+        graduatesError: null,
+        graduatesPage: nextPage,
+        graduatesHasMore: meta.pagination.page < meta.pagination.pageCount
+      });
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error?.message || error.message
+        : 'An unexpected error occurred while loading more graduates';
+      
+      set({ 
+        graduatesLoadingMore: false,
+        graduatesError: errorMessage
+      });
+    }
+  },
+
   clearError: () => {
-    set({ error: null, eventsError: null, currentEventError: null, categoriesError: null, galleriesError: null });
+    set({ error: null, eventsError: null, currentEventError: null, categoriesError: null, galleriesError: null, graduatesError: null });
   },
 
   setLoading: (loading: boolean) => {
@@ -595,15 +782,20 @@ export const useApiStore = create<ApiState>((set, get) => ({
       events: [], 
       categories: [],
       galleries: [],
+      graduates: [],
       lastFetchTime: null,
-      categoriesLastFetchTime: null,
       galleriesLastFetchTime: null,
+      graduatesLastFetchTime: null,
       eventsError: null,
       categoriesError: null,
       galleriesError: null,
+      graduatesError: null,
       galleriesPage: 1,
       galleriesHasMore: true,
       galleriesLoadingMore: false,
+      graduatesPage: 1,
+      graduatesHasMore: true,
+      graduatesLoadingMore: false,
       eventsPage: 1,
       eventsHasMore: true,
       eventsLoadingMore: false
