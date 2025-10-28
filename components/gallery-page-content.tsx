@@ -27,8 +27,8 @@ interface GalleryPageContentProps {
   className?: string;
 }
 
-export function GalleryPageContent({ 
-  showCategories = true, 
+export function GalleryPageContent({
+  showCategories = true,
   maxImages,
   showViewAllButton = false,
   isPreview = false,
@@ -40,7 +40,7 @@ export function GalleryPageContent({
   const [searchTerm, setSearchTerm] = useState("")
   const [isClient, setIsClient] = useState(false)
 
-  const { 
+  const {
     categories: apiCategories,
     categoriesLoading,
     categoriesError,
@@ -72,29 +72,29 @@ export function GalleryPageContent({
   // Transform API galleries into individual images
   const transformApiGalleriesToImages = () => {
     const images: any[] = [];
-    
+
     apiGalleries.forEach((gallery) => {
-      gallery.image.forEach((img, index) => {
+      gallery?.image?.forEach((img, index) => {
         images.push({
-          id: `${gallery.id}-${img.id}`,
-          src: img.url,
-          alt: img.alternativeText || gallery.title,
-          category: gallery.category?.slug || 'general',
-          title: gallery.title,
-          description: gallery.description,
-          date: gallery.date,
-          location: gallery.branch?.header || 'SLA Center',
-          tags: gallery.tags?.map((tag: any) => tag.name.toLowerCase()) || [],
+          id: `${gallery?.id}-${img?.id}`,
+          src: img?.url,
+          alt: img?.alternativeText || gallery?.title,
+          category: gallery?.category?.slug || 'general',
+          title: gallery?.title,
+          description: gallery?.description,
+          date: gallery?.date,
+          location: gallery?.branch?.header || 'SLA Center',
+          tags: gallery?.tags?.map((tag: any) => tag.name.toLowerCase()) || [],
         });
       });
     });
-    
+
     return images;
   };
 
   // Static fallback gallery images
   const staticGalleryImages = [
- 
+
   ]
 
   // Get gallery images from API or fallback to static
@@ -116,7 +116,7 @@ export function GalleryPageContent({
   // Build dynamic categories from API data with client-side filtering
   const buildCategories = () => {
     const allCategory = { id: "all", name: "All Photos", icon: Camera, count: galleryImages.length };
-    
+
     if (apiCategories.length === 0) {
       // Show loading or fallback categories
       return [
@@ -126,10 +126,10 @@ export function GalleryPageContent({
         { id: "graduation", name: "Graduation", icon: GraduationCap, count: galleryImages.filter((i) => i.category === "graduation").length },
       ];
     }
-    
+
     // Filter categories by WhichPage='gallery' on the client side
     const galleryCategories = apiCategories.filter(category => category.WhichPage === 'gallery');
-    
+
     // Build categories from filtered API data
     const dynamicCategories = galleryCategories.map(category => ({
       id: category.slug,
@@ -137,25 +137,25 @@ export function GalleryPageContent({
       icon: getCategoryIcon(category.name),
       count: galleryImages.filter((i) => i.category === category.slug || i.category === category.name.toLowerCase()).length
     }));
-    
+
     return [allCategory, ...dynamicCategories];
   };
-  
+
   const categories = buildCategories();
 
   const filteredImages = galleryImages
     .filter((img) => {
       if (selectedCategory === "all") return true;
-      
+
       // Find the selected category from API data
       const selectedCategoryData = apiCategories.find(cat => cat.slug === selectedCategory);
-      
+
       // If we found the category, filter by both slug and name; otherwise use the selectedCategory directly
       if (selectedCategoryData) {
-        return img.category === selectedCategoryData.slug || 
+        return img.category === selectedCategoryData.slug ||
                img.category === selectedCategoryData.name.toLowerCase();
       }
-      
+
       return img.category === selectedCategory;
     })
     .filter(
@@ -177,11 +177,11 @@ export function GalleryPageContent({
 
   const currentImage = selectedImageIndex !== null ? filteredImages[selectedImageIndex] : null
 
-  const containerClass = isPreview 
-    ? `py-20 relative ${className}` 
+  const containerClass = isPreview
+    ? `py-20 relative ${className}`
     : `container mx-auto px-4 py-16 space-y-12 ${className}`;
 
-  const gridClass = isPreview 
+  const gridClass = isPreview
     ? "grid md:grid-cols-2 lg:grid-cols-3 gap-6"
     : "grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
 
@@ -339,8 +339,8 @@ export function GalleryPageContent({
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">No photos found</h3>
           <p className="text-gray-400 mb-4">
-            {apiGalleries.length === 0 
-              ? "No gallery images available at the moment" 
+            {apiGalleries.length === 0
+              ? "No gallery images available at the moment"
               : "Try adjusting your search or filter criteria"
             }
           </p>
