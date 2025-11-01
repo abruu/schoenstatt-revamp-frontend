@@ -54,8 +54,8 @@ export default function HomePage() {
       <OrganizationSchema
         name="Schoenstatt Language Academy"
         description="Premier German language institute in Kerala offering A1-B2 courses with Telc certification"
-        url="https://sla-kerala.com"
-        logo="https://sla-kerala.com/logo.png"
+        url="https://sla.schoenstatt-fathers.in"
+        logo="https://sla.schoenstatt-fathers.in/logo.png"
         address={[
           {
             addressLocality: "Thrissur",

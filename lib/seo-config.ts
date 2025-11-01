@@ -12,7 +12,7 @@ export const defaultMetadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: 'https://sla-kerala.com',
+    url: 'https://sla.schoenstatt-fathers.in',
     siteName: 'Schoenstatt Language Academy',
     title: 'German Language Courses Kerala | Schoenstatt Language Academy',
     description: 'Premier German language institute in Kerala offering A1-B2 courses with Telc certification. Expert faculty, modern facilities, proven results.',

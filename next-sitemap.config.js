@@ -1,6 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-  siteUrl: process.env.SITE_URL || 'https://sla-kerala.com',
+  siteUrl: process.env.SITE_URL || 'https://sla.schoenstatt-fathers.in',
   generateRobotsTxt: true,
   sitemapSize: 7000,
   changefreq: 'daily',
@@ -24,7 +24,7 @@ module.exports = {
       },
     ],
     additionalSitemaps: [
-      'https://sla-kerala.com/sitemap.xml',
+      'https://sla.schoenstatt-fathers.in/sitemap.xml',
     ],
   },
   transform: async (config, path) => {
