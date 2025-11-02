@@ -1,102 +1,149 @@
 "use client"
-
+import Image from 'next/image'
+import { type BlocksContent } from '@strapi/blocks-react-renderer';
 import { useState, useEffect } from "react"
-import { createPortal } from "react-dom"
 import {
   Calendar,
   MapPin,
   User,
   Clock,
   Tag,
-  Share2,
   ArrowLeft,
   Camera,
-  X,
-  ChevronLeft,
-  ChevronRight,
   ZoomIn,
-  Download,
   BookOpen,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { UnifiedEvent, getRelatedArticles } from "@/lib/unified-events-data"
+import { UnifiedEvent, getRelatedArticles, mapApiEventsToUnifiedFormat } from "@/lib/unified-events-data"
 import { getIconComponent } from "@/lib/icon-mapping"
+import { useApiStore } from "@/lib/stores/api-store"
+import { SkeletonLoader } from "@/components/common/skeleton-loader"
+import { DateDisplay } from "@/components/common/date-display"
+import { RichContentRenderer } from "@/components/common/rich-content-renderer"
+import { ImageLightbox, type LightboxImage } from "@/components/common/image-lightbox"
 
 interface EventDetailContentProps {
-  event: UnifiedEvent
+  documentId: string
 }
 
-export function EventDetailContent({ event }: EventDetailContentProps) {
-  const [selectedImage, setSelectedImage] = useState<number | null>(null)
+export function EventDetailContent({ documentId }: EventDetailContentProps) {
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
-  const [isVisible, setIsVisible] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [isClient, setIsClient] = useState(false)
 
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
+  // API store integration
+  const { 
+    currentEvent, 
+    currentEventLoading, 
+    currentEventError, 
+    fetchEventByDocumentId, 
+    clearError 
+  } = useApiStore();
 
+  // Convert API event to UnifiedEvent format
+  const event: UnifiedEvent | null = currentEvent ? mapApiEventsToUnifiedFormat([currentEvent])[0] : null;
+
+  // Define functions for lightbox
   const openLightbox = (index: number) => {
-    setSelectedImage(index)
-    setImageLoaded(false)
+    setSelectedImageIndex(index)
     setIsLightboxOpen(true)
-    setTimeout(() => setIsVisible(true), 10)
-    document.body.style.overflow = "hidden"
   }
 
   const closeLightbox = () => {
-    setIsVisible(false)
-    setTimeout(() => {
-      setIsLightboxOpen(false)
-      document.body.style.overflow = "unset"
-    }, 300)
+    setIsLightboxOpen(false)
   }
 
-  const nextImage = () => {
-    if (selectedImage !== null && event.galleryItems) {
-      setImageLoaded(false)
-      setSelectedImage((selectedImage + 1) % event.galleryItems.length)
-    }
-  }
-
-  const prevImage = () => {
-    if (selectedImage !== null && event.galleryItems) {
-      setImageLoaded(false)
-      setSelectedImage((selectedImage - 1 + event.galleryItems.length) % event.galleryItems.length)
-    }
-  }
-
+  // Effects
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isLightboxOpen) return
-      if (e.key === "Escape") closeLightbox()
-      if (e.key === "ArrowLeft") prevImage()
-      if (e.key === "ArrowRight") nextImage()
+    if (documentId) {
+      fetchEventByDocumentId(documentId);
     }
-    document.addEventListener("keydown", handleKeyPress)
-    return () => document.removeEventListener("keydown", handleKeyPress)
-  }, [isLightboxOpen, selectedImage])
+  }, [documentId, fetchEventByDocumentId]);
 
-  const currentImage = selectedImage !== null && event.galleryItems ? event.galleryItems[selectedImage] : null
+  // Convert gallery items to lightbox format
+  const lightboxImages: LightboxImage[] = event?.galleryItems?.map((item: any) => ({
+    id: item.id,
+    src: item.src || "/placeholder.svg",
+    alt: item.alt || "",
+    title: item.title,
+    description: item.description
+  })) || []
+
+  // Handle loading state
+  if (currentEventLoading) {
+    return (
+      <SkeletonLoader 
+        show={currentEventLoading} 
+        variant="event-detail"
+      />
+    );
+  }
+
+  // Handle error state
+  if (currentEventError) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <div className="text-red-500 font-medium">Error loading event: {currentEventError}</div>
+            <Button onClick={() => {
+              clearError();
+              fetchEventByDocumentId(documentId);
+            }} variant="outline">
+              Try Again
+            </Button>
+            <Link href="/events">
+              <Button variant="ghost">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Events
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle not found state
+  if (!event) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <div className="text-gray-400 font-medium text-lg">Event not found</div>
+            <p className="text-gray-500">The event you're looking for doesn't exist or has been removed.</p>
+            <Link href="/events">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Events
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-4xl">
-      <div className="mb-8">
+    <div className="container mx-auto px-4 max-w-4xl">
+      {/* Back button - positioned as a floating element */}
+      <div className="sticky top-4 z-40 mb-6 pt-4">
         <Link href="/events">
           <Button
             variant="outline"
-            className="border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10 bg-black/20 backdrop-blur-md shadow-lg transition-all duration-200 hover:scale-105"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Events
+            <span className="hidden sm:inline">Back to Events</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </Link>
       </div>
 
-      <article className="space-y-8">
+      <article className="space-y-8 pb-16">
         <header className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
             {/* <Badge className={`bg-gradient-to-r ${event.gradient} text-white`}>{event.category}</Badge> */}
@@ -110,12 +157,12 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
           </h1>
           <div className="flex flex-wrap items-center gap-6 text-gray-400 text-sm">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              {event.date}
+            
+              <DateDisplay date={event.date} />
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              {event.location}
+              {event.branch?.header}
             </div>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -142,34 +189,31 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
           </div> */}
         </header>
 
-        {event.hasGallery && event.galleryItems && event.galleryItems.length > 0 && (
-          <div className="relative group cursor-pointer" onClick={() => openLightbox(0)}>
+       
+          <div className="relative group " >
             <div className="aspect-video bg-black border border-white/10 rounded-2xl overflow-hidden flex items-center justify-center">
-              <img
-                src={event.galleryItems[0].src || "/placeholder.svg"}
-                alt={event.galleryItems[0].alt}
-                className="w-full h-full object-cover"
-              />
+            <Image
+  src={event.coverImage?.formats?.medium?.url || "/placeholder.svg"}
+  alt={event.coverImage?.name || "Placeholder"}
+  width={event.coverImage?.formats?.medium?.width || 800} // fallback width
+  height={event.coverImage?.formats?.medium?.height || 600} // fallback height
+  className="w-full h-full object-cover"
+/>
             </div>
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center rounded-2xl">
+            {/* <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center rounded-2xl">
               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                   <ZoomIn className="h-8 w-8 text-white" />
                 </div>
               </div>
-            </div>
-            <p className="text-center text-gray-400 text-sm mt-2">{event.galleryItems[0].title}</p>
+            </div> */}
+            {/* <p className="text-center text-gray-400 text-sm mt-2">{event.galleryItems[0].title}</p> */}
           </div>
-        )}
+       
 
-        <div className="prose prose-invert prose-lg max-w-none">
-          <div
-            className="text-gray-300 leading-relaxed space-y-6"
-            dangerouslySetInnerHTML={{ __html: event.fullContent || '' }}
-          />
-        </div>
+        <RichContentRenderer content={event.fullContent as BlocksContent} />
 
-        {event.hasGallery && event.galleryItems && event.galleryItems.length > 1 && (
+        {event.galleryItems && event.galleryItems.length > 0 && (
           <section className="space-y-8">
             <div className="border-t border-white/10 pt-8">
               <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
@@ -177,10 +221,10 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
                 Image Gallery ({event.galleryItems.length} photos)
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {event.galleryItems.map((image, index) => (
+                {event.galleryItems.map((image: any, index: number) => (
                   <div key={image.id} className="relative group cursor-pointer" onClick={() => openLightbox(index)}>
                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-blue-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500"></div>
-                    <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105">
+                    <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-100">
                       <div className="aspect-video bg-black flex items-center justify-center relative overflow-hidden">
                         <img
                           src={image.src || "/placeholder.svg"}
@@ -221,22 +265,23 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
         )}
 
         {/* Related Articles Section */}
+        {event.related_articles && event.related_articles.length > 0 && (
         <section className="border-t border-white/10 pt-8 mt-8">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
             <BookOpen className="h-6 w-6" />
             Related Articles
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {getRelatedArticles(event.id).map((article) => {
-              const IconComponent = getIconComponent(article.icon)
+            {event.related_articles?.map((article) => {
+              const IconComponent = getIconComponent(article?.icon)
               return (
-                <Link key={article.id} href={`/events/${article.id}`}>
+                <Link key={article.id} href={`/events/${article.documentId || article.id}`}>
                   <div className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105">
                     <div className="absolute -inset-1 bg-gradient-to-r opacity-0 group-hover:opacity-30 rounded-2xl blur-lg transition-all duration-500" style={{backgroundImage: article.gradient}}></div>
                     <div className="relative">
                       <div className="aspect-video bg-black flex items-center justify-center relative overflow-hidden">
                         <img
-                          src={article.image || "/placeholder.svg"}
+                          src={article.coverImage?.formats?.medium?.url || "/placeholder.svg"}
                           alt={article.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -245,14 +290,14 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
                             target.nextElementSibling?.classList.remove('hidden')
                           }}
                         />
-                        <div className={`absolute inset-0 bg-gradient-to-r ${article.gradient} flex items-center justify-center hidden`}>
+                        {/* <div className={`absolute inset-0 bg-gradient-to-r ${article.gradient?.className} flex items-center justify-center hidden`}>
                           <IconComponent className="h-12 w-12 text-white" />
-                        </div>
-                        <div className="absolute top-3 right-3">
-                          <div className={`w-8 h-8 bg-gradient-to-r ${article.gradient} rounded-full flex items-center justify-center`}>
+                        </div> */}
+                        {/* <div className="absolute top-3 right-3">
+                          <div className={`w-8 h-8 bg-gradient-to-r ${article.gradient?.className} rounded-full flex items-center justify-center`}>
                             <IconComponent className="h-4 w-4 text-white" />
                           </div>
-                        </div>
+                        </div> */}
                         {article.isNew && (
                           <div className="absolute top-3 left-3">
                             <Badge className="bg-red-500 text-white text-xs animate-pulse">New</Badge>
@@ -261,25 +306,25 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
                       </div>
                       <div className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge className={`bg-gradient-to-r ${article.gradient} text-white text-xs`}>
-                            {article.category}
+                          <Badge className={`bg-gradient-to-r ${article.gradient?.className} text-white text-xs`}>
+                            {article.category?.name}
                           </Badge>
                           <Badge variant="outline" className="border-white/20 text-gray-400 text-xs">
-                            {article.type}
+                            {article.eventType}
                           </Badge>
                         </div>
                         <h3 className="font-semibold text-white mb-2 text-sm group-hover:text-blue-300 transition-colors line-clamp-2">
                           {article.title}
                         </h3>
-                        <p className="text-xs text-gray-400 mb-3 line-clamp-2">{article.excerpt}</p>
+                        <p className="text-xs text-gray-400 mb-3 line-clamp-2">{article.description}</p>
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {article.date}
+                            {/* <Calendar className="h-3 w-3" /> */}
+                            <DateDisplay date={article.date} />
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {article.readTime}
+                            {article.readTime} read
                           </div>
                         </div>
                       </div>
@@ -290,103 +335,19 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
             })}
           </div>
         </section>
+      )}
       </article>
+    {/* )} */}
 
-      {isClient &&
-        isLightboxOpen &&
-        currentImage &&
-        createPortal(
-          <div
-            className={`fixed inset-0 bg-black/80 backdrop-blur-lg z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}
-            onClick={closeLightbox}
-          >
-            <div
-              className="relative w-full max-w-7xl h-full max-h-[90vh] bg-black/50 border border-white/10 rounded-2xl flex flex-col lg:flex-row overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Button
-                onClick={closeLightbox}
-                className="absolute top-3 right-3 z-[51] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20"
-                size="icon"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-
-              <div className="flex-grow flex items-center justify-center p-4 lg:p-8 relative">
-                <Button
-                  onClick={prevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-[51] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 lg:w-12 lg:h-12"
-                  size="icon"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
-
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {!imageLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-12 h-12 border-4 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"></div>
-                    </div>
-                  )}
-                  <img
-                    key={currentImage.id}
-                    src={currentImage.src || "/placeholder.svg"}
-                    alt={currentImage.alt}
-                    className={`object-contain w-auto h-auto max-w-full max-h-full transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-                    onLoad={() => setImageLoaded(true)}
-                  />
-                </div>
-
-                <Button
-                  onClick={nextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-[51] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 lg:w-12 lg:h-12"
-                  size="icon"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
-              </div>
-
-              <div className="w-full lg:w-[350px] flex-shrink-0 bg-black/30 border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col">
-                <div className="p-6 border-b border-white/10">
-                  <h3 className="text-xl font-bold text-white mb-2">{currentImage.title}</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed">{currentImage.description}</p>
-                </div>
-                {/* <div className="p-6 flex gap-3">
-                  <Button className="w-full bg-white/10 hover:bg-white/20 border border-white/20">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button className="w-full bg-white/10 hover:bg-white/20 border border-white/20">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                </div> */}
-                {event.galleryItems && event.galleryItems.length > 1 && (
-                  <div className="flex-grow overflow-y-auto p-6 pt-0">
-                    <h4 className="text-lg font-semibold text-white mb-4">
-                      More Photos ({selectedImage !== null ? selectedImage + 1 : 0} / {event.galleryItems.length})
-                    </h4>
-                    <div className="grid grid-cols-3 gap-2">
-                      {event.galleryItems.map((img, index) => (
-                        <button
-                          key={img.id}
-                          onClick={() => setSelectedImage(index)}
-                          className={`aspect-square rounded-md overflow-hidden border-2 transition-all duration-200 ${index === selectedImage ? "border-purple-400 scale-105" : "border-transparent hover:border-white/50"}`}
-                        >
-                          <img
-                            src={img.src || "/placeholder.svg"}
-                            alt={img.alt}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={lightboxImages}
+        isOpen={isLightboxOpen}
+        initialIndex={selectedImageIndex}
+        onClose={closeLightbox}
+        showThumbnails={true}
+        showImageInfo={true}
+      />
     </div>
   )
 }

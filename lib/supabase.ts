@@ -56,10 +56,10 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
   if (!user?.email) return null
 
   const { data: adminUser } = await supabase
-    .from('admin_users')
+    .from('admin_users_login')
     .select('*')
     .eq('email', user.email)
-    .single()
+    .maybeSingle()
 
   return adminUser
 }

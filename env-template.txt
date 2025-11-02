@@ -40,7 +40,16 @@ RESEND_FROM="Admissions <admissions@info.abru.fun>"
 # - Audit logging for all changes
 # - Role-based access control (admin vs super_admin)
 
+# Strapi Configuration (for API Store)
+NEXT_PUBLIC_STRAPI_URL=http://localhost:1337/api
+NEXT_PUBLIC_STRAPI_TOKEN=your_strapi_api_token
+
 # Resend Setup:
 # - Sign up at https://resend.com
 # - Create an API key in your dashboard
 # - Verify your domain for sending emails
+
+# Strapi Setup:
+# - Install and run Strapi backend
+# - Create an API token in Strapi admin panel
+# - Make sure your Strapi server is running on the specified URL
