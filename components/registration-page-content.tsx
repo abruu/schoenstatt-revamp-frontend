@@ -34,7 +34,6 @@ import Link from 'next/link'
 import imageCompression from 'browser-image-compression'
 import { ParticleBackground } from '@/components/layout/particle-background'
 import { Footer } from '@/components/layout/footer'
-import { uploadPhotoToStrapi, registerStudentInStrapi, checkStudentExists } from '@/lib/strapi-api'
 
 // Form values interface
 interface FormValues {
@@ -301,8 +300,20 @@ export function RegistrationPageContent() {
     try {
       setSubmitStatus('idle')
 
+
       // Check for duplicates first
-      const duplicateResult = await checkStudentExists(values.email, values.phone)
+      const duplicateCheck = await fetch('/api/registrations/check-duplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: values.email,
+          phone: values.phone
+        })
+      })
+
+      const duplicateResult = await duplicateCheck.json()
 
       if (duplicateResult.exists) {
         setSubmitStatus('error')
@@ -311,51 +322,35 @@ export function RegistrationPageContent() {
         return
       }
 
-      // Upload photo to Strapi
-      if (!values.photo) {
-        setSubmitStatus('error')
-        setSubmitMessage('Please upload a photo')
-        setSubmitting(false)
-        return
-      }
-
-      const photoUploadResult = await uploadPhotoToStrapi(values.photo)
-
-      // Convert DD/MM/YYYY to YYYY-MM-DD for database storage
-      const convertDateFormat = (ddmmyyyy: string): string => {
-        const [day, month, year] = ddmmyyyy.split("/")
-        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
-      }
-
-      // Register student in Strapi
-      const registrationData = await registerStudentInStrapi({
-        firstName: values.firstName,
-        lastName: values.lastName,
-        dateOfBirth: convertDateFormat(values.dateOfBirth),
-        email: values.email,
-        phone: values.phone,
-        address: values.address,
-        parentName: values.parentName,
-        parentContact: values.parentContact,
-        aadhaarNumber: values.aadhaarNumber,
-        center: values.center,
-        photo: photoUploadResult.documentId,
-        courseLevel: values.courseLevel,
+      // Create FormData for file upload
+      const formData = new FormData()
+      Object.entries(values).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          formData.append(key, value as string | File)
+        }
       })
 
-      setSubmitStatus('success')
-      setSubmitMessage('Registration successful! You will be contacted by the institution.')
-      setRegistrationComplete(true)
-      resetForm()
-      clearPhotoPreview()
+      const response = await fetch('/api/registrations', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setSubmitStatus('success')
+        setSubmitMessage('Registration successful! You will be contacted by the institution.')
+        setRegistrationComplete(true)
+        resetForm()
+        clearPhotoPreview()
+      } else {
+        setSubmitStatus('error')
+        setSubmitMessage(result.details || 'Failed to submit registration')
+      }
     } catch (error) {
       console.error('Submission error:', error)
       setSubmitStatus('error')
-      if (error instanceof Error) {
-        setSubmitMessage(error.message)
-      } else {
-        setSubmitMessage('Failed to submit registration. Please try again.')
-      }
+      setSubmitMessage('Network error. Please check your connection and try again.')
     } finally {
       setSubmitting(false)
     }

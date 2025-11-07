@@ -63,7 +63,7 @@ export interface StudentRegistrationData {
   parentContact: string;
   aadhaarNumber: string;
   center: string; // Branch ID
-  photo: string; // Photo ID from upload
+  photo: string | number; // Photo ID from upload
   courseLevel: string; // Language certification level ID
 }
 

@@ -108,9 +108,9 @@ export async function POST(request: NextRequest) {
         parentName,
         parentContact,
         aadhaarNumber,
-        center: parseInt(center),
+        center: center,
         photo: photoUploadResult.id,
-        courseLevel: parseInt(courseLevel),
+        courseLevel: courseLevel,
       });
     } catch (registrationError) {
       console.error("Registration error:", registrationError);
@@ -129,13 +129,14 @@ export async function POST(request: NextRequest) {
     // Get center data from registration response
     const centerData = registrationData.data.center;
     const courseLevelData = registrationData.data.courseLevel;
+
     const photoData = registrationData.data.photo;
 
     // Build photo URL
-    const photoUrl = `${
-      process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-      "http://localhost:1337"
-    }${photoData.url}`;
+    const photoUrl = `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
+      "/api",
+      ""
+    )}${photoData.url}`;
 
     // Debug email sending conditions
     console.log("Email sending debug:", {
