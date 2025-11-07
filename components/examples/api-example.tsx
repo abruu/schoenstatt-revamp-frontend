@@ -8,12 +8,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Calendar, MapPin, RefreshCw } from 'lucide-react';
 
 const ApiExample: React.FC = () => {
-  const { 
-    events, 
-    eventsLoading, 
-    eventsError, 
-    fetchEvents, 
-    clearError 
+  const {
+    events,
+    eventsLoading,
+    eventsError,
+    fetchEvents,
+    clearError
   } = useApiStore();
 
   // Fetch events on component mount
@@ -75,9 +75,9 @@ const ApiExample: React.FC = () => {
           <AlertDescription>
             <div className="flex items-center justify-between">
               <span>Error: {eventsError}</span>
-              <Button 
-                onClick={clearError} 
-                variant="outline" 
+              <Button
+                onClick={clearError}
+                variant="outline"
                 size="sm"
                 className="ml-4"
               >
@@ -122,7 +122,7 @@ const ApiExample: React.FC = () => {
                 {event.attributes.image?.data && (
                   <div className="mt-3">
                     <img
-                      src={`${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'}${event.attributes.image.data.attributes.url}`}
+                      src={`${process.env.NEXT_PUBLIC_STRAPI_URL }${event.attributes.image.data.attributes.url}`}
                       alt={event.attributes.image.data.attributes.alternativeText || event.attributes.title}
                       className="w-full h-32 object-cover rounded-md"
                     />

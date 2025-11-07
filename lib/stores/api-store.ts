@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import axios, { AxiosError } from 'axios';
-import qs from 'qs';
+import { create } from "zustand";
+import axios, { AxiosError } from "axios";
+import qs from "qs";
 
 // Types
 interface Event {
@@ -44,10 +44,10 @@ interface GalleryImage {
   width: number;
   height: number;
   formats: {
-    large?: { url: string; width: number; height: number; };
-    medium?: { url: string; width: number; height: number; };
-    small?: { url: string; width: number; height: number; };
-    thumbnail?: { url: string; width: number; height: number; };
+    large?: { url: string; width: number; height: number };
+    medium?: { url: string; width: number; height: number };
+    small?: { url: string; width: number; height: number };
+    thumbnail?: { url: string; width: number; height: number };
   };
   hash: string;
   ext: string;
@@ -159,6 +159,37 @@ interface Graduate {
   certificate?: GalleryImage;
 }
 
+interface Branch {
+  id: number;
+  documentId: string;
+  name: string;
+  header: string;
+  address: string;
+  phone: string;
+  callno: string;
+  email: string;
+  timings: string;
+  students: string;
+  established: string;
+  instagram: string;
+  facebook: string;
+  location: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
+interface LanguageCertificationLevel {
+  id: number;
+  documentId: string;
+  LabelFull: string;
+  LabelShort: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
 interface ApiResponse<T> {
   data: T;
   meta: {
@@ -179,17 +210,17 @@ interface ApiState {
   eventsPage: number;
   eventsHasMore: boolean;
   eventsLoadingMore: boolean;
-  
+
   // Single event data
   currentEvent: Event | null;
   currentEventLoading: boolean;
   currentEventError: string | null;
-  
+
   // Categories data
   categories: Category[];
   categoriesLoading: boolean;
   categoriesError: string | null;
-  
+
   // Galleries data
   galleries: Gallery[];
   galleriesLoading: boolean;
@@ -197,7 +228,7 @@ interface ApiState {
   galleriesPage: number;
   galleriesHasMore: boolean;
   galleriesLoadingMore: boolean;
-  
+
   // Graduates data
   graduates: Graduate[];
   graduatesLoading: boolean;
@@ -205,20 +236,35 @@ interface ApiState {
   graduatesPage: number;
   graduatesHasMore: boolean;
   graduatesLoadingMore: boolean;
-  
+
+  // Branches data
+  branches: Branch[];
+  branchesLoading: boolean;
+  branchesError: string | null;
+
+  // Language Certification Levels data
+  languageCertificationLevels: LanguageCertificationLevel[];
+  languageCertificationLevelsLoading: boolean;
+  languageCertificationLevelsError: string | null;
+
   // Generic loading states
   loading: boolean;
   error: string | null;
-  
+
   // Cache management
   lastFetchTime: number | null;
   categoriesLastFetchTime: number | null;
   galleriesLastFetchTime: number | null;
   graduatesLastFetchTime: number | null;
+  branchesLastFetchTime: number | null;
+  languageCertificationLevelsLastFetchTime: number | null;
   cacheExpiry: number; // Cache expiry time in milliseconds (default: 5 minutes)
-  
+
   // Actions
-  fetchEvents: (params?: Record<string, any>, forceRefresh?: boolean) => Promise<void>;
+  fetchEvents: (
+    params?: Record<string, any>,
+    forceRefresh?: boolean
+  ) => Promise<void>;
   loadMoreEvents: () => Promise<void>;
   fetchEventByDocumentId: (documentId: string) => Promise<void>;
   fetchCategories: (forceRefresh?: boolean) => Promise<void>;
@@ -226,6 +272,8 @@ interface ApiState {
   loadMoreGalleries: () => Promise<void>;
   fetchGraduates: (forceRefresh?: boolean) => Promise<void>;
   loadMoreGraduates: () => Promise<void>;
+  fetchBranches: (forceRefresh?: boolean) => Promise<void>;
+  fetchLanguageCertificationLevels: (forceRefresh?: boolean) => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
   clearCache: () => void;
@@ -233,10 +281,10 @@ interface ApiState {
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337/api',
+  baseURL: process.env.NEXT_PUBLIC_STRAPI_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -259,7 +307,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
@@ -291,54 +339,63 @@ export const useApiStore = create<ApiState>((set, get) => ({
   graduatesPage: 1,
   graduatesHasMore: true,
   graduatesLoadingMore: false,
+  branches: [],
+  branchesLoading: false,
+  branchesError: null,
+  languageCertificationLevels: [],
+  languageCertificationLevelsLoading: false,
+  languageCertificationLevelsError: null,
   loading: false,
   error: null,
-  
+
   // Cache management
   lastFetchTime: null,
   categoriesLastFetchTime: null,
   galleriesLastFetchTime: null,
   graduatesLastFetchTime: null,
+  branchesLastFetchTime: null,
+  languageCertificationLevelsLastFetchTime: null,
   cacheExpiry: 5 * 60 * 1000, // 5 minutes in milliseconds
 
   // Actions
   fetchEvents: async (params = {}, forceRefresh = false) => {
     const state = get();
     const currentTime = Date.now();
-    
+
     // Check if we have cached data and it's still valid
-    const isCacheValid = state.lastFetchTime && 
-                        (currentTime - state.lastFetchTime) < state.cacheExpiry;
-    
+    const isCacheValid =
+      state.lastFetchTime &&
+      currentTime - state.lastFetchTime < state.cacheExpiry;
+
     // If we have valid cached data and not forcing refresh, return early
     if (!forceRefresh && isCacheValid && state.events.length > 0) {
-      console.log('Using cached events data');
+      console.log("Using cached events data");
       return;
     }
-    
-    set({ 
-      eventsLoading: true, 
+
+    set({
+      eventsLoading: true,
       eventsError: null,
       eventsPage: 1,
-      eventsHasMore: true
+      eventsHasMore: true,
     });
-    
+
     try {
       // Default parameters for Strapi with detailed population
       const defaultParams = {
         // Detailed population parameters
         populate: {
-          tags: { fields: ['name'] },
-          category: { fields: ['name','slug','WhichPage'] },
-          gradient: { fields: ['name','className'] },
-          branch: { fields: ['header'] },
-          coverImage: { populate: '*' },
+          tags: { fields: ["name"] },
+          category: { fields: ["name", "slug", "WhichPage"] },
+          gradient: { fields: ["name", "className"] },
+          branch: { fields: ["header"] },
+          coverImage: { populate: "*" },
           GalleryItems: {
-            populate: ['src'],
-            fields: ['alt', 'title', 'description']
+            populate: ["src"],
+            fields: ["alt", "title", "description"],
           },
         },
-        sort: 'date:desc',
+        sort: "date:desc",
         pagination: {
           page: 1,
           pageSize: 9, // Load 9 events per page for better performance
@@ -351,120 +408,126 @@ export const useApiStore = create<ApiState>((set, get) => ({
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Event[]>>(`/events?${queryString}`);
+      const response = await api.get<ApiResponse<Event[]>>(
+        `/events?${queryString}`
+      );
       const { data, meta } = response.data;
-      
-      set({ 
+
+      set({
         events: data,
         eventsLoading: false,
         eventsError: null,
         eventsPage: 1,
         eventsHasMore: meta.pagination.page < meta.pagination.pageCount,
-        lastFetchTime: Date.now() // Update cache timestamp
+        lastFetchTime: Date.now(), // Update cache timestamp
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred";
+
+      set({
         events: [],
         eventsLoading: false,
         eventsError: errorMessage,
-        eventsHasMore: false
+        eventsHasMore: false,
       });
     }
   },
 
   loadMoreEvents: async () => {
     const state = get();
-    
+
     // Don't load more if already loading or no more data available
     if (state.eventsLoadingMore || !state.eventsHasMore) {
       return;
     }
-    
+
     set({ eventsLoadingMore: true, eventsError: null });
-    
+
     try {
       const nextPage = state.eventsPage + 1;
-      
+
       // Build query parameters for next page
       const params = {
         populate: {
-          tags: { fields: ['name'] },
-          category: { fields: ['name','slug','WhichPage'] },
-          gradient: { fields: ['name','className'] },
-          branch: { fields: ['header'] },
-          coverImage: { populate: '*' },
+          tags: { fields: ["name"] },
+          category: { fields: ["name", "slug", "WhichPage"] },
+          gradient: { fields: ["name", "className"] },
+          branch: { fields: ["header"] },
+          coverImage: { populate: "*" },
           GalleryItems: {
-            populate: ['src'],
-            fields: ['alt', 'title', 'description']
+            populate: ["src"],
+            fields: ["alt", "title", "description"],
           },
         },
-        sort: 'date:desc',
+        sort: "date:desc",
         pagination: {
           page: nextPage,
-          pageSize: 9
-        }
+          pageSize: 9,
+        },
       };
 
       const queryString = qs.stringify(params, {
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Event[]>>(`/events?${queryString}`);
+      const response = await api.get<ApiResponse<Event[]>>(
+        `/events?${queryString}`
+      );
       const { data, meta } = response.data;
-      
-      set({ 
+
+      set({
         events: [...state.events, ...data], // Append new events
         eventsLoadingMore: false,
         eventsError: null,
         eventsPage: nextPage,
-        eventsHasMore: meta.pagination.page < meta.pagination.pageCount
+        eventsHasMore: meta.pagination.page < meta.pagination.pageCount,
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred while loading more events';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while loading more events";
+
+      set({
         eventsLoadingMore: false,
-        eventsError: errorMessage
+        eventsError: errorMessage,
       });
     }
   },
 
   fetchEventByDocumentId: async (documentId: string) => {
     set({ currentEventLoading: true, currentEventError: null });
-    
+
     try {
       // Build the query parameters for single event fetch
       const params = {
         filters: {
           documentId: {
-            $eq: documentId
-          }
+            $eq: documentId,
+          },
         },
         populate: {
-          tags: { fields: ['name'] },
-          category: { fields: ['name','slug','WhichPage'] },
-          gradient: { fields: ['name', 'className'] },
-          branch: { fields: ['header'] },
-          coverImage: { populate: '*' },
+          tags: { fields: ["name"] },
+          category: { fields: ["name", "slug", "WhichPage"] },
+          gradient: { fields: ["name", "className"] },
+          branch: { fields: ["header"] },
+          coverImage: { populate: "*" },
           related_articles: {
-            populate: '*'
+            populate: "*",
           },
           GalleryItems: {
-            populate: ['src'],
-            fields: ['alt', 'title', 'description']
-          }
+            populate: ["src"],
+            fields: ["alt", "title", "description"],
+          },
         },
-        sort: 'date:desc',
+        sort: "date:desc",
         pagination: {
           page: 1,
-          pageSize: 10
-        }
+          pageSize: 10,
+        },
       };
 
       // Convert params to query string using qs
@@ -472,25 +535,28 @@ export const useApiStore = create<ApiState>((set, get) => ({
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Event[]>>(`/events?${queryString}`);
-      
+      const response = await api.get<ApiResponse<Event[]>>(
+        `/events?${queryString}`
+      );
+
       // Since we're filtering by documentId, we should get exactly one result
       const event = response.data.data[0] || null;
-      
-      set({ 
+
+      set({
         currentEvent: event,
         currentEventLoading: false,
-        currentEventError: null 
+        currentEventError: null,
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred";
+
+      set({
         currentEvent: null,
         currentEventLoading: false,
-        currentEventError: errorMessage 
+        currentEventError: errorMessage,
       });
     }
   },
@@ -498,27 +564,28 @@ export const useApiStore = create<ApiState>((set, get) => ({
   fetchCategories: async (forceRefresh = false) => {
     const state = get();
     const currentTime = Date.now();
-    
+
     // Check if we have cached categories data and it's still valid
-    const isCacheValid = state.categoriesLastFetchTime && 
-                        (currentTime - state.categoriesLastFetchTime) < state.cacheExpiry;
-    
+    const isCacheValid =
+      state.categoriesLastFetchTime &&
+      currentTime - state.categoriesLastFetchTime < state.cacheExpiry;
+
     // If we have valid cached data and not forcing refresh, return early
     if (!forceRefresh && isCacheValid && state.categories.length > 0) {
-      console.log('Using cached categories data');
+      console.log("Using cached categories data");
       return;
     }
-    
+
     set({ categoriesLoading: true, categoriesError: null });
-    
+
     try {
       // Build query parameters without WhichPage filter to get all categories
       const params = {
-        sort: 'name:asc',
+        sort: "name:asc",
         pagination: {
           page: 1,
-          pageSize: 50 // Increased page size to get all categories
-        }
+          pageSize: 50, // Increased page size to get all categories
+        },
       };
 
       // Convert params to query string using qs
@@ -526,23 +593,26 @@ export const useApiStore = create<ApiState>((set, get) => ({
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Category[]>>(`/categories?${queryString}`);
-      
-      set({ 
+      const response = await api.get<ApiResponse<Category[]>>(
+        `/categories?${queryString}`
+      );
+
+      set({
         categories: response.data.data,
         categoriesLoading: false,
         categoriesError: null,
-        categoriesLastFetchTime: Date.now() // Update cache timestamp
+        categoriesLastFetchTime: Date.now(), // Update cache timestamp
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred while fetching categories';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while fetching categories";
+
+      set({
         categories: [],
         categoriesLoading: false,
-        categoriesError: errorMessage 
+        categoriesError: errorMessage,
       });
     }
   },
@@ -550,33 +620,34 @@ export const useApiStore = create<ApiState>((set, get) => ({
   fetchGalleries: async (forceRefresh = false) => {
     const state = get();
     const currentTime = Date.now();
-    
+
     // Check if we have cached galleries data and it's still valid
-    const isCacheValid = state.galleriesLastFetchTime && 
-                        (currentTime - state.galleriesLastFetchTime) < state.cacheExpiry;
-    
+    const isCacheValid =
+      state.galleriesLastFetchTime &&
+      currentTime - state.galleriesLastFetchTime < state.cacheExpiry;
+
     // If we have valid cached data and not forcing refresh, return early
     if (!forceRefresh && isCacheValid && state.galleries.length > 0) {
-      console.log('Using cached galleries data');
+      console.log("Using cached galleries data");
       return;
     }
-    
-    set({ 
-      galleriesLoading: true, 
+
+    set({
+      galleriesLoading: true,
       galleriesError: null,
       galleriesPage: 1,
-      galleriesHasMore: true
+      galleriesHasMore: true,
     });
-    
+
     try {
       // Build query parameters for galleries with full population
       const params = {
-        populate: '*', // Populate all relations
-        sort: 'date:desc',
+        populate: "*", // Populate all relations
+        sort: "date:desc",
         pagination: {
           page: 1,
-          pageSize: 12 // Load 12 items per page for better performance
-        }
+          pageSize: 12, // Load 12 items per page for better performance
+        },
       };
 
       // Convert params to query string using qs
@@ -584,76 +655,82 @@ export const useApiStore = create<ApiState>((set, get) => ({
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Gallery[]>>(`/galleries?${queryString}`);
+      const response = await api.get<ApiResponse<Gallery[]>>(
+        `/galleries?${queryString}`
+      );
       const { data, meta } = response.data;
-      
-      set({ 
+
+      set({
         galleries: data,
         galleriesLoading: false,
         galleriesError: null,
         galleriesPage: 1,
         galleriesHasMore: meta.pagination.page < meta.pagination.pageCount,
-        galleriesLastFetchTime: Date.now() // Update cache timestamp
+        galleriesLastFetchTime: Date.now(), // Update cache timestamp
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred while fetching galleries';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while fetching galleries";
+
+      set({
         galleries: [],
         galleriesLoading: false,
         galleriesError: errorMessage,
-        galleriesHasMore: false
+        galleriesHasMore: false,
       });
     }
   },
 
   loadMoreGalleries: async () => {
     const state = get();
-    
+
     // Don't load more if already loading or no more data available
     if (state.galleriesLoadingMore || !state.galleriesHasMore) {
       return;
     }
-    
+
     set({ galleriesLoadingMore: true, galleriesError: null });
-    
+
     try {
       const nextPage = state.galleriesPage + 1;
-      
+
       // Build query parameters for next page
       const params = {
-        populate: '*',
-        sort: 'date:desc',
+        populate: "*",
+        sort: "date:desc",
         pagination: {
           page: nextPage,
-          pageSize: 12
-        }
+          pageSize: 12,
+        },
       };
 
       const queryString = qs.stringify(params, {
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Gallery[]>>(`/galleries?${queryString}`);
+      const response = await api.get<ApiResponse<Gallery[]>>(
+        `/galleries?${queryString}`
+      );
       const { data, meta } = response.data;
-      
-      set({ 
+
+      set({
         galleries: [...state.galleries, ...data], // Append new galleries
         galleriesLoadingMore: false,
         galleriesError: null,
         galleriesPage: nextPage,
-        galleriesHasMore: meta.pagination.page < meta.pagination.pageCount
+        galleriesHasMore: meta.pagination.page < meta.pagination.pageCount,
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred while loading more galleries';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while loading more galleries";
+
+      set({
         galleriesLoadingMore: false,
-        galleriesError: errorMessage
+        galleriesError: errorMessage,
       });
     }
   },
@@ -661,33 +738,34 @@ export const useApiStore = create<ApiState>((set, get) => ({
   fetchGraduates: async (forceRefresh = false) => {
     const state = get();
     const currentTime = Date.now();
-    
+
     // Check if we have cached graduates data and it's still valid
-    const isCacheValid = state.graduatesLastFetchTime && 
-                        (currentTime - state.graduatesLastFetchTime) < state.cacheExpiry;
-    
+    const isCacheValid =
+      state.graduatesLastFetchTime &&
+      currentTime - state.graduatesLastFetchTime < state.cacheExpiry;
+
     // If we have valid cached data and not forcing refresh, return early
     if (!forceRefresh && isCacheValid && state.graduates.length > 0) {
-      console.log('Using cached graduates data');
+      console.log("Using cached graduates data");
       return;
     }
-    
-    set({ 
-      graduatesLoading: true, 
+
+    set({
+      graduatesLoading: true,
       graduatesError: null,
       graduatesPage: 1,
-      graduatesHasMore: true
+      graduatesHasMore: true,
     });
-    
+
     try {
       // Build query parameters for graduates with full population
       const params = {
-        populate: '*', // Populate all relations
-        sort: 'GraduateDate:desc',
+        populate: "*", // Populate all relations
+        sort: "GraduateDate:desc",
         pagination: {
           page: 1,
-          pageSize: 10 // Load 10 graduates per page for better performance
-        }
+          pageSize: 10, // Load 10 graduates per page for better performance
+        },
       };
 
       // Convert params to query string using qs
@@ -695,82 +773,213 @@ export const useApiStore = create<ApiState>((set, get) => ({
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Graduate[]>>(`/graduates?${queryString}`);
+      const response = await api.get<ApiResponse<Graduate[]>>(
+        `/graduates?${queryString}`
+      );
       const { data, meta } = response.data;
-      
-      set({ 
+
+      set({
         graduates: data,
         graduatesLoading: false,
         graduatesError: null,
         graduatesPage: 1,
         graduatesHasMore: meta.pagination.page < meta.pagination.pageCount,
-        graduatesLastFetchTime: Date.now() // Update cache timestamp
+        graduatesLastFetchTime: Date.now(), // Update cache timestamp
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred while fetching graduates';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while fetching graduates";
+
+      set({
         graduates: [],
         graduatesLoading: false,
         graduatesError: errorMessage,
-        graduatesHasMore: false
+        graduatesHasMore: false,
       });
     }
   },
 
   loadMoreGraduates: async () => {
     const state = get();
-    
+
     // Don't load more if already loading or no more data available
     if (state.graduatesLoadingMore || !state.graduatesHasMore) {
       return;
     }
-    
+
     set({ graduatesLoadingMore: true, graduatesError: null });
-    
+
     try {
       const nextPage = state.graduatesPage + 1;
-      
+
       // Build query parameters for next page
       const params = {
-        populate: '*',
-        sort: 'GraduateDate:desc',
+        populate: "*",
+        sort: "GraduateDate:desc",
         pagination: {
           page: nextPage,
-          pageSize: 10
-        }
+          pageSize: 10,
+        },
       };
 
       const queryString = qs.stringify(params, {
         encodeValuesOnly: true,
       });
 
-      const response = await api.get<ApiResponse<Graduate[]>>(`/graduates?${queryString}`);
+      const response = await api.get<ApiResponse<Graduate[]>>(
+        `/graduates?${queryString}`
+      );
       const { data, meta } = response.data;
-      
-      set({ 
+
+      set({
         graduates: [...state.graduates, ...data], // Append new graduates
         graduatesLoadingMore: false,
         graduatesError: null,
         graduatesPage: nextPage,
-        graduatesHasMore: meta.pagination.page < meta.pagination.pageCount
+        graduatesHasMore: meta.pagination.page < meta.pagination.pageCount,
       });
     } catch (error) {
-      const errorMessage = error instanceof AxiosError 
-        ? error.response?.data?.error?.message || error.message
-        : 'An unexpected error occurred while loading more graduates';
-      
-      set({ 
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while loading more graduates";
+
+      set({
         graduatesLoadingMore: false,
-        graduatesError: errorMessage
+        graduatesError: errorMessage,
+      });
+    }
+  },
+
+  fetchBranches: async (forceRefresh = false) => {
+    const state = get();
+    const currentTime = Date.now();
+
+    // Check if we have cached branches data and it's still valid
+    const isCacheValid =
+      state.branchesLastFetchTime &&
+      currentTime - state.branchesLastFetchTime < state.cacheExpiry;
+
+    // If we have valid cached data and not forcing refresh, return early
+    if (!forceRefresh && isCacheValid && state.branches.length > 0) {
+      console.log("Using cached branches data");
+      return;
+    }
+
+    set({ branchesLoading: true, branchesError: null });
+
+    try {
+      const params = {
+        sort: "name:asc",
+        pagination: {
+          page: 1,
+          pageSize: 50,
+        },
+      };
+
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<Branch[]>>(
+        `/branches?${queryString}`
+      );
+
+      set({
+        branches: response.data.data,
+        branchesLoading: false,
+        branchesError: null,
+        branchesLastFetchTime: Date.now(),
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while fetching branches";
+
+      set({
+        branches: [],
+        branchesLoading: false,
+        branchesError: errorMessage,
+      });
+    }
+  },
+
+  fetchLanguageCertificationLevels: async (forceRefresh = false) => {
+    const state = get();
+    const currentTime = Date.now();
+
+    // Check if we have cached data and it's still valid
+    const isCacheValid =
+      state.languageCertificationLevelsLastFetchTime &&
+      currentTime - state.languageCertificationLevelsLastFetchTime <
+        state.cacheExpiry;
+
+    // If we have valid cached data and not forcing refresh, return early
+    if (
+      !forceRefresh &&
+      isCacheValid &&
+      state.languageCertificationLevels.length > 0
+    ) {
+      console.log("Using cached language certification levels data");
+      return;
+    }
+
+    set({
+      languageCertificationLevelsLoading: true,
+      languageCertificationLevelsError: null,
+    });
+
+    try {
+      const params = {
+        sort: "LabelShort:asc",
+        pagination: {
+          page: 1,
+          pageSize: 50,
+        },
+      };
+
+      const queryString = qs.stringify(params, {
+        encodeValuesOnly: true,
+      });
+
+      const response = await api.get<ApiResponse<LanguageCertificationLevel[]>>(
+        `/language-certification-levels?${queryString}`
+      );
+
+      set({
+        languageCertificationLevels: response.data.data,
+        languageCertificationLevelsLoading: false,
+        languageCertificationLevelsError: null,
+        languageCertificationLevelsLastFetchTime: Date.now(),
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.error?.message || error.message
+          : "An unexpected error occurred while fetching language certification levels";
+
+      set({
+        languageCertificationLevels: [],
+        languageCertificationLevelsLoading: false,
+        languageCertificationLevelsError: errorMessage,
       });
     }
   },
 
   clearError: () => {
-    set({ error: null, eventsError: null, currentEventError: null, categoriesError: null, galleriesError: null, graduatesError: null });
+    set({
+      error: null,
+      eventsError: null,
+      currentEventError: null,
+      categoriesError: null,
+      galleriesError: null,
+      graduatesError: null,
+      branchesError: null,
+      languageCertificationLevelsError: null,
+    });
   },
 
   setLoading: (loading: boolean) => {
@@ -778,18 +987,24 @@ export const useApiStore = create<ApiState>((set, get) => ({
   },
 
   clearCache: () => {
-    set({ 
-      events: [], 
+    set({
+      events: [],
       categories: [],
       galleries: [],
       graduates: [],
+      branches: [],
+      languageCertificationLevels: [],
       lastFetchTime: null,
       galleriesLastFetchTime: null,
       graduatesLastFetchTime: null,
+      branchesLastFetchTime: null,
+      languageCertificationLevelsLastFetchTime: null,
       eventsError: null,
       categoriesError: null,
       galleriesError: null,
       graduatesError: null,
+      branchesError: null,
+      languageCertificationLevelsError: null,
       galleriesPage: 1,
       galleriesHasMore: true,
       galleriesLoadingMore: false,
@@ -798,7 +1013,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
       graduatesLoadingMore: false,
       eventsPage: 1,
       eventsHasMore: true,
-      eventsLoadingMore: false
+      eventsLoadingMore: false,
     });
   },
 }));
@@ -824,18 +1039,18 @@ export const apiHelpers = {
   }) => {
     const params: Record<string, any> = {
       populate: {
-        tags: { fields: ['name'] },
-        category: { fields: ['name'] },
-        gradient: { fields: ['name'] },
-        branch: { fields: ['header'] },
-        image: { fields: ['formats', 'name'] },
+        tags: { fields: ["name"] },
+        category: { fields: ["name"] },
+        gradient: { fields: ["name"] },
+        branch: { fields: ["header"] },
+        image: { fields: ["formats", "name"] },
         GalleryItems: {
-          populate: ['src'],
-          fields: ['alt', 'title', 'description']
+          populate: ["src"],
+          fields: ["alt", "title", "description"],
         },
-        gallery: { populate: '*' },
+        gallery: { populate: "*" },
       },
-      sort: 'date:desc',
+      sort: "date:desc",
     };
 
     if (filters?.category) {
@@ -872,24 +1087,26 @@ export const apiHelpers = {
       // Build detailed population parameters
       const params = {
         populate: {
-          tags: { fields: ['name'] },
-          category: { fields: ['name'] },
-          gradient: { fields: ['name'] },
-          branch: { fields: ['header'] },
-          image: { fields: ['formats', 'name'] },
+          tags: { fields: ["name"] },
+          category: { fields: ["name"] },
+          gradient: { fields: ["name"] },
+          branch: { fields: ["header"] },
+          image: { fields: ["formats", "name"] },
           GalleryItems: {
-            populate: ['src'],
-            fields: ['alt', 'title', 'description']
+            populate: ["src"],
+            fields: ["alt", "title", "description"],
           },
-          gallery: { populate: '*' },
-        }
+          gallery: { populate: "*" },
+        },
       };
-      
+
       const queryString = qs.stringify(params, { encodeValuesOnly: true });
-      const response = await api.get<{ data: Event }>(`/events/${id}?${queryString}`);
+      const response = await api.get<{ data: Event }>(
+        `/events/${id}?${queryString}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching event:', error);
+      console.error("Error fetching event:", error);
       throw error;
     }
   },

@@ -1,10 +1,6 @@
-import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+'use client'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useApiStore } from '@/lib/stores/api-store'
 
 export interface Center {
   id: string
@@ -13,37 +9,18 @@ export interface Center {
 }
 
 export function useCenters() {
-  const [centers, setCenters] = useState<Center[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { branches, branchesLoading, branchesError } = useApiStore()
 
-  useEffect(() => {
-    async function fetchCenters() {
-      try {
-        const { data, error } = await supabase
-          .from('centers')
-          .select('id, name, email')
-          .order('name')
+  // Transform branches to match the Center interface
+  const centers: Center[] = branches.map(branch => ({
+    id: branch.documentId,
+    name: branch.name,
+    email: branch.email
+  }))
 
-        if (error) throw error
-
-        setCenters(data || [])
-      } catch (err) {
-        console.error('Error fetching centers:', err)
-        setError('Failed to load training centers')
-        // Fallback to hardcoded centers if database fails
-        setCenters([
-          { id: 'thrissur', name: 'SLA-Thrissur Center', email: 'thrissur@sla.com' },
-          { id: 'chalakudy', name: 'SLA-Chalakudy Center', email: 'chalakudy@sla.com' },
-          { id: 'peravoor', name: 'SLA-Peravoor Center', email: 'peravoor@sla.com' }
-        ])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchCenters()
-  }, [])
-
-  return { centers, loading, error }
+  return {
+    centers,
+    loading: branchesLoading,
+    error: branchesError
+  }
 }

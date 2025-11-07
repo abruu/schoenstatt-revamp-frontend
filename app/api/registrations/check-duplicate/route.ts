@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { checkStudentExists } from '@/lib/strapi-api'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,53 +12,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for existing registration with same email
-    const { data: emailExists, error: emailError } = await supabase
-      .from('registrations')
-      .select('id')
-      .eq('email', email.toLowerCase().trim())
-      .limit(1)
+    // Check for existing student with same email or phone
+    const result = await checkStudentExists(email.toLowerCase().trim(), phone.trim())
 
-    if (emailError && emailError.code !== 'PGRST116') {
-      console.error('Email check error:', emailError)
-      return NextResponse.json(
-        { error: 'Failed to check email duplicates' },
-        { status: 500 }
-      )
-    }
-
-    if (emailExists && emailExists.length > 0) {
-      return NextResponse.json({
-        exists: true,
-        field: 'email address'
-      })
-    }
-
-    // Check for existing registration with same phone
-    const { data: phoneExists, error: phoneError } = await supabase
-      .from('registrations')
-      .select('id')
-      .eq('phone', phone.trim())
-      .limit(1)
-
-    if (phoneError && phoneError.code !== 'PGRST116') {
-      console.error('Phone check error:', phoneError)
-      return NextResponse.json(
-        { error: 'Failed to check phone duplicates' },
-        { status: 500 }
-      )
-    }
-
-    if (phoneExists && phoneExists.length > 0) {
-      return NextResponse.json({
-        exists: true,
-        field: 'phone number'
-      })
-    }
-
-    return NextResponse.json({
-      exists: false
-    })
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('Duplicate check error:', error)

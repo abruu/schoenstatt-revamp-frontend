@@ -1,289 +1,317 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
-
-// Initialize Supabase client with service role key for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
+import {
+  uploadPhotoToStrapi,
+  registerStudentInStrapi,
+  checkStudentExists,
+} from "@/lib/strapi-api";
 
 // Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY!)
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 // Helper function to mask Aadhaar number
 function maskAadhaar(aadhaar: string): string {
-  return `XXXX-XXXX-${aadhaar.slice(-4)}`
+  return `XXXX-XXXX-${aadhaar.slice(-4)}`;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    
+    const formData = await request.formData();
+
     // Extract form fields
-    const photo = formData.get('photo') as File
-    const firstName = formData.get('firstName') as string
-    const lastName = formData.get('lastName') as string
-    const dateOfBirthRaw = formData.get('dateOfBirth') as string
-    const email = formData.get('email') as string
-    const phone = formData.get('phone') as string
-    
+    const photo = formData.get("photo") as File;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
+    const dateOfBirthRaw = formData.get("dateOfBirth") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+
     // Convert DD/MM/YYYY to YYYY-MM-DD for database storage
     const convertDateFormat = (ddmmyyyy: string): string => {
-      const [day, month, year] = ddmmyyyy.split('/')
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
-    }
-    
-    const dateOfBirth = convertDateFormat(dateOfBirthRaw)
-    const address = formData.get('address') as string
-    const parentName = formData.get('parentName') as string
-    const parentContact = formData.get('parentContact') as string
-    const aadhaarNumber = formData.get('aadhaarNumber') as string
-    const center = formData.get('center') as string
-    const courseLevel = formData.get('courseLevel') as string
+      const [day, month, year] = ddmmyyyy.split("/");
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    };
+
+    const dateOfBirth = convertDateFormat(dateOfBirthRaw);
+    const address = formData.get("address") as string;
+    const parentName = formData.get("parentName") as string;
+    const parentContact = formData.get("parentContact") as string;
+    const aadhaarNumber = formData.get("aadhaarNumber") as string;
+    const center = formData.get("center") as string;
+    const courseLevel = formData.get("courseLevel") as string;
 
     // Validate required fields
-    if (!photo || !firstName || !lastName || !dateOfBirth || !email || !phone || 
-        !address || !parentName || !parentContact || !aadhaarNumber || !center || !courseLevel) {
+    if (
+      !photo ||
+      !firstName ||
+      !lastName ||
+      !dateOfBirth ||
+      !email ||
+      !phone ||
+      !address ||
+      !parentName ||
+      !parentContact ||
+      !aadhaarNumber ||
+      !center ||
+      !courseLevel
+    ) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: "All fields are required" },
         { status: 400 }
-      )
+      );
     }
 
     // Validate file type and size
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(photo.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Please upload a JPG, PNG, or WebP image.' },
+        {
+          error: "Invalid file type. Please upload a JPG, PNG, or WebP image.",
+        },
         { status: 400 }
-      )
+      );
     }
 
-    if (photo.size > 5 * 1024 * 1024) { // 5MB limit
+    if (photo.size > 5 * 1024 * 1024) {
+      // 5MB limit
       return NextResponse.json(
-        { error: 'File size too large. Please upload an image smaller than 5MB.' },
+        {
+          error:
+            "File size too large. Please upload an image smaller than 5MB.",
+        },
         { status: 400 }
-      )
+      );
     }
 
-    // Generate filename with format: firstname_lastname_dateOfRegistration.ext
-    const fileExtension = photo.name.split('.').pop()
-    const registrationDate = Math.floor(Date.now() / 1000);      const sanitizedFirstName = firstName.toLowerCase().replace(/[^a-z0-9]/g, '')
-    const sanitizedLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '')
-    const fileName = `${sanitizedFirstName}_${sanitizedLastName}_${registrationDate}.${fileExtension}`
-    
-    // Convert file to buffer
-    const buffer = Buffer.from(await photo.arrayBuffer())
-
-    // Upload photo to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('photos')
-      .upload(fileName, buffer, {
-        contentType: photo.type,
-        cacheControl: '3600',
-        upsert: false
-      })
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError)
+    // Upload photo to Strapi
+    let photoUploadResult;
+    try {
+      photoUploadResult = await uploadPhotoToStrapi(photo);
+    } catch (uploadError) {
+      console.error("Upload error:", uploadError);
       return NextResponse.json(
-        { error: 'Failed to upload photo' },
+        { error: "Failed to upload photo" },
         { status: 500 }
-      )
+      );
     }
 
-    // Insert registration data into database
-    const { data: registrationData, error: insertError } = await supabase
-      .from('registrations')
-      .insert({
-        first_name: firstName,
-        last_name: lastName,
-        date_of_birth: dateOfBirth,
-        email: email,
-        phone: phone,
-        address: address,
-        parent_name: parentName,
-        parent_contact: parentContact,
-        aadhaar_number: aadhaarNumber,
-        center: center,
-        course_level: courseLevel,
-        photo_path: uploadData.path,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Detailed insert error:', {
-        error: insertError,
-        message: insertError.message,
-        details: insertError.details,
-        hint: insertError.hint,
-        code: insertError.code
-      })
-      // Clean up uploaded file if database insert fails
-      await supabase.storage.from('photos').remove([fileName])
+    // Register student in Strapi
+    let registrationData;
+    try {
+      registrationData = await registerStudentInStrapi({
+        firstName,
+        lastName,
+        dateOfBirth,
+        email,
+        phone,
+        address,
+        parentName,
+        parentContact,
+        aadhaarNumber,
+        center: parseInt(center),
+        photo: photoUploadResult.id,
+        courseLevel: parseInt(courseLevel),
+      });
+    } catch (registrationError) {
+      console.error("Registration error:", registrationError);
       return NextResponse.json(
-        { 
-          error: 'Failed to save registration data',
-          details: insertError.message,
-          hint: insertError.hint,
-          code: insertError.code
+        {
+          error: "Failed to save registration data",
+          details:
+            registrationError instanceof Error
+              ? registrationError.message
+              : "Unknown error",
         },
         { status: 500 }
-      )
+      );
     }
 
-    // Get center email from centers table
-    const { data: centerData, error: centerError } = await supabase
-      .from('centers')
-      .select('email, name')
-      .eq('id', center)
-      .single()
+    // Get center data from registration response
+    const centerData = registrationData.data.center;
+    const courseLevelData = registrationData.data.courseLevel;
+    const photoData = registrationData.data.photo;
 
-    if (centerError) {
-      console.error('Center lookup error:', centerError)
-      // Registration is saved, but we'll continue without sending email
-    }
-
-    // Generate signed URL for photo (7 days expiry)
-    const { data: signedUrlData } = await supabase.storage
-      .from('photos')
-      .createSignedUrl(uploadData.path, 7 * 24 * 60 * 60) // 7 days in seconds
+    // Build photo URL
+    const photoUrl = `${
+      process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
+      "http://localhost:1337"
+    }${photoData.url}`;
 
     // Debug email sending conditions
-    console.log('Email sending debug:', {
+    console.log("Email sending debug:", {
       hasCenterData: !!centerData,
       centerEmail: centerData?.email,
-      hasSignedUrl: !!signedUrlData?.signedUrl,
+      hasPhotoUrl: !!photoUrl,
       resendFrom: process.env.RESEND_FROM,
-      resendApiKey: process.env.RESEND_API_KEY ? 'Set' : 'Missing'
-    })
+      resendApiKey: process.env.RESEND_API_KEY ? "Set" : "Missing",
+    });
 
     // Send email notification if center email is found
-    if (centerData?.email && signedUrlData?.signedUrl) {
+    if (centerData?.email && photoUrl) {
       try {
         // Clean and validate the email address
-        const cleanEmail = centerData.email.trim().toLowerCase()
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        
+        const cleanEmail = centerData.email.trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
         if (!emailRegex.test(cleanEmail)) {
-          console.error('Invalid email format:', cleanEmail)
-          throw new Error(`Invalid email format: ${cleanEmail}`)
+          console.error("Invalid email format:", cleanEmail);
+          throw new Error(`Invalid email format: ${cleanEmail}`);
         }
-        
-        console.log('Attempting to send email to:', cleanEmail)
+
+        console.log("Attempting to send email to:", cleanEmail);
         const emailResult = await resend.emails.send({
           from: process.env.RESEND_FROM!,
           to: cleanEmail,
-          subject: `New Registration - ${firstName} ${lastName}`,
+          subject: `🎓 New Student Registration - ${firstName} ${lastName}`,
           html: `
           <!DOCTYPE html>
           <html>
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="color-scheme" content="light dark">
+            <meta name="supported-color-schemes" content="light dark">
             <title>New Student Registration</title>
+            <style>
+              :root {
+                color-scheme: light dark;
+                supported-color-schemes: light dark;
+              }
+              @media (prefers-color-scheme: dark) {
+                .email-container { background: #1a1a2e !important; }
+                .header-title { color: #ffffff !important; }
+                .section-card { background: #252541 !important; border-color: #3a3a5c !important; }
+                .section-title { color: #f1f5f9 !important; }
+                .text-primary { color: #e2e8f0 !important; }
+                .text-secondary { color: #94a3b8 !important; }
+                .footer-bg { background: #0f0f1e !important; }
+              }
+            </style>
           </head>
-          <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-              
-              <!-- Header with Logo and Gradient -->
-              <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); padding: 30px 20px; text-align: center; position: relative;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="80" cy="80" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="40" cy="60" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg></div>
-                <img src="https://schoenstatt-six.vercel.app/images/logo/sla_logo.webp" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 15px; position: relative; z-index: 1;" />
-                <h1 style="color: #000; margin: 0; font-size: 24px; font-weight: 700; position: relative; z-index: 1;">New Student Registration</h1>
-                <p style="color: #000; margin: 8px 0 0 0; font-size: 14px; opacity: 0.8; position: relative; z-index: 1;">Schoenstatt Language Academy</p>
+          <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; padding: 20px 0;">
+            <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);">
+
+              <!-- Header -->
+              <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%); padding: 40px 30px; text-align: center; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); animation: pulse 4s ease-in-out infinite;"></div>
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; display: inline-block; position: relative; z-index: 1;">
+                  <img src="images/locations/Image (7).jpeg" alt="SLA" style="height: 70px; margin-bottom: 15px;" />
+                </div>
+                <h1 class="header-title" style="color: #1a1a2e; margin: 20px 0 8px 0; font-size: 28px; font-weight: 800; position: relative; z-index: 1; letter-spacing: -0.5px;">New Student Registration</h1>
+                <p style="color: rgba(26, 26, 46, 0.9); margin: 0; font-size: 15px; position: relative; z-index: 1; font-weight: 500;">Schoenstatt Language Academy</p>
               </div>
 
               <!-- Content -->
-              <div style="padding: 30px 20px;">
-                
+              <div style="padding: 35px 30px;">
+
+
+
                 <!-- Student Information -->
-                <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden;">
-                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #fbbf24 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">👤 Student Information</h3>
-                  <table style="width: 100%; border-collapse: collapse; position: relative; z-index: 1;">
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569; width: 35%;">Name:</td><td style="padding: 6px 0; color: #1e293b;">${firstName} ${lastName}</td></tr>
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Date of Birth:</td><td style="padding: 6px 0; color: #1e293b;">${dateOfBirthRaw}</td></tr>
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Email:</td><td style="padding: 6px 0; color: #1e293b;">${email}</td></tr>
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Phone:</td><td style="padding: 6px 0; color: #1e293b;">${phone}</td></tr>
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Address:</td><td style="padding: 6px 0; color: #1e293b;">${address}</td></tr>
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Aadhaar:</td><td style="padding: 6px 0; color: #1e293b;">${aadhaarNumber}</td></tr>
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Course Level:</td><td style="padding: 6px 0; color: #1e293b;">${courseLevel.toUpperCase()}</td></tr>
+                <div class="section-card" style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 20px; transition: all 0.3s ease;">
+                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+
+                    <h3 class="section-title" style="color: #0f172a; margin: 0; font-size: 19px; font-weight: 700;">Student Information</h3>
+                  </div>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%; font-size: 14px;">Full Name</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 15px;">${firstName} ${lastName}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Date of Birth</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${dateOfBirthRaw}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Email</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${email}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Phone</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${phone}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Address</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${address}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Aadhaar</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px; font-family: monospace;">${maskAadhaar(
+                      aadhaarNumber
+                    )}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Course Level</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 15px;"><span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1a1a2e; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">${
+                      courseLevelData?.LabelShort || courseLevel
+                    }</span></td></tr>
                   </table>
                 </div>
 
                 <!-- Parent Information -->
-                <div style="background: linear-gradient(135deg, #fef7ff 0%, #faf5ff 100%); border: 1px solid #e9d5ff; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden;">
-                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #a855f7 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">👨‍👩‍👧‍👦 Parent/Guardian Information</h3>
-                  <table style="width: 100%; border-collapse: collapse; position: relative; z-index: 1;">
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569; width: 35%;">Name:</td><td style="padding: 6px 0; color: #1e293b;">${parentName}</td></tr>
-                    <tr><td style="padding: 6px 0; font-weight: 600; color: #475569;">Contact:</td><td style="padding: 6px 0; color: #1e293b;">${parentContact}</td></tr>
+                <div class="section-card" style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+
+                    <h3 class="section-title" style="color: #0f172a; margin: 0; font-size: 19px; font-weight: 700;">Parent/Guardian</h3>
+                  </div>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%; font-size: 14px;">Name</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${parentName}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Contact</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${parentContact}</td></tr>
                   </table>
                 </div>
 
                 <!-- Training Center -->
-                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden;">
-                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #22c55e 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">🏢 Training Center</h3>
-                  <p style="margin: 0; color: #1e293b; font-weight: 600; position: relative; z-index: 1;">${centerData?.name || center}</p>
+                <div class="section-card" style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+
+                    <div>
+                      <h3 style="color: #0f172a; margin: 0 0 4px 0; font-size: 14px; font-weight: 600; opacity: 0.7;">Training Center</h3>
+                      <p style="margin: 0; color: #0f172a; font-weight: 700; font-size: 18px;">${
+                        centerData?.name || center
+                      }</p>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Student Photo -->
-                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; position: relative; overflow: hidden;">
-                  <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #3b82f6 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">📸 Student Photo</h3>
-                  <a href="${signedUrlData.signedUrl}" style="display: inline-block; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; position: relative; z-index: 1; transition: all 0.3s ease;">View Photo</a>
+                <!-- Photo Button -->
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${photoUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); transition: all 0.3s ease;">📸 View Student Photo</a>
                 </div>
 
-                <!-- Registration Details -->
-                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border-left: 4px solid #fbbf24;">
-                  <h3 style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px; font-weight: 600;">📋 Registration Details</h3>
-                  <p style="margin: 5px 0; color: #64748b; font-size: 14px;"><strong>Registration ID:</strong> ${registrationData.id}</p>
-                  <p style="margin: 5px 0; color: #64748b; font-size: 14px;"><strong>Submitted on:</strong> ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
+                <!-- Registration Meta -->
+                <div class="section-card" style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px; border-left: 5px solid #fbbf24;">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <span style="font-size: 20px;">📋</span>
+                    <h3 class="section-title" style="color: #0f172a; margin: 0; font-size: 17px; font-weight: 700;">Registration Details</h3>
+                  </div>
+                  <p class="text-secondary" style="margin: 8px 0; color: #64748b; font-size: 14px;"><strong>ID:</strong> <span style="background: #e2e8f0; padding: 4px 10px; border-radius: 6px; font-family: monospace; color: #0f172a; font-weight: 600;">#${
+                    registrationData.data.id
+                  }</span></p>
+                  <p class="text-secondary" style="margin: 8px 0; color: #64748b; font-size: 14px;"><strong>Submitted:</strong> ${new Date().toLocaleDateString(
+                    "en-GB",
+                    { day: "numeric", month: "long", year: "numeric" }
+                  )} at ${new Date().toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</p>
                 </div>
 
               </div>
 
               <!-- Footer -->
-              <div style="background: #1e293b; padding: 20px; text-align: center;">
-                <p style="color: #94a3b8; margin: 0; font-size: 12px;">This is an automated notification from Schoenstatt Language Academy</p>
-                <p style="color: #64748b; margin: 8px 0 0 0; font-size: 11px;">Please do not reply to this email</p>
+              <div class="footer-bg" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center;">
+                <p style="color: #cbd5e1; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">Schoenstatt Language Academy</p>
+                <p style="color: #64748b; margin: 0; font-size: 12px;">Automated notification • Do not reply to this email</p>
               </div>
 
             </div>
           </body>
           </html>
-        `
-        })
-        console.log('Institution email sent successfully:', emailResult)
+        `,
+        });
+        console.log("Institution email sent successfully:", emailResult);
       } catch (emailError) {
-        console.error('Institution email sending error:', emailError)
+        console.error("Institution email sending error:", emailError);
         // Log the full error details for debugging
         if (emailError instanceof Error) {
-          console.error('Error message:', emailError.message)
-          console.error('Error stack:', emailError.stack)
+          console.error("Error message:", emailError.message);
+          console.error("Error stack:", emailError.stack);
         }
       }
     } else {
-      console.log('Institution email not sent because:', {
+      console.log("Institution email not sent because:", {
         noCenterEmail: !centerData?.email,
-        noSignedUrl: !signedUrlData?.signedUrl,
+        noPhotoUrl: !photoUrl,
         centerData,
-        signedUrlData
-      })
+      });
     }
 
     // Send confirmation email to candidate
     try {
-      console.log('Sending confirmation email to candidate:', email)
+      console.log("Sending confirmation email to candidate:", email);
       const confirmationResult = await resend.emails.send({
         from: process.env.RESEND_FROM!,
         to: email,
-        subject: 'Registration Confirmation - Schoenstatt Language Academy',
+        subject: "Registration Confirmation - Schoenstatt Language Academy",
         html: `
           <!DOCTYPE html>
           <html>
@@ -294,19 +322,19 @@ export async function POST(request: NextRequest) {
           </head>
           <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-              
+
               <!-- Header with Logo and Success Animation -->
               <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 20px; text-align: center; position: relative;">
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="success" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23success)"/></svg></div>
-                <img src="https://schoenstatt-six.vercel.app/images/logo/sla_logo.webp" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 20px; position: relative; z-index: 1;" />
-                
+                <img src="images/locations/Image (7).jpeg" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 20px; position: relative; z-index: 1;" />
+
                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; position: relative; z-index: 1;">Registration Confirmed!</h1>
                 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; position: relative; z-index: 1;">Thank you for joining Schoenstatt Language Academy</p>
               </div>
 
               <!-- Content -->
               <div style="padding: 30px 20px;">
-                
+
                 <!-- Welcome Message -->
                 <div style="text-align: center; margin-bottom: 30px;">
                   <h2 style="color: #1e293b; margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">Welcome to Our Community! 🎉</h2>
@@ -316,7 +344,7 @@ export async function POST(request: NextRequest) {
                 <!-- Registration Details -->
                 <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
                   <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #fbbf24 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 600; position: relative; z-index: 1;">📋 Your Registration Details</h3>
+                  <h3 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 600; position: relative; z-index: 1;">Your Registration Details</h3>
                   <table style="width: 100%; border-collapse: collapse; position: relative; z-index: 1;">
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                       <td style="padding: 12px 0; font-weight: 600; color: #475569; width: 40%;">Name:</td>
@@ -336,15 +364,21 @@ export async function POST(request: NextRequest) {
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                       <td style="padding: 12px 0; font-weight: 600; color: #475569;">Course Level:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${courseLevel.toUpperCase()}</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${
+                        courseLevelData?.LabelShort || courseLevel
+                      }</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                       <td style="padding: 12px 0; font-weight: 600; color: #475569;">Training Center:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${centerData?.name || center}</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${
+                        centerData?.name || center
+                      }</td>
                     </tr>
                     <tr>
                       <td style="padding: 12px 0; font-weight: 600; color: #475569;">Registration ID:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500; font-family: monospace; background: #f1f5f9; padding: 8px 12px; border-radius: 6px; display: inline-block;">${registrationData.id}</td>
+                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500; font-family: monospace; background: #f1f5f9; padding: 8px 12px; border-radius: 6px; display: inline-block;">${
+                        registrationData.data.id
+                      }</td>
                     </tr>
                   </table>
                 </div>
@@ -352,18 +386,18 @@ export async function POST(request: NextRequest) {
                 <!-- Next Steps -->
                 <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
                   <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #22c55e 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">🚀 What Happens Next?</h3>
+                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">What Happens Next?</h3>
                   <div style="position: relative; z-index: 1;">
                     <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
+                      <div style="width: 20px; height: 20px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
                       <p style="margin: 0; color: #1e293b; font-weight: 500;">Our team will review your application</p>
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
+                      <div style="width: 20px; height: 20px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
                       <p style="margin: 0; color: #1e293b; font-weight: 500;">You will be contacted within 2-3 business days</p>
                     </div>
                     <div style="display: flex; align-items: center;">
-                      <div style="width: 24px; height: 24px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
+                      <div style="width: 20px; height: 20px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
                       <p style="margin: 0; color: #1e293b; font-weight: 500;">Please keep this email for your records</p>
                     </div>
                   </div>
@@ -386,26 +420,25 @@ export async function POST(request: NextRequest) {
             </div>
           </body>
           </html>
-        `
-      })
-      
-      console.log('Confirmation email sent successfully:', confirmationResult)
+        `,
+      });
+
+      console.log("Confirmation email sent successfully:", confirmationResult);
     } catch (confirmationError) {
-      console.error('Confirmation email sending error:', confirmationError)
+      console.error("Confirmation email sending error:", confirmationError);
       // Don't fail the registration if confirmation email fails
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Registration submitted successfully!',
-      registrationId: registrationData.id
-    })
-
+      message: "Registration submitted successfully!",
+      registrationId: registrationData.data,
+    });
   } catch (error) {
-    console.error('Registration error:', error)
+    console.error("Registration error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
-    )
+    );
   }
 }

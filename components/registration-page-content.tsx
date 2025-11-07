@@ -8,15 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  BookOpen, 
-  Users, 
-  CreditCard, 
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  BookOpen,
+  Users,
+  CreditCard,
   Send,
   Upload,
   X,
@@ -27,7 +27,6 @@ import {
   XCircle,
   Building
 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { useCourseLevels } from '@/hooks/use-course-levels'
 import { useCenters } from '@/hooks/use-centers'
 import Image from 'next/image'
@@ -35,6 +34,7 @@ import Link from 'next/link'
 import imageCompression from 'browser-image-compression'
 import { ParticleBackground } from '@/components/layout/particle-background'
 import { Footer } from '@/components/layout/footer'
+import { uploadPhotoToStrapi, registerStudentInStrapi, checkStudentExists } from '@/lib/strapi-api'
 
 // Form values interface
 interface FormValues {
@@ -81,7 +81,7 @@ const permutationTable = [
 const validateAadhaar = (aadhaar: string): boolean => {
   if (!/^\d{12}$/.test(aadhaar)) return false
   if (/^(\d)\1{11}$/.test(aadhaar)) return false // No repeated digits
-  
+
   let checksum = 0
   for (let i = 0; i < 12; i++) {
     checksum = verhoeffTable[checksum][permutationTable[i % 8][parseInt(aadhaar[i])]]
@@ -247,7 +247,7 @@ export function RegistrationPageContent() {
       setSubmitStatus('idle')
       setSubmitMessage('')
       setPhotoUploading(true)
-      
+
       try {
         // Compress image to 999KB (0.999MB)
         const options = {
@@ -256,11 +256,11 @@ export function RegistrationPageContent() {
           useWebWorker: true,
           fileType: file.type
         }
-        
+
         const compressedFile = await imageCompression(file, options)
-        
+
         setFieldValue('photo', compressedFile)
-        
+
         // Create preview URL from compressed file
         const reader = new FileReader()
         reader.onload = (e) => {
@@ -268,7 +268,7 @@ export function RegistrationPageContent() {
           setPhotoUploading(false)
         }
         reader.readAsDataURL(compressedFile)
-        
+
       } catch (error) {
         console.error('Image compression error:', error)
         setSubmitStatus('error')
@@ -300,58 +300,62 @@ export function RegistrationPageContent() {
   const handleSubmit = async (values: FormValues, { setSubmitting, resetForm }: FormikHelpers<FormValues>) => {
     try {
       setSubmitStatus('idle')
-      
-      
+
       // Check for duplicates first
-      const duplicateCheck = await fetch('/api/registrations/check-duplicate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: values.email,
-          phone: values.phone
-        })
-      })
-      
-      const duplicateResult = await duplicateCheck.json()
-      
+      const duplicateResult = await checkStudentExists(values.email, values.phone)
+
       if (duplicateResult.exists) {
         setSubmitStatus('error')
         setSubmitMessage(`A registration already exists with this ${duplicateResult.field}. Please contact the institution if you need assistance.`)
         setSubmitting(false)
         return
       }
-      
-      // Create FormData for file upload
-      const formData = new FormData()
-      Object.entries(values).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          formData.append(key, value as string | File)
-        }
-      })
 
-      const response = await fetch('/api/registrations', {
-        method: 'POST',
-        body: formData
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
-        setSubmitStatus('success')
-        setSubmitMessage('Registration successful! You will be contacted by the institution.')
-        setRegistrationComplete(true)
-        resetForm()
-        clearPhotoPreview()
-      } else {
+      // Upload photo to Strapi
+      if (!values.photo) {
         setSubmitStatus('error')
-        setSubmitMessage(result.error || 'Failed to submit registration')
+        setSubmitMessage('Please upload a photo')
+        setSubmitting(false)
+        return
       }
+
+      const photoUploadResult = await uploadPhotoToStrapi(values.photo)
+
+      // Convert DD/MM/YYYY to YYYY-MM-DD for database storage
+      const convertDateFormat = (ddmmyyyy: string): string => {
+        const [day, month, year] = ddmmyyyy.split("/")
+        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
+      }
+
+      // Register student in Strapi
+      const registrationData = await registerStudentInStrapi({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        dateOfBirth: convertDateFormat(values.dateOfBirth),
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        parentName: values.parentName,
+        parentContact: values.parentContact,
+        aadhaarNumber: values.aadhaarNumber,
+        center: values.center,
+        photo: photoUploadResult.documentId,
+        courseLevel: values.courseLevel,
+      })
+
+      setSubmitStatus('success')
+      setSubmitMessage('Registration successful! You will be contacted by the institution.')
+      setRegistrationComplete(true)
+      resetForm()
+      clearPhotoPreview()
     } catch (error) {
       console.error('Submission error:', error)
       setSubmitStatus('error')
-      setSubmitMessage('Network error. Please check your connection and try again.')
+      if (error instanceof Error) {
+        setSubmitMessage(error.message)
+      } else {
+        setSubmitMessage('Failed to submit registration. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -362,12 +366,12 @@ export function RegistrationPageContent() {
     return (
       <div className="min-h-screen bg-black text-white relative overflow-hidden flex items-center justify-center">
         <ParticleBackground />
-        
+
         <div className="relative z-10 text-center space-y-8 max-w-md mx-auto px-4">
           <div className="w-20 h-20 bg-green-500/20 border-2 border-green-500 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle className="h-10 w-10 text-green-400" />
           </div>
-          
+
           <div className="space-y-4">
             <h1 className="text-3xl font-bold text-green-400">Registration Successful!</h1>
             <p className="text-white/80 text-lg">A confirmation email has been sent to your registered email address.</p>
@@ -404,7 +408,7 @@ export function RegistrationPageContent() {
             <Home className="h-5 w-5" />
             Back to Home
           </Link>
-        </div> 
+        </div>
       </div>
       //  <Footer />
     )
@@ -413,7 +417,7 @@ export function RegistrationPageContent() {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       <ParticleBackground />
-      
+
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400/5 rounded-full blur-3xl animate-pulse"></div>
@@ -460,13 +464,13 @@ export function RegistrationPageContent() {
             </p>
           </div>
 
-          
+
 
           {/* Registration Form */}
           <div className="relative mx-4 sm:mx-0">
             {/* Glow effect */}
             <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20"></div>
-            
+
             <div className="relative bg-black/40 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 shadow-2xl">
               <Formik
                 initialValues={initialValues}
@@ -534,7 +538,7 @@ export function RegistrationPageContent() {
                         />
                         <ErrorMessage name="photo" component="div" className="text-red-400 text-xs mt-1" />
                       </div>
-                      
+
                       {/* File validation error messages */}
                       {submitStatus === 'error' && submitMessage && (
                         <div className="mt-3 p-3 rounded-lg border bg-red-500/10 border-red-500/30 text-red-400">
@@ -594,7 +598,7 @@ export function RegistrationPageContent() {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const inputValue = e.target.value
                             const currentValue = values.dateOfBirth || ''
-                            
+
                             // Handle backspace - if user is deleting and hits a slash, remove it too
                             if (inputValue.length < currentValue.length) {
                               // User is deleting
@@ -605,7 +609,7 @@ export function RegistrationPageContent() {
                               setFieldValue('dateOfBirth', inputValue)
                               return
                             }
-                            
+
                             // Handle forward typing - add slashes automatically
                             let value = inputValue.replace(/\D/g, '') // Remove non-digits
                             if (value.length >= 2) {
@@ -773,8 +777,8 @@ export function RegistrationPageContent() {
                             <option disabled className="bg-black text-gray-400">Loading levels...</option>
                           ) : (
                             courseLevels.map((level) => (
-                              <option key={level.id} value={level.name} className="bg-black text-white">
-                                {level.name} - {level.description}
+                              <option key={level.id} value={level.id} className="bg-black text-white">
+                                {level.name}
                               </option>
                             ))
                           )}
@@ -787,8 +791,8 @@ export function RegistrationPageContent() {
                     {/* Submit Button */}
                     {submitStatus !== 'idle' && (
             <div className={`mx-4 sm:mx-0 mb-6 p-4 rounded-xl border ${
-              submitStatus === 'success' 
-                ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+              submitStatus === 'success'
+                ? 'bg-green-500/10 border-green-500/30 text-green-400'
                 : 'bg-red-500/10 border-red-500/30 text-red-400'
             }`}>
               <div className="flex items-center gap-2">
@@ -821,7 +825,7 @@ export function RegistrationPageContent() {
                       </Button>
                     </div>
                     {/* Success/Error Messages */}
-          
+
                   </Form>
                 )}
               </Formik>
@@ -863,7 +867,7 @@ export function RegistrationPageContent() {
           </div>
         </div>
       </section>
-      
+
       {/* Footer */}
       <Footer />
     </div>
