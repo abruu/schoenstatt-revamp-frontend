@@ -369,7 +369,7 @@ function DashboardContent() {
                     <SelectContent>
                       <SelectItem value="all">All Courses</SelectItem>
                       {courseLevels.map(level => (
-                        <SelectItem key={level.id} value={level.name}>{level.name}</SelectItem>
+                        <SelectItem key={level.id} value={level.id}>{level.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

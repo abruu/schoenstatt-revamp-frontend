@@ -84,7 +84,7 @@ export const studentService = {
 
     // Add course level filter
     if (params?.courseLevel && params.courseLevel !== 'all') {
-      queryParams.filters.courseLevel = { name: { $eq: params.courseLevel } };
+      queryParams.filters.courseLevel = { documentId: { $eq: params.courseLevel } };
     }
 
     // Add status filter

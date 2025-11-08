@@ -12,23 +12,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, Users, CreditCard, BookOpen, Upload, Plus, X, Save, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { supabase, logAuditAction } from '@/lib/supabase'
-import { useAdminAuth } from '@/hooks/use-admin-auth'
+import { useStrapiAuth } from '@/contexts/strapi-auth-context'
 import { useCenters } from '@/hooks/use-centers'
 import { useCourseLevels } from '@/hooks/use-course-levels'
-import { AdminProtectedRoute } from '@/components/admin-protected-route'
+import { StrapiProtectedRoute } from '@/components/strapi-protected-route'
+import { studentService } from '@/lib/services/student-service'
 
 export default function NewStudentPage() {
   return (
-    <AdminProtectedRoute>
+    <StrapiProtectedRoute>
       <NewStudentContent />
-    </AdminProtectedRoute>
+    </StrapiProtectedRoute>
   )
 }
 
 function NewStudentContent() {
   const router = useRouter()
-  const { adminUser } = useAdminAuth()
+  const { user } = useStrapiAuth()
   const { centers } = useCenters()
   const { courseLevels } = useCourseLevels()
   const [saving, setSaving] = useState(false)
@@ -38,17 +38,17 @@ function NewStudentContent() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    date_of_birth: '',
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
     email: '',
     phone: '',
     address: '',
-    parent_name: '',
-    parent_contact: '',
-    aadhaar_number: '',
-    center: adminUser?.center_id || '',
-    course_level: '',
+    parentName: '',
+    parentContact: '',
+    aadhaarNumber: '',
+    center: user?.assignedCenter?.documentId || '',
+    courseLevel: '',
   })
 
 
@@ -73,21 +73,11 @@ function NewStudentContent() {
     setPhotoPreview(null)
   }
 
-  const uploadPhoto = async (): Promise<string | null> => {
-    if (!photoFile) return null
+  const uploadPhoto = async (studentId: string): Promise<void> => {
+    if (!photoFile) return
 
     try {
-      const fileExt = photoFile.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `students/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(filePath, photoFile)
-
-      if (uploadError) throw uploadError
-
-      return filePath
+      await studentService.uploadPhoto(studentId, photoFile)
     } catch (error) {
       console.error('Error uploading photo:', error)
       throw new Error('Failed to upload photo')
@@ -102,41 +92,28 @@ function NewStudentContent() {
 
     try {
       // Check admin permissions
-      if (adminUser?.role !== 'super_admin' && adminUser?.center_id !== formData.center) {
+      if (!user?.isSuperAdmin && user?.assignedCenter?.documentId !== formData.center) {
         throw new Error('You can only add students to your center')
       }
 
-      // Upload photo if provided
-      const photoPath = await uploadPhoto()
-
+      // Create student first
       const studentData = {
         ...formData,
-        photo_path: photoPath || '/default-avatar.jpg'
+        status: 'pending' as const
       }
 
-      // Insert student
-      const { data, error } = await supabase
-        .from('registrations')
-        .insert(studentData)
-        .select()
-        .single()
+      const newStudent = await studentService.create(studentData)
 
-      if (error) throw error
-
-      // Log audit action
-      await logAuditAction(
-        'registrations',
-        data.id,
-        'INSERT',
-        null,
-        studentData
-      )
+      // Upload photo if provided
+      if (photoFile) {
+        await uploadPhoto(newStudent.documentId)
+      }
 
       setSuccess('Student added successfully!')
       
       // Redirect after a short delay
       setTimeout(() => {
-        router.push(`/admin/students/${data.id}`)
+        router.push(`/admin/students/${newStudent.documentId}`)
       }, 1500)
 
     } catch (error: any) {
@@ -260,20 +237,20 @@ function NewStudentContent() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="first_name">First Name *</Label>
+                  <Label htmlFor="firstName">First Name *</Label>
                   <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => handleInputChange('first_name', e.target.value)}
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="last_name">Last Name *</Label>
+                  <Label htmlFor="lastName">Last Name *</Label>
                   <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => handleInputChange('last_name', e.target.value)}
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
                     required
                   />
                 </div>
@@ -281,21 +258,21 @@ function NewStudentContent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="date_of_birth">Date of Birth *</Label>
+                  <Label htmlFor="dateOfBirth">Date of Birth *</Label>
                   <Input
-                    id="date_of_birth"
+                    id="dateOfBirth"
                     type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
+                    value={formData.dateOfBirth}
+                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="aadhaar_number">Aadhaar Number *</Label>
+                  <Label htmlFor="aadhaarNumber">Aadhaar Number *</Label>
                   <Input
-                    id="aadhaar_number"
-                    value={formData.aadhaar_number}
-                    onChange={(e) => handleInputChange('aadhaar_number', e.target.value)}
+                    id="aadhaarNumber"
+                    value={formData.aadhaarNumber}
+                    onChange={(e) => handleInputChange('aadhaarNumber', e.target.value)}
                     placeholder="1234 5678 9012"
                     required
                   />
@@ -357,20 +334,20 @@ function NewStudentContent() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="parent_name">Parent/Guardian Name *</Label>
+                  <Label htmlFor="parentName">Parent/Guardian Name *</Label>
                   <Input
-                    id="parent_name"
-                    value={formData.parent_name}
-                    onChange={(e) => handleInputChange('parent_name', e.target.value)}
+                    id="parentName"
+                    value={formData.parentName}
+                    onChange={(e) => handleInputChange('parentName', e.target.value)}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="parent_contact">Parent Contact *</Label>
+                  <Label htmlFor="parentContact">Parent Contact *</Label>
                   <Input
-                    id="parent_contact"
-                    value={formData.parent_contact}
-                    onChange={(e) => handleInputChange('parent_contact', e.target.value)}
+                    id="parentContact"
+                    value={formData.parentContact}
+                    onChange={(e) => handleInputChange('parentContact', e.target.value)}
                     placeholder="+91 9876543210"
                     required
                   />
@@ -400,7 +377,7 @@ function NewStudentContent() {
                         <SelectItem 
                           key={center.id} 
                           value={center.id}
-                          disabled={adminUser?.role !== 'super_admin' && adminUser?.center_id !== center.id}
+                          disabled={!user?.isSuperAdmin && user?.assignedCenter?.documentId !== center.id}
                         >
                           {center.name}
                         </SelectItem>
@@ -409,10 +386,10 @@ function NewStudentContent() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="course_level">Course Level *</Label>
+                  <Label htmlFor="courseLevel">Course Level *</Label>
                   <Select
-                    value={formData.course_level}
-                    onValueChange={(value) => handleInputChange('course_level', value)}
+                    value={formData.courseLevel}
+                    onValueChange={(value) => handleInputChange('courseLevel', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select course level" />
@@ -420,7 +397,7 @@ function NewStudentContent() {
                     <SelectContent>
                       {courseLevels.map(level => (
                         <SelectItem key={level.id} value={level.id}>
-                          {level.name} - {level.description}
+                          {level.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
