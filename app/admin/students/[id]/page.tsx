@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { AdminProtectedRoute } from '@/components/admin-protected-route'
-import { supabase, Student } from '@/lib/supabase'
+import { StrapiProtectedRoute } from '@/components/strapi-protected-route'
+import { studentService, StrapiStudent } from '@/lib/services/student-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -29,16 +29,16 @@ import Image from 'next/image'
 
 export default function StudentDetailPage() {
   return (
-    <AdminProtectedRoute>
+    <StrapiProtectedRoute>
       <StudentDetailContent />
-    </AdminProtectedRoute>
+    </StrapiProtectedRoute>
   )
 }
 
 function StudentDetailContent() {
   const params = useParams()
   const router = useRouter()
-  const [student, setStudent] = useState<Student | null>(null)
+  const [student, setStudent] = useState<StrapiStudent | null>(null)
   const [loading, setLoading] = useState(true)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
 
@@ -48,24 +48,16 @@ function StudentDetailContent() {
     }
   }, [params.id])
 
-  const fetchStudent = async (id: string) => {
+  const fetchStudent = async (documentId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('registrations')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (error) throw error
-
+      const data = await studentService.getOne(documentId)
       setStudent(data)
 
-      // Get photo URL if photo_path exists and is not a default path
-      if (data.photo_path && data.photo_path !== '/default-avatar.jpg') {
-        // Use public URL format since bucket is now public
-        const publicUrl = `${supabase.supabaseUrl}/storage/v1/object/public/photos/${data.photo_path}`
-        setPhotoUrl(publicUrl)
-        console.log('Photo public URL:', publicUrl)
+      // Get photo URL if photo exists
+      if (data.photo?.url) {
+        const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL?.replace('/api', '') || 'http://localhost:1337'
+        const fullPhotoUrl = data.photo.url.startsWith('http') ? data.photo.url : `${strapiUrl}${data.photo.url}`
+        setPhotoUrl(fullPhotoUrl)
       }
     } catch (error) {
       console.error('Error fetching student:', error)
@@ -83,13 +75,7 @@ function StudentDetailContent() {
     }
 
     try {
-      const { error } = await supabase
-        .from('registrations')
-        .delete()
-        .eq('id', student.id)
-
-      if (error) throw error
-
+      await studentService.delete(student.documentId)
       router.push('/admin/dashboard')
     } catch (error) {
       console.error('Error deleting student:', error)
@@ -98,19 +84,16 @@ function StudentDetailContent() {
   }
 
   const downloadPhoto = async () => {
-    if (!student?.photo_path || student.photo_path === '/default-avatar.jpg') {
+    if (!photoUrl) {
       alert('No photo available to download')
       return
     }
 
     try {
-      // Use public URL for download since bucket is now public
-      const publicUrl = `${supabase.supabaseUrl}/storage/v1/object/public/photos/${student.photo_path}`
-
       // Create download link
       const a = document.createElement('a')
-      a.href = publicUrl
-      a.download = `${student.first_name}_${student.last_name}_photo.jpg`
+      a.href = photoUrl
+      a.download = `${student?.firstName}_${student?.lastName}_photo.jpg`
       a.target = '_blank'
       a.click()
     } catch (error) {
@@ -174,7 +157,7 @@ function StudentDetailContent() {
                     Student Profile
                   </h1>
                   <p className="text-sm text-blue-300 font-medium">
-                    {student.first_name} {student.last_name}
+                    {student.firstName} {student.lastName}
                   </p>
                 </div>
               </div>
@@ -184,13 +167,13 @@ function StudentDetailContent() {
                 <Printer className="h-4 w-4 mr-2" />
                 Print
               </Button>
-              {student.photo_path && (
+              {student.photo && (
                 <Button onClick={downloadPhoto} variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                   <Download className="h-4 w-4 mr-2" />
                   Download Photo
                 </Button>
               )}
-              {/* <Link href={`/admin/students/${student.id}/edit`}>
+              {/* <Link href={`/admin/students/${student.documentId}/edit`}>
                 <Button className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -238,7 +221,7 @@ function StudentDetailContent() {
                   {photoUrl ? (
                     <Image
                       src={photoUrl}
-                      alt={`${student.first_name} ${student.last_name}`}
+                      alt={`${student.firstName} ${student.lastName}`}
                       fill
                       className="object-cover"
                     />
@@ -248,7 +231,7 @@ function StudentDetailContent() {
                     </div>
                   )}
                 </div>
-                {student.photo_path && (
+                {student.photo && (
                   <Button
                     onClick={downloadPhoto}
                     className="w-full mt-4 print:hidden"
@@ -277,7 +260,7 @@ function StudentDetailContent() {
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-blue-300">First Name</label>
-                      <p className="text-lg font-semibold text-white">{student.first_name}</p>
+                      <p className="text-lg font-semibold text-white">{student.firstName}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-blue-300 flex items-center">
@@ -285,21 +268,21 @@ function StudentDetailContent() {
                         Date of Birth
                       </label>
                       <p className="text-lg text-blue-100">
-                        {student.date_of_birth ? format(new Date(student.date_of_birth), 'PPP') : 'Not provided'}
+                        {student.dateOfBirth ? format(new Date(student.dateOfBirth), 'PPP') : 'Not provided'}
                       </p>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-blue-300">Last Name</label>
-                      <p className="text-lg font-semibold text-white">{student.last_name}</p>
+                      <p className="text-lg font-semibold text-white">{student.lastName}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-blue-300 flex items-center">
                         <CreditCard className="w-4 h-4 mr-1" />
                         Aadhaar Number
                       </label>
-                      <p className="text-lg text-blue-100">{student.aadhaar_number || 'Not provided'}</p>
+                      <p className="text-lg text-blue-100">{student.aadhaarNumber || 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -357,14 +340,14 @@ function StudentDetailContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-sm font-medium text-purple-300">Parent/Guardian Name</label>
-                    <p className="text-lg text-white">{student.parent_name || 'Not provided'}</p>
+                    <p className="text-lg text-white">{student.parentName || 'Not provided'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-purple-300 flex items-center">
                       <Phone className="w-4 h-4 mr-1" />
                       Parent Contact
                     </label>
-                    <p className="text-lg text-purple-100">{student.parent_contact || 'Not provided'}</p>
+                    <p className="text-lg text-purple-100">{student.parentContact || 'Not provided'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -382,18 +365,18 @@ function StudentDetailContent() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="text-sm font-medium text-yellow-300">Center</label>
-                    <p className="text-lg text-white capitalize">{student.center}</p>
+                    <p className="text-lg text-white capitalize">{student.center?.name || 'Not assigned'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-yellow-300">Course Level</label><br></br>
                     <Badge variant="secondary" className="text-lg px-3 py-1 bg-yellow-400/20 text-yellow-300 border border-yellow-400/30">
-                      {student.course_level}
+                      {student.courseLevel?.LabelFull || 'Not assigned'}
                     </Badge>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-yellow-300">Registration Date</label>
                     <p className="text-lg text-yellow-100">
-                      {format(new Date(student.created_at), 'PPP')}
+                      {format(new Date(student.createdAt), 'PPP')}
                     </p>
                   </div>
                 </div>

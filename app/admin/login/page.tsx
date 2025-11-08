@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAdminAuth } from '@/hooks/use-admin-auth'
+import { useStrapiAuth } from '@/contexts/strapi-auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,15 +16,15 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const { signIn, user, adminUser, loading } = useAdminAuth()
+  const { login, user, loading } = useStrapiAuth()
   const router = useRouter()
 
   // Redirect if already logged in
   useEffect(() => {
-    if (!loading && user && adminUser) {
+    if (!loading && user) {
       router.push('/admin/dashboard')
     }
-  }, [user, adminUser, loading, router])
+  }, [user, loading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      const result = await signIn(email, password)
+      const result = await login(email, password)
       if (result.error) {
         setError(result.error)
         setIsLoading(false)
@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
   }
 
   // Show loading if auth is initializing or if we're already logged in
-  if (loading || (user && adminUser)) {
+  if (loading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         <div className="flex items-center space-x-2 text-white">

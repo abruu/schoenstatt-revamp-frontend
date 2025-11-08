@@ -5,7 +5,7 @@ import "./globals.css"
 import { SITE_CONFIG } from "@/lib/constants"
 import { BackToTop } from "@/components/common/back-to-top"
 import { NavigationProvider } from "@/components/providers/navigation-provider"
-import { AdminAuthProvider } from "@/hooks/use-admin-auth"
+import { StrapiAuthProvider } from "@/contexts/strapi-auth-context"
 import { AppDataProvider } from "@/components/providers/app-data-provider"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -78,12 +78,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <AppDataProvider>
-          <AdminAuthProvider>
+          <StrapiAuthProvider>
             <NavigationProvider>
               {children}
               <BackToTop />
             </NavigationProvider>
-          </AdminAuthProvider>
+          </StrapiAuthProvider>
         </AppDataProvider>
         <script
           dangerouslySetInnerHTML={{

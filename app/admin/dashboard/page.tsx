@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAdminAuth } from '@/hooks/use-admin-auth'
-import { AdminProtectedRoute } from '@/components/admin-protected-route'
-import { supabase, Student } from '@/lib/supabase'
+import { useStrapiAuth } from '@/contexts/strapi-auth-context'
+import { StrapiProtectedRoute } from '@/components/strapi-protected-route'
+import { studentService, StrapiStudent } from '@/lib/services/student-service'
 import { useCourseLevels } from '@/hooks/use-course-levels'
 import { useCenters } from '@/hooks/use-centers'
 import { Button } from '@/components/ui/button'
@@ -52,17 +52,17 @@ import { format } from 'date-fns'
 
 export default function AdminDashboard() {
   return (
-    <AdminProtectedRoute>
+    <StrapiProtectedRoute>
       <DashboardContent />
-    </AdminProtectedRoute>
+    </StrapiProtectedRoute>
   )
 }
 
 function DashboardContent() {
-  const { adminUser, signOut, signingOut } = useAdminAuth()
+  const { user, logout, signingOut, isSuperAdmin, centerName } = useStrapiAuth()
   const { courseLevels, loading: courseLevelsLoading } = useCourseLevels()
   const { centers, loading: centersLoading } = useCenters()
-  const [students, setStudents] = useState<Student[]>([])
+  const [students, setStudents] = useState<StrapiStudent[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -90,47 +90,17 @@ function DashboardContent() {
   const fetchStudents = async () => {
     setLoading(true)
     try {
-      let query = supabase
-        .from('registrations')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+      const response = await studentService.getAll({
+        page: currentPage,
+        pageSize: studentsPerPage,
+        search: debouncedSearchTerm || undefined,
+        courseLevel: courseFilter !== 'all' ? courseFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        center: institutionFilter !== 'all' ? institutionFilter : undefined,
+      })
 
-      // Apply search filter
-      if (debouncedSearchTerm) {
-        query = query.or(`first_name.ilike.%${debouncedSearchTerm}%,last_name.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%,aadhaar_number.ilike.%${debouncedSearchTerm}%`)
-      }
-
-      // Apply course filter
-      if (courseFilter !== 'all') {
-        query = query.eq('course_level', courseFilter)
-      }
-
-      // Apply status filter
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter)
-      }
-
-      // Apply institution filter for super admin
-      if (institutionFilter !== 'all') {
-        query = query.eq('center', institutionFilter)
-      }
-
-      // For regular admin, filter by their center only (not super admin)
-      if (adminUser?.role !== 'super_admin' && adminUser?.center_id) {
-        query = query.eq('center', adminUser.center_id)
-      }
-
-      // Apply pagination
-      const from = (currentPage - 1) * studentsPerPage
-      const to = from + studentsPerPage - 1
-      query = query.range(from, to)
-
-      const { data, error, count } = await query
-
-      if (error) throw error
-
-      setStudents(data || [])
-      setTotalCount(count || 0)
+      setStudents(response.data || [])
+      setTotalCount(response.meta.pagination.total || 0)
     } catch (error) {
       console.error('Error fetching students:', error)
     } finally {
@@ -138,19 +108,13 @@ function DashboardContent() {
     }
   }
 
-  const handleDeleteStudent = async (studentId: string) => {
+  const handleDeleteStudent = async (documentId: string) => {
     if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
       return
     }
 
     try {
-      const { error } = await supabase
-        .from('registrations')
-        .delete()
-        .eq('id', studentId)
-
-      if (error) throw error
-
+      await studentService.delete(documentId)
       fetchStudents()
     } catch (error) {
       console.error('Error deleting student:', error)
@@ -158,19 +122,14 @@ function DashboardContent() {
     }
   }
 
-  const handleStatusUpdate = async (studentId: string, newStatus: 'accepted' | 'rejected' | 'enquired') => {
-    setUpdatingStatus(studentId)
+  const handleStatusUpdate = async (documentId: string, newStatus: 'accepted' | 'rejected' | 'enquired') => {
+    setUpdatingStatus(documentId)
     try {
-      const { error } = await supabase
-        .from('registrations')
-        .update({ status: newStatus })
-        .eq('id', studentId)
-
-      if (error) throw error
+      await studentService.updateStatus(documentId, newStatus)
 
       // Update the local state immediately
       setStudents(prev => prev.map(student =>
-        student.id === studentId ? { ...student, status: newStatus } : student
+        student.documentId === documentId ? { ...student, status: newStatus } : student
       ))
     } catch (error) {
       console.error('Error updating student status:', error)
@@ -190,19 +149,19 @@ function DashboardContent() {
     const csvContent = [
       headers.join(','),
       ...students.map(student => [
-        student.first_name,
-        student.last_name,
+        student.firstName,
+        student.lastName,
         student.email,
         student.phone,
-        student.date_of_birth,
+        student.dateOfBirth,
         `"${student.address}"`,
-        student.parent_name,
-        student.parent_contact,
-        student.aadhaar_number,
-        student.center,
-        student.course_level,
+        student.parentName,
+        student.parentContact,
+        student.aadhaarNumber,
+        student.center?.name || '',
+        student.courseLevel?.LabelFull || '',
         student.status,
-        format(new Date(student.created_at), 'yyyy-MM-dd')
+        format(new Date(student.createdAt), 'yyyy-MM-dd')
       ].join(','))
     ].join('\n')
 
@@ -210,7 +169,7 @@ function DashboardContent() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `students-${adminUser?.center_id}-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    a.download = `students-${centerName || 'all'}-${format(new Date(), 'yyyy-MM-dd')}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
   }
@@ -219,25 +178,25 @@ function DashboardContent() {
     try {
       const XLSX = await import('xlsx')
       const worksheet = XLSX.utils.json_to_sheet(students.map(student => ({
-        'First Name': student.first_name,
-        'Last Name': student.last_name,
+        'First Name': student.firstName,
+        'Last Name': student.lastName,
         'Email': student.email,
         'Phone': student.phone,
-        'Date of Birth': student.date_of_birth,
+        'Date of Birth': student.dateOfBirth,
         'Address': student.address,
-        'Parent Name': student.parent_name,
-        'Parent Contact': student.parent_contact,
-        'Aadhaar Number': student.aadhaar_number,
-        'Center': student.center,
-        'Course Level': student.course_level,
+        'Parent Name': student.parentName,
+        'Parent Contact': student.parentContact,
+        'Aadhaar Number': student.aadhaarNumber,
+        'Center': student.center?.name || '',
+        'Course Level': student.courseLevel?.LabelFull || '',
         'Status': student.status,
-        'Registration Date': format(new Date(student.created_at), 'yyyy-MM-dd')
+        'Registration Date': format(new Date(student.createdAt), 'yyyy-MM-dd')
       })))
 
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
 
-      XLSX.writeFile(workbook, `students-${adminUser?.center_id}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
+      XLSX.writeFile(workbook, `students-${centerName || 'all'}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
     } catch (error) {
       console.error('Error exporting to Excel:', error)
       alert('Failed to export to Excel. Please try CSV export instead.')
@@ -277,7 +236,7 @@ function DashboardContent() {
                     SCHOENSTATT ADMIN
                   </h1>
                   <span className="px-3 py-1 text-xs font-medium bg-yellow-400/20 text-yellow-400 rounded-full border border-yellow-400/30">
-                    {adminUser?.role === 'super_admin' ? 'Super Admin' : 'SLA - ' + adminUser?.center_id?.toUpperCase()}
+                    {isSuperAdmin ? 'Super Admin' : 'SLA - ' + (centerName || '').toUpperCase()}
                   </span>
                 </div>
                 <p className="text-sm text-blue-300 font-medium tracking-wider">
@@ -287,7 +246,7 @@ function DashboardContent() {
             </div>
             <Button
               variant="outline"
-              onClick={signOut}
+              onClick={logout}
               disabled={signingOut}
               className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-300 disabled:opacity-50"
             >
@@ -330,8 +289,8 @@ function DashboardContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-purple-300">Admin User</p>
-                    <p className="text-lg font-bold text-white truncate">{adminUser?.email}</p>
-                    <p className="text-xs text-purple-200 capitalize">{adminUser?.role?.replace('_', ' ')}</p>
+                    <p className="text-lg font-bold text-white truncate">{user?.email}</p>
+                    <p className="text-xs text-purple-200 capitalize">{isSuperAdmin ? 'Super Admin' : 'Center Admin'}</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-purple-400/30">
                     <Shield className="h-6 w-6 text-white" />
@@ -341,13 +300,13 @@ function DashboardContent() {
             </Card>
 
             {/* Center Card - Only for regular admins, not super_admin */}
-            {adminUser?.role !== 'super_admin' && (
+            {!isSuperAdmin && centerName && (
               <Card className="bg-gradient-to-br from-slate-800/90 via-yellow-900/90 to-orange-900/90 border border-yellow-600/30 shadow-xl shadow-yellow-900/50 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-yellow-300">Your Center</p>
-                      <p className="text-2xl font-bold text-white capitalize">SLA - {adminUser?.center_id}</p>
+                      <p className="text-2xl font-bold text-white capitalize">{centerName}</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg shadow-yellow-400/30">
                       <MapPin className="h-6 w-6 text-black" />
@@ -389,7 +348,7 @@ function DashboardContent() {
                   </Select>
 
                   {/* Institution Filter - Only for Super Admin */}
-                  {adminUser?.role === 'super_admin' && (
+                  {isSuperAdmin && (
                     <Select value={institutionFilter} onValueChange={setInstitutionFilter}>
                       <SelectTrigger className="w-[180px] bg-slate-700/50 border-blue-600/30 text-white">
                         <SelectValue placeholder="Filter by institution" />
@@ -471,7 +430,7 @@ function DashboardContent() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Phone</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Course Level</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Status</th>
-                      {adminUser?.role === 'super_admin' && (
+                      {isSuperAdmin && (
                         <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Institution</th>
                       )}
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Registration Date</th>
@@ -481,7 +440,7 @@ function DashboardContent() {
                   <tbody className="bg-slate-800/50 divide-y divide-blue-700/30">
                     {loading ? (
                       <tr>
-                        <td colSpan={adminUser?.role === 'super_admin' ? 9 : 8} className="px-6 py-8 text-center">
+                        <td colSpan={isSuperAdmin ? 9 : 8} className="px-6 py-8 text-center">
                           <div className="flex items-center justify-center">
                             <Loader2 className="h-6 w-6 animate-spin text-yellow-400 mr-2" />
                             <span className="text-blue-300">Loading students...</span>
@@ -490,16 +449,16 @@ function DashboardContent() {
                       </tr>
                     ) : students.length === 0 ? (
                       <tr>
-                        <td colSpan={adminUser?.role === 'super_admin' ? 9 : 8} className="px-6 py-8 text-center text-blue-300">
+                        <td colSpan={isSuperAdmin ? 9 : 8} className="px-6 py-8 text-center text-blue-300">
                           No students found
                         </td>
                       </tr>
                     ) : (
                       students.map((student) => (
-                        <tr key={student.id} className="hover:bg-blue-800/30 transition-colors duration-200">
+                        <tr key={student.documentId} className="hover:bg-blue-800/30 transition-colors duration-200">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-white">
-                              {student.first_name} {student.last_name}
+                              {student.firstName} {student.lastName}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -510,7 +469,7 @@ function DashboardContent() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-400/20 text-yellow-300 border border-yellow-400/30">
-                              {student.course_level}
+                              {student.courseLevel?.LabelFull || 'N/A'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -518,14 +477,14 @@ function DashboardContent() {
                               {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
                             </span>
                           </td>
-                          {adminUser?.role === 'super_admin' && (
+                          {isSuperAdmin && (
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-blue-300 capitalize">SLA - {student.center}</div>
+                              <div className="text-sm text-blue-300 capitalize">{student.center?.name || 'N/A'}</div>
                             </td>
                           )}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-blue-300">
-                              {format(new Date(student.created_at), 'MMM dd, yyyy')}
+                              {format(new Date(student.createdAt), 'MMM dd, yyyy')}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium sticky right-0 bg-slate-800 border-l border-blue-700/30">
@@ -533,8 +492,8 @@ function DashboardContent() {
                               {/* Status Action Buttons */}
                               <div className="flex gap-1">
                                 <Button
-                                  onClick={() => handleStatusUpdate(student.id, 'accepted')}
-                                  disabled={updatingStatus === student.id || student.status === 'accepted'}
+                                  onClick={() => handleStatusUpdate(student.documentId, 'accepted')}
+                                  disabled={updatingStatus === student.documentId || student.status === 'accepted'}
                                   variant="outline"
                                   size="sm"
                                   className={`h-8 w-8 p-0 ${
@@ -544,15 +503,15 @@ function DashboardContent() {
                                   }`}
                                   title="Accept Student"
                                 >
-                                  {updatingStatus === student.id ? (
+                                  {updatingStatus === student.documentId ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
                                     <Check className="h-3 w-3" />
                                   )}
                                 </Button>
                                 <Button
-                                  onClick={() => handleStatusUpdate(student.id, 'rejected')}
-                                  disabled={updatingStatus === student.id || student.status === 'rejected'}
+                                  onClick={() => handleStatusUpdate(student.documentId, 'rejected')}
+                                  disabled={updatingStatus === student.documentId || student.status === 'rejected'}
                                   variant="outline"
                                   size="sm"
                                   className={`h-8 w-8 p-0 ${
@@ -562,15 +521,15 @@ function DashboardContent() {
                                   }`}
                                   title="Reject Student"
                                 >
-                                  {updatingStatus === student.id ? (
+                                  {updatingStatus === student.documentId ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
                                     <X className="h-3 w-3" />
                                   )}
                                 </Button>
                                 <Button
-                                  onClick={() => handleStatusUpdate(student.id, 'enquired')}
-                                  disabled={updatingStatus === student.id}
+                                  onClick={() => handleStatusUpdate(student.documentId, 'enquired')}
+                                  disabled={updatingStatus === student.documentId}
                                   variant="outline"
                                   size="sm"
                                   className={`h-8 w-8 p-0 ${
@@ -580,7 +539,7 @@ function DashboardContent() {
                                   }`}
                                   title="Mark Student as Enquired"
                                 >
-                                  {updatingStatus === student.id ? (
+                                  {updatingStatus === student.documentId ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
                                     <HelpCircle className="h-3 w-3" />
@@ -589,7 +548,7 @@ function DashboardContent() {
                               </div>
 
                               {/* View Button */}
-                              <Link href={`/admin/students/${student.id}`}>
+                              <Link href={`/admin/students/${student.documentId}`}>
                                 <Button variant="outline" size="sm" className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400">
                                   <Eye className="h-4 w-4 mr-1" />
                                   View
