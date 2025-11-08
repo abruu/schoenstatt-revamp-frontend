@@ -132,11 +132,10 @@ export async function POST(request: NextRequest) {
 
     const photoData = registrationData.data.photo;
 
-    // Build photo URL
-    const photoUrl = `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
-      "/api",
-      ""
-    )}${photoData.url}`;
+    // Build photo URL - check if it's already an absolute URL
+    const photoUrl = photoData.url.startsWith('http') 
+      ? photoData.url 
+      : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "")}${photoData.url}`;
 
     // Debug email sending conditions
     console.log("Email sending debug:", {
