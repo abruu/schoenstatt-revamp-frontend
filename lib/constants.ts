@@ -16,7 +16,7 @@ export const NAVIGATION_ITEMS = [
   // { name: "Courses", href: "#courses" },
   { name: "About Us", href: "/about" },
   { name: "Centers", href: "#centers" },
-  { name: "Graduates", href: "/graduates" },
+  // { name: "Graduates", href: "/graduates" },
   { name: "Events", href: "/events" },
   { name: "Gallery", href: "/gallery" },
   { name: "Contact Us", href: "#contact" },

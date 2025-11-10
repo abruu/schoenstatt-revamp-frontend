@@ -318,10 +318,30 @@ export async function POST(request: NextRequest) {
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="color-scheme" content="light dark">
+            <meta name="supported-color-schemes" content="light dark">
             <title>Registration Confirmation</title>
+            <style>
+              :root {
+                color-scheme: light dark;
+                supported-color-schemes: light dark;
+              }
+              @media (prefers-color-scheme: dark) {
+                .email-body { background: #0f0f1e !important; }
+                .email-container { background: #1a1a2e !important; }
+                .section-card { background: #252541 !important; border-color: #3a3a5c !important; }
+                .section-title { color: #f1f5f9 !important; }
+                .text-primary { color: #e2e8f0 !important; }
+                .text-secondary { color: #94a3b8 !important; }
+                .text-muted { color: #cbd5e1 !important; }
+                .footer-bg { background: #0f0f1e !important; }
+                .next-steps-card { background: #1e3a2e !important; border-color: #2d5a45 !important; }
+                .help-card { background: #2e1e3a !important; border-color: #4a2d5a !important; }
+              }
+            </style>
           </head>
-          <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+          <body class="email-body" style="margin: 0; padding: 0; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
 
               <!-- Header with Logo and Success Animation -->
               <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 20px; text-align: center; position: relative;">
@@ -337,46 +357,46 @@ export async function POST(request: NextRequest) {
 
                 <!-- Welcome Message -->
                 <div style="text-align: center; margin-bottom: 30px;">
-                  <h2 style="color: #1e293b; margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">Welcome to Our Community! 🎉</h2>
-                  <p style="color: #64748b; margin: 0; font-size: 16px;">Your registration has been successfully submitted and is being processed.</p>
+                  <h2 class="section-title" style="color: #1e293b; margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">Welcome to Our Community! 🎉</h2>
+                  <p class="text-muted" style="color: #64748b; margin: 0; font-size: 16px;">Your registration has been successfully submitted and is being processed.</p>
                 </div>
 
                 <!-- Registration Details -->
-                <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
+                <div class="section-card" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
                   <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #fbbf24 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 600; position: relative; z-index: 1;">Your Registration Details</h3>
+                  <h3 class="section-title" style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 600; position: relative; z-index: 1;">Your Registration Details</h3>
                   <table style="width: 100%; border-collapse: collapse; position: relative; z-index: 1;">
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                      <td style="padding: 12px 0; font-weight: 600; color: #475569; width: 40%;">Name:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${firstName} ${lastName}</td>
+                      <td class="text-secondary" style="padding: 12px 0; font-weight: 600; color: #475569; width: 40%;">Name:</td>
+                      <td class="text-primary" style="padding: 12px 0; color: #1e293b; font-weight: 500;">${firstName} ${lastName}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Date of Birth:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${dateOfBirthRaw}</td>
+                      <td class="text-secondary" style="padding: 12px 0; font-weight: 600; color: #475569;">Date of Birth:</td>
+                      <td class="text-primary" style="padding: 12px 0; color: #1e293b; font-weight: 500;">${dateOfBirthRaw}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Email:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${email}</td>
+                      <td class="text-secondary" style="padding: 12px 0; font-weight: 600; color: #475569;">Email:</td>
+                      <td class="text-primary" style="padding: 12px 0; color: #1e293b; font-weight: 500;">${email}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Phone:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${phone}</td>
+                      <td class="text-secondary" style="padding: 12px 0; font-weight: 600; color: #475569;">Phone:</td>
+                      <td class="text-primary" style="padding: 12px 0; color: #1e293b; font-weight: 500;">${phone}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Course Level:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${
+                      <td class="text-secondary" style="padding: 12px 0; font-weight: 600; color: #475569;">Course Level:</td>
+                      <td class="text-primary" style="padding: 12px 0; color: #1e293b; font-weight: 500;">${
                         courseLevelData?.LabelShort || courseLevel
                       }</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Training Center:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">${
+                      <td class="text-secondary" style="padding: 12px 0; font-weight: 600; color: #475569;">Training Center:</td>
+                      <td class="text-primary" style="padding: 12px 0; color: #1e293b; font-weight: 500;">${
                         centerData?.name || center
                       }</td>
                     </tr>
                     <tr>
-                      <td style="padding: 12px 0; font-weight: 600; color: #475569;">Registration ID:</td>
-                      <td style="padding: 12px 0; color: #1e293b; font-weight: 500; font-family: monospace; background: #f1f5f9; padding: 8px 12px; border-radius: 6px; display: inline-block;">${
+                      <td class="text-secondary" style="padding: 12px 0; font-weight: 600; color: #475569;">Registration ID:</td>
+                      <td class="text-primary" style="padding: 12px 0; color: #1e293b; font-weight: 500; font-family: monospace; background: #f1f5f9; padding: 8px 12px; border-radius: 6px; display: inline-block;">${
                         registrationData.data.id
                       }</td>
                     </tr>
@@ -384,35 +404,35 @@ export async function POST(request: NextRequest) {
                 </div>
 
                 <!-- Next Steps -->
-                <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
+                <div class="next-steps-card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; border-radius: 12px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden;">
                   <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, #22c55e 0%, transparent 70%); opacity: 0.05;"></div>
-                  <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">What Happens Next?</h3>
+                  <h3 class="section-title" style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; position: relative; z-index: 1;">What Happens Next?</h3>
                   <div style="position: relative; z-index: 1;">
                     <div style="display: flex; align-items: center; margin-bottom: 12px;">
                       <div style="width: 20px; height: 20px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
-                      <p style="margin: 0; color: #1e293b; font-weight: 500;">Our team will review your application</p>
+                      <p class="text-primary" style="margin: 0; color: #1e293b; font-weight: 500;">Our team will review your application</p>
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 12px;">
                       <div style="width: 20px; height: 20px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
-                      <p style="margin: 0; color: #1e293b; font-weight: 500;">You will be contacted within 2-3 business days</p>
+                      <p class="text-primary" style="margin: 0; color: #1e293b; font-weight: 500;">You will be contacted within 2-3 business days</p>
                     </div>
                     <div style="display: flex; align-items: center;">
                       <div style="width: 20px; height: 20px; background: #22c55e; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;"></div>
-                      <p style="margin: 0; color: #1e293b; font-weight: 500;">Please keep this email for your records</p>
+                      <p class="text-primary" style="margin: 0; color: #1e293b; font-weight: 500;">Please keep this email for your records</p>
                     </div>
                   </div>
                 </div>
 
                 <!-- Contact Information -->
-                <div style="background: linear-gradient(135deg, #fef7ff 0%, #faf5ff 100%); border: 1px solid #e9d5ff; border-radius: 12px; padding: 20px; text-align: center;">
-                  <h3 style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px; font-weight: 600;">📞 Need Help?</h3>
-                  <p style="color: #64748b; margin: 0; font-size: 14px;">If you have any questions, please contact us at your selected training center.</p>
+                <div class="help-card" style="background: linear-gradient(135deg, #fef7ff 0%, #faf5ff 100%); border: 1px solid #e9d5ff; border-radius: 12px; padding: 20px; text-align: center;">
+                  <h3 class="section-title" style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px; font-weight: 600;">📞 Need Help?</h3>
+                  <p class="text-muted" style="color: #64748b; margin: 0; font-size: 14px;">If you have any questions, please contact us at your selected training center.</p>
                 </div>
 
               </div>
 
               <!-- Footer -->
-              <div style="background: #1e293b; padding: 25px 20px; text-align: center;">
+              <div class="footer-bg" style="background: #1e293b; padding: 25px 20px; text-align: center;">
                 <p style="color: #94a3b8; margin: 0 0 5px 0; font-size: 13px; font-weight: 500;">Schoenstatt Language Academy</p>
                 <p style="color: #64748b; margin: 0; font-size: 11px;">This is an automated confirmation email • Please do not reply</p>
               </div>

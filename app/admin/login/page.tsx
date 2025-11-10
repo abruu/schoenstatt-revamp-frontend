@@ -102,7 +102,7 @@ export default function AdminLoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label style={{ color: 'black' }} htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -115,7 +115,7 @@ export default function AdminLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label style={{ color: 'black' }} htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
