@@ -11,34 +11,39 @@ import { getEventsForEventsPage } from "@/lib/unified-events-data"
 import { getIconComponent } from "@/lib/icon-mapping"
 import { useApiStore } from "@/lib/stores/api-store"
 import { SkeletonLoader } from "@/components/common/skeleton-loader"
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
+import { useEnhancedInfiniteScroll } from "@/hooks/use-enhanced-infinite-scroll"
+import { EventCardSkeleton } from "@/components/common/event-card-skeleton"
 
 export function EventsPageContent() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
 
-  const { 
-    events: apiEvents, 
-    eventsLoading, 
-    eventsError, 
+  const {
+    events: apiEvents,
+    eventsLoading,
+    eventsError,
     eventsHasMore,
     eventsLoadingMore,
-    fetchEvents, 
+    fetchEvents,
     loadMoreEvents,
     categories: apiCategories,
     categoriesLoading,
     categoriesError,
     fetchCategories,
-    clearError 
+    clearError
   } = useApiStore();
-  
-  // Initialize infinite scroll
-  const { loadingRef } = useInfiniteScroll({
+
+  // Initialize enhanced infinite scroll with retry and prefetch
+  const { loadingRef, retry, retryCount, lastError } = useEnhancedInfiniteScroll({
     hasMore: eventsHasMore,
     isLoading: eventsLoadingMore,
     onLoadMore: loadMoreEvents,
-    threshold: 300
+    threshold: 300,
+    prefetchThreshold: 600,
+    retryAttempts: 3,
+    retryDelay: 1000,
+    enabled: !eventsError,
   });
 
   useEffect(() => {
@@ -51,7 +56,7 @@ export function EventsPageContent() {
   // Build dynamic categories from API data with client-side filtering
   const buildCategories = () => {
     const allCategory = { id: "all", name: "All Events", count: events.length };
-    
+
     if (categoriesLoading || apiCategories.length === 0) {
       // Show loading or fallback categories
       return [
@@ -61,32 +66,32 @@ export function EventsPageContent() {
         { id: "Care", name: "SLA Cares", count: events.filter((e) => e.category === "Care").length },
       ];
     }
-    
+
     // Filter categories by WhichPage='events' on the client side
     const eventsCategories = apiCategories.filter(category => category.WhichPage === 'events');
-    
+
     // Build categories from filtered API data
     const dynamicCategories = eventsCategories.map(category => ({
       id: category.slug,
       name: category.name,
       count: events.filter((e) => e.category === category.name).length
     }));
-    
+
     return [allCategory, ...dynamicCategories];
   };
-  
+
   const categories = buildCategories();
 
   const filteredEvents = events
     .filter((event) => {
       if (selectedCategory === "all") return true;
-      
+
       // Find the selected category from API data
       const selectedCategoryData = apiCategories.find(cat => cat.slug === selectedCategory);
-      
+
       // If we found the category, filter by name; otherwise use the selectedCategory directly
       const categoryToMatch = selectedCategoryData ? selectedCategoryData.name : selectedCategory;
-      
+
       return event.category === categoryToMatch;
     })
     .filter(
@@ -119,7 +124,7 @@ export function EventsPageContent() {
 
         <h1 className="text-4xl lg:text-6xl font-bold">
           <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-            SLA Events & News
+            SLA Updates & News
           </span>
         </h1>
 
@@ -154,7 +159,7 @@ export function EventsPageContent() {
                 }`}
               >
                 {category.name}
-                <Badge className="bg-white/20 text-xs">{category.count}</Badge>
+
               </Button>
             ))
           )}
@@ -206,12 +211,9 @@ export function EventsPageContent() {
 
     {/* Loading skeleton */}
 {eventsLoading ? (
-  <SkeletonLoader 
-    count={6} 
-    show={eventsLoading} 
-    variant="event-card"
-    className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-  />
+  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <EventCardSkeleton count={6} />
+  </div>
 ) : !eventsError && filteredEvents.length === 0 && !eventsLoading ? (
   <div className="flex flex-col items-center justify-center py-12 space-y-4">
     <div className="p-6 rounded-full bg-white/5 border border-white/10">
@@ -221,13 +223,13 @@ export function EventsPageContent() {
     <p className="text-gray-500 text-center max-w-md">
       Try adjusting your search or filter criteria, or check back later for new events.
     </p>
-    <Button 
+    <Button
       onClick={() => {
         clearError();
         fetchEvents();
         fetchCategories(true); // Force refresh
-      }} 
-      variant="outline" 
+      }}
+      variant="outline"
       className="mt-2"
     >
       Refresh
@@ -275,7 +277,7 @@ export function EventsPageContent() {
             <div className="absolute bottom-4 right-4 z-20">
               <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
                 {(() => {
-                  
+
                   return <Camera className="h-5 w-5 text-white" />
                 })()}
                 <span className="text-xs text-white">{event.GalleryItems.length}</span>
@@ -315,12 +317,12 @@ export function EventsPageContent() {
                 <Button
                   className={`w-full bg-gradient-to-r ${event.gradient.className} text-white hover:scale-105 transition-all duration-300`}
                 >
-                  View Details 
+                  View Details
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </Link>
-              <Button 
-                size="icon" 
+              <Button
+                size="icon"
                 className="bg-white/10 hover:bg-white/20 border border-white/20"
               >
                 <Share2 className="h-4 w-4" />
@@ -333,12 +335,13 @@ export function EventsPageContent() {
   </div>
 ) : null}
 
-    
- 
+
+
+      {/* Infinite scroll sentinel and loading states */}
       {eventsHasMore && (
         <div ref={loadingRef} className="flex justify-center py-8">
           {eventsLoadingMore && (
-            <div className="flex items-center space-x-2 text-gray-400">
+            <div className="flex items-center space-x-2 text-gray-400" role="status" aria-live="polite">
               <div className="w-6 h-6 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"></div>
               <span>Loading more events...</span>
             </div>
@@ -346,9 +349,19 @@ export function EventsPageContent() {
         </div>
       )}
 
+      {/* Retry on error */}
+      {lastError && retryCount > 0 && (
+        <div className="flex flex-col items-center justify-center py-8 space-y-4" role="alert">
+          <div className="text-red-500 font-medium">Failed to load more events (Attempt {retryCount}/3)</div>
+          <Button onClick={retry} variant="outline" size="sm">
+            Retry Now
+          </Button>
+        </div>
+      )}
+
       {/* End of Events Indicator */}
       {!eventsHasMore && apiEvents.length > 0 && (
-        <div className="text-center py-8">
+        <div className="text-center py-8" role="status" aria-live="polite">
           <p className="text-gray-400">You've reached the end of the events</p>
         </div>
       )}

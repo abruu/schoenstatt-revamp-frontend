@@ -17,7 +17,7 @@ export const NAVIGATION_ITEMS = [
   { name: "About Us", href: "/about" },
   { name: "Centers", href: "#centers" },
   // { name: "Graduates", href: "/graduates" },
-  { name: "Events", href: "/events" },
+  { name: "Updates", href: "/events" },
   { name: "Gallery", href: "/gallery" },
   { name: "Contact Us", href: "#contact" },
   // { name: "Register Now", href: "/register" },

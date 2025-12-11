@@ -17,7 +17,8 @@ import { Badge } from "@/components/ui/badge"
 import { useApiStore } from "@/lib/stores/api-store"
 import Link from "next/link"
 import { DateDisplay } from "./common/date-display"
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
+import { useEnhancedInfiniteScroll } from "@/hooks/use-enhanced-infinite-scroll"
+import { GalleryCardSkeleton } from "@/components/common/gallery-card-skeleton"
 
 interface GalleryPageContentProps {
   showCategories?: boolean;
@@ -55,12 +56,16 @@ export function GalleryPageContent({
     clearError
   } = useApiStore();
 
-  // Initialize infinite scroll
-  const { loadingRef } = useInfiniteScroll({
+  // Initialize enhanced infinite scroll with retry and prefetch
+  const { loadingRef, retry, retryCount, lastError } = useEnhancedInfiniteScroll({
     hasMore: galleriesHasMore && !isPreview, // Disable infinite scroll in preview mode
     isLoading: galleriesLoadingMore,
     onLoadMore: loadMoreGalleries,
-    threshold: 30
+    threshold: 400,
+    prefetchThreshold: 800,
+    retryAttempts: 3,
+    retryDelay: 1000,
+    enabled: !galleriesError && !isPreview,
   });
 
   useEffect(() => {
@@ -70,23 +75,32 @@ export function GalleryPageContent({
   }, [fetchCategories, fetchGalleries]);
 
   // Transform API galleries into individual images
+  // This flattens the nested structure: each gallery contains multiple images
+  // We create a separate item for each image to enable smooth scrolling
   const transformApiGalleriesToImages = () => {
     const images: any[] = [];
 
     apiGalleries.forEach((gallery) => {
-      gallery?.image?.forEach((img, index) => {
-        images.push({
-          id: `${gallery?.id}-${img?.id}`,
-          src: img?.url,
-          alt: img?.alternativeText || gallery?.title,
-          category: gallery?.category?.slug || 'general',
-          title: gallery?.title,
-          description: gallery?.description,
-          date: gallery?.date,
-          location: gallery?.branch?.header || 'SLA Center',
-          tags: gallery?.tags?.map((tag: any) => tag.name.toLowerCase()) || [],
+      // Each gallery can have multiple images - we flatten them into individual items
+      if (gallery?.image && Array.isArray(gallery.image)) {
+        gallery.image.forEach((img, imageIndex) => {
+          images.push({
+            id: `${gallery?.id}-${img?.id}`,
+            src: img?.url,
+            alt: img?.alternativeText || gallery?.title,
+            category: gallery?.category?.slug || 'general',
+            title: gallery?.title,
+            description: gallery?.description,
+            date: gallery?.date,
+            location: gallery?.branch?.header || 'SLA Center',
+            tags: gallery?.tags?.map((tag: any) => tag.name.toLowerCase()) || [],
+            // Additional metadata for tracking
+            galleryId: gallery?.id,
+            imageIndex: imageIndex,
+            totalImagesInGallery: gallery.image.length,
+          });
         });
-      });
+      }
     });
 
     return images;
@@ -243,7 +257,7 @@ export function GalleryPageContent({
       >
         <category.icon className="h-4 w-4" />
         <span className="hidden md:inline">{category.name}</span>
-        <Badge className="bg-white/20 text-xs">{category.count}</Badge>
+
       </Button>
     ))
   ) : null}
@@ -281,22 +295,7 @@ export function GalleryPageContent({
       {/* Loading state for galleries */}
       {galleriesLoading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="relative">
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden animate-pulse">
-                <div className="aspect-square bg-white/10"></div>
-                <div className="p-4 space-y-2">
-                  <div className="h-4 bg-white/10 rounded w-3/4"></div>
-                  <div className="h-3 bg-white/10 rounded w-full"></div>
-                  <div className="h-3 bg-white/10 rounded w-1/2"></div>
-                  <div className="flex justify-between">
-                    <div className="h-3 bg-white/10 rounded w-1/4"></div>
-                    <div className="h-3 bg-white/10 rounded w-1/4"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+          <GalleryCardSkeleton count={8} aspectRatio={isPreview ? "video" : "square"} />
         </div>
       ) : (
         <div className={gridClass}>
@@ -359,17 +358,32 @@ export function GalleryPageContent({
       {!isPreview && galleriesHasMore && (
         <div ref={loadingRef} className="flex justify-center py-8">
           {galleriesLoadingMore && (
-            <div className="flex items-center space-x-2 text-gray-400">
-              <div className="w-6 h-6 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"></div>
-              <span>Loading more photos...</span>
+            <div className="flex flex-col items-center space-y-2 text-gray-400" role="status" aria-live="polite">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"></div>
+                <span>Loading more photos...</span>
+              </div>
+              <span className="text-xs text-gray-500">
+                {filteredImages.length} images loaded from {apiGalleries.length} galleries
+              </span>
             </div>
           )}
         </div>
       )}
 
+      {/* Retry on error */}
+      {!isPreview && lastError && retryCount > 0 && (
+        <div className="flex flex-col items-center justify-center py-8 space-y-4" role="alert">
+          <div className="text-red-500 font-medium">Failed to load more photos (Attempt {retryCount}/3)</div>
+          <Button onClick={retry} variant="outline" size="sm">
+            Retry Now
+          </Button>
+        </div>
+      )}
+
       {/* End of Gallery Indicator */}
       {!isPreview && !galleriesHasMore && filteredImages.length > 0 && (
-        <div className="text-center py-8">
+        <div className="text-center py-8" role="status" aria-live="polite">
           <p className="text-gray-400">You've reached the end of the gallery</p>
         </div>
       )}

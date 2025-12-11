@@ -190,6 +190,59 @@ interface LanguageCertificationLevel {
   publishedAt: string;
 }
 
+interface HeroImageFormat {
+  ext: string;
+  url: string;
+  hash: string;
+  mime: string;
+  name: string;
+  path: null | string;
+  size: number;
+  width: number;
+  height: number;
+  sizeInBytes: number;
+}
+
+interface HeroImage {
+  id: number;
+  documentId: string;
+  formats: {
+    large?: HeroImageFormat;
+    medium?: HeroImageFormat;
+    small?: HeroImageFormat;
+    thumbnail?: HeroImageFormat;
+  };
+}
+
+interface HeroImageItem {
+  id: number;
+  priority: string;
+  images: HeroImage;
+}
+
+interface HeroTestimonial {
+  id: number;
+  StudentName: string;
+  testimonialDescription: string;
+}
+
+interface HeroData {
+  id: number;
+  documentId: string;
+  Header1: string;
+  Header2: string;
+  description: string;
+  Students: string;
+  SuccessRate: string;
+  Centers: string;
+  tagline: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  headerimage: HeroImageItem[];
+  testimonials: HeroTestimonial[];
+}
+
 interface ApiResponse<T> {
   data: T;
   meta: {
@@ -210,6 +263,7 @@ interface ApiState {
   eventsPage: number;
   eventsHasMore: boolean;
   eventsLoadingMore: boolean;
+  eventsPendingRequest: boolean;
 
   // Single event data
   currentEvent: Event | null;
@@ -228,6 +282,7 @@ interface ApiState {
   galleriesPage: number;
   galleriesHasMore: boolean;
   galleriesLoadingMore: boolean;
+  galleriesPendingRequest: boolean;
 
   // Graduates data
   graduates: Graduate[];
@@ -236,6 +291,7 @@ interface ApiState {
   graduatesPage: number;
   graduatesHasMore: boolean;
   graduatesLoadingMore: boolean;
+  graduatesPendingRequest: boolean;
 
   // Branches data
   branches: Branch[];
@@ -246,6 +302,12 @@ interface ApiState {
   languageCertificationLevels: LanguageCertificationLevel[];
   languageCertificationLevelsLoading: boolean;
   languageCertificationLevelsError: string | null;
+
+  // Hero data
+  heroData: HeroData | null;
+  heroDataLoading: boolean;
+  heroDataError: string | null;
+  heroDataLastFetchTime: number | null;
 
   // Generic loading states
   loading: boolean;
@@ -259,6 +321,7 @@ interface ApiState {
   branchesLastFetchTime: number | null;
   languageCertificationLevelsLastFetchTime: number | null;
   cacheExpiry: number; // Cache expiry time in milliseconds (default: 5 minutes)
+  heroDataCacheExpiry: number; // Hero data cache expiry (default: 10 minutes)
 
   // Actions
   fetchEvents: (
@@ -274,6 +337,7 @@ interface ApiState {
   loadMoreGraduates: () => Promise<void>;
   fetchBranches: (forceRefresh?: boolean) => Promise<void>;
   fetchLanguageCertificationLevels: (forceRefresh?: boolean) => Promise<void>;
+  fetchHeroData: (forceRefresh?: boolean) => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
   clearCache: () => void;
@@ -282,7 +346,7 @@ interface ApiState {
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_STRAPI_URL,
-  timeout: 10000,
+  timeout: 50000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -321,6 +385,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
   eventsPage: 1,
   eventsHasMore: true,
   eventsLoadingMore: false,
+  eventsPendingRequest: false,
   currentEvent: null,
   currentEventLoading: false,
   currentEventError: null,
@@ -333,18 +398,24 @@ export const useApiStore = create<ApiState>((set, get) => ({
   galleriesPage: 1,
   galleriesHasMore: true,
   galleriesLoadingMore: false,
+  galleriesPendingRequest: false,
   graduates: [],
   graduatesLoading: false,
   graduatesError: null,
   graduatesPage: 1,
   graduatesHasMore: true,
   graduatesLoadingMore: false,
+  graduatesPendingRequest: false,
   branches: [],
   branchesLoading: false,
   branchesError: null,
   languageCertificationLevels: [],
   languageCertificationLevelsLoading: false,
   languageCertificationLevelsError: null,
+  heroData: null,
+  heroDataLoading: false,
+  heroDataError: null,
+  heroDataLastFetchTime: null,
   loading: false,
   error: null,
 
@@ -356,6 +427,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
   branchesLastFetchTime: null,
   languageCertificationLevelsLastFetchTime: null,
   cacheExpiry: 5 * 60 * 1000, // 5 minutes in milliseconds
+  heroDataCacheExpiry: 10 * 60 * 1000, // 10 minutes in milliseconds
 
   // Actions
   fetchEvents: async (params = {}, forceRefresh = false) => {
@@ -440,11 +512,20 @@ export const useApiStore = create<ApiState>((set, get) => ({
     const state = get();
 
     // Don't load more if already loading or no more data available
-    if (state.eventsLoadingMore || !state.eventsHasMore) {
+    // Prevent duplicate requests
+    if (
+      state.eventsLoadingMore ||
+      !state.eventsHasMore ||
+      state.eventsPendingRequest
+    ) {
       return;
     }
 
-    set({ eventsLoadingMore: true, eventsError: null });
+    set({
+      eventsLoadingMore: true,
+      eventsError: null,
+      eventsPendingRequest: true,
+    });
 
     try {
       const nextPage = state.eventsPage + 1;
@@ -484,6 +565,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
         eventsError: null,
         eventsPage: nextPage,
         eventsHasMore: meta.pagination.page < meta.pagination.pageCount,
+        eventsPendingRequest: false,
       });
     } catch (error) {
       const errorMessage =
@@ -494,6 +576,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
       set({
         eventsLoadingMore: false,
         eventsError: errorMessage,
+        eventsPendingRequest: false,
       });
     }
   },
@@ -687,11 +770,20 @@ export const useApiStore = create<ApiState>((set, get) => ({
     const state = get();
 
     // Don't load more if already loading or no more data available
-    if (state.galleriesLoadingMore || !state.galleriesHasMore) {
+    // Prevent duplicate requests
+    if (
+      state.galleriesLoadingMore ||
+      !state.galleriesHasMore ||
+      state.galleriesPendingRequest
+    ) {
       return;
     }
 
-    set({ galleriesLoadingMore: true, galleriesError: null });
+    set({
+      galleriesLoadingMore: true,
+      galleriesError: null,
+      galleriesPendingRequest: true,
+    });
 
     try {
       const nextPage = state.galleriesPage + 1;
@@ -721,6 +813,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
         galleriesError: null,
         galleriesPage: nextPage,
         galleriesHasMore: meta.pagination.page < meta.pagination.pageCount,
+        galleriesPendingRequest: false,
       });
     } catch (error) {
       const errorMessage =
@@ -731,6 +824,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
       set({
         galleriesLoadingMore: false,
         galleriesError: errorMessage,
+        galleriesPendingRequest: false,
       });
     }
   },
@@ -805,11 +899,20 @@ export const useApiStore = create<ApiState>((set, get) => ({
     const state = get();
 
     // Don't load more if already loading or no more data available
-    if (state.graduatesLoadingMore || !state.graduatesHasMore) {
+    // Prevent duplicate requests
+    if (
+      state.graduatesLoadingMore ||
+      !state.graduatesHasMore ||
+      state.graduatesPendingRequest
+    ) {
       return;
     }
 
-    set({ graduatesLoadingMore: true, graduatesError: null });
+    set({
+      graduatesLoadingMore: true,
+      graduatesError: null,
+      graduatesPendingRequest: true,
+    });
 
     try {
       const nextPage = state.graduatesPage + 1;
@@ -839,6 +942,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
         graduatesError: null,
         graduatesPage: nextPage,
         graduatesHasMore: meta.pagination.page < meta.pagination.pageCount,
+        graduatesPendingRequest: false,
       });
     } catch (error) {
       const errorMessage =
@@ -849,6 +953,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
       set({
         graduatesLoadingMore: false,
         graduatesError: errorMessage,
+        graduatesPendingRequest: false,
       });
     }
   },
@@ -969,6 +1074,140 @@ export const useApiStore = create<ApiState>((set, get) => ({
     }
   },
 
+  fetchHeroData: async (forceRefresh = false) => {
+    const state = get();
+    const currentTime = Date.now();
+
+    // Check localStorage cache first
+    const cachedData =
+      typeof window !== "undefined" ? localStorage.getItem("heroData") : null;
+    const cachedTimestamp =
+      typeof window !== "undefined"
+        ? localStorage.getItem("heroDataTimestamp")
+        : null;
+
+    // Check if we have valid cached data (in-memory or localStorage)
+    const isCacheValid =
+      state.heroDataLastFetchTime &&
+      currentTime - state.heroDataLastFetchTime < state.heroDataCacheExpiry;
+
+    const isLocalStorageValid =
+      cachedData &&
+      cachedTimestamp &&
+      currentTime - parseInt(cachedTimestamp) < state.heroDataCacheExpiry;
+
+    // Optimistic UI: Use cached data immediately if available
+    if (!forceRefresh && (isCacheValid || isLocalStorageValid)) {
+      if (state.heroData) {
+        console.log("Using in-memory cached hero data");
+        // Still fetch in background to refresh
+        if (isCacheValid) return;
+      } else if (isLocalStorageValid && cachedData) {
+        try {
+          const parsedData = JSON.parse(cachedData);
+          set({
+            heroData: parsedData,
+            heroDataLoading: false,
+            heroDataError: null,
+            heroDataLastFetchTime: parseInt(cachedTimestamp),
+          });
+          console.log("Using localStorage cached hero data");
+          return;
+        } catch (e) {
+          console.error("Failed to parse cached hero data", e);
+        }
+      }
+    }
+
+    set({
+      heroDataLoading: true,
+      heroDataError: null,
+    });
+
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    let retryCount = 0;
+    let lastError: any = null;
+
+    while (retryCount < maxRetries) {
+      try {
+        const queryString =
+          "populate[headerimage][populate][images][fields][0]=formats&populate[testimonials]=*";
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await api.get(`home-page?${queryString}`, {
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        const heroData = response.data.data;
+
+        // Validate data structure
+        if (!heroData || !heroData.Header1 || !heroData.headerimage) {
+          throw new Error("Invalid hero data structure received from API");
+        }
+
+        // Update state
+        set({
+          heroData,
+          heroDataLoading: false,
+          heroDataError: null,
+          heroDataLastFetchTime: Date.now(),
+        });
+
+        // Cache in localStorage
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("heroData", JSON.stringify(heroData));
+            localStorage.setItem("heroDataTimestamp", Date.now().toString());
+          } catch (e) {
+            console.warn("Failed to cache hero data in localStorage", e);
+          }
+        }
+
+        console.log("Hero data fetched successfully");
+        return;
+      } catch (error) {
+        lastError = error;
+        retryCount++;
+
+        if (retryCount < maxRetries) {
+          // Exponential backoff: 1s, 2s, 4s
+          const delay = Math.pow(2, retryCount - 1) * 1000;
+          console.log(
+            `Retrying hero data fetch (${retryCount}/${maxRetries}) after ${delay}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    // All retries failed
+    const errorMessage =
+      lastError instanceof AxiosError
+        ? lastError.response?.data?.error?.message || lastError.message
+        : "Failed to fetch hero data after multiple retries";
+
+    console.error("Hero data fetch failed:", errorMessage);
+
+    // Log to analytics (placeholder)
+    if (typeof window !== "undefined" && (window as any).gtag) {
+      (window as any).gtag("event", "api_error", {
+        error_type: "hero_data_fetch_failed",
+        error_message: errorMessage,
+        retry_count: retryCount,
+      });
+    }
+
+    set({
+      heroDataLoading: false,
+      heroDataError: errorMessage,
+    });
+  },
+
   clearError: () => {
     set({
       error: null,
@@ -979,6 +1218,7 @@ export const useApiStore = create<ApiState>((set, get) => ({
       graduatesError: null,
       branchesError: null,
       languageCertificationLevelsError: null,
+      heroDataError: null,
     });
   },
 
@@ -994,27 +1234,39 @@ export const useApiStore = create<ApiState>((set, get) => ({
       graduates: [],
       branches: [],
       languageCertificationLevels: [],
+      heroData: null,
       lastFetchTime: null,
       galleriesLastFetchTime: null,
       graduatesLastFetchTime: null,
       branchesLastFetchTime: null,
       languageCertificationLevelsLastFetchTime: null,
+      heroDataLastFetchTime: null,
       eventsError: null,
       categoriesError: null,
       galleriesError: null,
       graduatesError: null,
       branchesError: null,
       languageCertificationLevelsError: null,
+      heroDataError: null,
       galleriesPage: 1,
       galleriesHasMore: true,
       galleriesLoadingMore: false,
+      galleriesPendingRequest: false,
       graduatesPage: 1,
       graduatesHasMore: true,
       graduatesLoadingMore: false,
+      graduatesPendingRequest: false,
       eventsPage: 1,
       eventsHasMore: true,
       eventsLoadingMore: false,
+      eventsPendingRequest: false,
     });
+
+    // Clear localStorage cache
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("heroData");
+      localStorage.removeItem("heroDataTimestamp");
+    }
   },
 }));
 

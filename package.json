@@ -39,6 +39,7 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@strapi/blocks-react-renderer": "^1.0.2",
+    "@tanstack/react-virtual": "^3.13.13",
     "autoprefixer": "^10.4.20",
     "axios": "^1.12.2",
     "browser-image-compression": "^2.0.2",

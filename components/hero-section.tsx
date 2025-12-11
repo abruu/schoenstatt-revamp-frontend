@@ -1,10 +1,96 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Users, Award, Globe, Zap, Star, BookOpen, Play, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { useApiStore } from "@/lib/stores/api-store"
+import { HeroSkeleton } from "@/components/hero-skeleton"
+
+// Fallback data in case API fails
+const FALLBACK_DATA = {
+  Header1: "Immerse Yourself In The World Of The",
+  Header2: "German Language",
+  description: "SLA is an Initiative of the Secular Institute of Schoenstatt Fathers, which offers German language courses, levels A1, A2, B1 and B2. Our branches are sited in Thrissur, Chalakudy and Peravoor. Our institute is founded in Germany with a charism to renew the church and the society through the covenant of love with our heavenly Mother.",
+  Students: "500",
+  SuccessRate: "95",
+  Centers: "3",
+  tagline: "Next-Gen Language Learning",
+  testimonials: [
+    { StudentName: "Maria K.", testimonialDescription: "Best German learning experience!" },
+    { StudentName: "John D.", testimonialDescription: "Excellent teaching methodology" },
+    { StudentName: "Sarah L.", testimonialDescription: "Achieved B2 level in 8 months" }
+  ],
+  headerimage: [
+    {
+      id: 1,
+      priority: "high",
+      images: {
+        id: 1,
+        documentId: "fallback-1",
+        formats: {
+          large: {
+            url: "/images/Gallery/header_pic.jpg",
+            ext: ".jpg",
+            hash: "fallback",
+            mime: "image/jpeg",
+            name: "header_pic.jpg",
+            path: null,
+            size: 100,
+            width: 1000,
+            height: 1000,
+            sizeInBytes: 100000
+          }
+        }
+      }
+    },
+    {
+      id: 2,
+      priority: "high",
+      images: {
+        id: 2,
+        documentId: "fallback-2",
+        formats: {
+          large: {
+            url: "/images/SLA gratuates/PHOTO-2025-04-04-01-45-04.jpg",
+            ext: ".jpg",
+            hash: "fallback",
+            mime: "image/jpeg",
+            name: "graduate.jpg",
+            path: null,
+            size: 100,
+            width: 1000,
+            height: 1000,
+            sizeInBytes: 100000
+          }
+        }
+      }
+    },
+    {
+      id: 3,
+      priority: "high",
+      images: {
+        id: 3,
+        documentId: "fallback-3",
+        formats: {
+          large: {
+            url: "/images/SLA gratuates/PHOTO-2025-04-04-01-45-06.jpg",
+            ext: ".jpg",
+            hash: "fallback",
+            mime: "image/jpeg",
+            name: "graduate2.jpg",
+            path: null,
+            size: 100,
+            width: 1000,
+            height: 1000,
+            sizeInBytes: 100000
+          }
+        }
+      }
+    }
+  ]
+}
 
 export function HeroSection() {
   const [mounted, setMounted] = useState(false)
@@ -12,62 +98,73 @@ export function HeroSection() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [hasAnimated, setHasAnimated] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  const testimonials = [
-    { text: "Best German learning experience!", author: "Maria K." },
-    { text: "Excellent teaching methodology", author: "John D." },
-    { text: "Achieved B2 level in 8 months", author: "Sarah L." }
-  ]
+  // Get hero data from store
+  const { heroData, heroDataLoading, heroDataError, fetchHeroData } = useApiStore()
 
-  const heroImages = [
-    {
-      src: "/images/Gallery/header_pic.jpg",
-      alt: "SLA Students and Faculty",
-      badge: "Live Interactive Classes",
-      icon: Zap
-    },
-    {
-      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-04.jpg", // Replace with actual image paths
-      alt: "German Language Learning",
-      badge: "Expert Instructors",
-      icon: Users
-    },
-    {
-      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-06.jpg", // Replace with actual image paths
-      alt: "Modern Learning Environment",
-      badge: "State-of-Art Facilities",
-      icon: Award
-    },
-    {
-      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-09.jpg", // Replace with actual image paths
-      alt: "Global Certification",
-      badge: "German Certification",
-      icon: Globe
-    },
-    {
-      src: "images/SLA gratuates/PHOTO-2025-04-04-01-45-07 2.jpg", // Replace with actual image paths
-      alt: "Global Certification",
-      badge: "German Certification",
-      icon: Globe
-    },
-    {
-      src: "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.30 PM (1).jpeg", // Replace with actual image paths
-      alt: "Global Certification",
-      badge: "German Certification",
-      icon: Globe
-    },
-    {
-      src: "/images/SLA gratuates/8_29/WhatsApp Image 2025-08-29 at 2.24.31 PM.jpeg", // Replace with actual image paths
-      alt: "Global Certification",
-      badge: "German Certification",
-      icon: Globe
-    }
-  ]
+  // Use API data or fallback, and sort images by priority
+  const rawData = heroData || FALLBACK_DATA
+  const displayData = {
+    ...rawData,
+    headerimage: [...rawData.headerimage].sort((a, b) => {
+      // Sort by priority: "high" comes first
+      if (a.priority === "high" && b.priority !== "high") return -1
+      if (a.priority !== "high" && b.priority === "high") return 1
+      return 0
+    })
+  }
 
+  // Fetch hero data on mount
   useEffect(() => {
     setMounted(true)
+    
+    // Detect hard reload and clear cache
+    const isHardReload = typeof window !== 'undefined' && 
+      (window.performance?.navigation?.type === 1 || 
+       window.performance?.getEntriesByType?.('navigation')?.[0]?.type === 'reload')
+    
+    if (isHardReload) {
+      // Clear localStorage cache on hard reload
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('heroData')
+        localStorage.removeItem('heroDataTimestamp')
+        console.log('Cache cleared due to hard reload')
+      }
+      // Force refresh from API
+      fetchHeroData(true)
+    } else {
+      // Normal fetch with cache
+      fetchHeroData()
+    }
 
-    // Animate counters
+    // Cleanup on unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [fetchHeroData])
+
+  // Log error to console and analytics
+  useEffect(() => {
+    if (heroDataError) {
+      console.error("Hero data error:", heroDataError)
+      
+      // Analytics tracking
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'hero_data_error', {
+          error_message: heroDataError,
+        })
+      }
+    }
+  }, [heroDataError])
+
+  // Animate counters only once when component mounts
+  useEffect(() => {
+    if (!displayData || hasAnimated) return
+
     const animateCounter = (target: number, key: keyof typeof counters) => {
       let current = 0
       const increment = target / 100
@@ -82,50 +179,85 @@ export function HeroSection() {
     }
 
     const timeout = setTimeout(() => {
-      animateCounter(500, "students")
-      animateCounter(95, "success")
-      animateCounter(3, "centers")
+      animateCounter(parseInt(displayData.Students) || 500, "students")
+      animateCounter(parseInt(displayData.SuccessRate) || 95, "success")
+      animateCounter(parseInt(displayData.Centers) || 3, "centers")
+      setHasAnimated(true)
     }, 1000)
 
-    // Testimonial rotation
+    return () => {
+      clearTimeout(timeout)
+    }
+  }, [displayData, hasAnimated])
+
+  // Testimonial rotation
+  useEffect(() => {
+    if (!displayData?.testimonials?.length) return
+
     const testimonialInterval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+      setCurrentTestimonial((prev) => (prev + 1) % displayData.testimonials.length)
     }, 4000)
 
-    // Auto image slider
+    return () => {
+      clearInterval(testimonialInterval)
+    }
+  }, [displayData?.testimonials?.length])
+
+  // Auto image slider
+  useEffect(() => {
+    if (!displayData?.headerimage?.length) return
+
     const imageInterval = setInterval(() => {
       nextImage()
     }, 5000)
 
     return () => {
-      clearTimeout(timeout)
-      clearInterval(testimonialInterval)
       clearInterval(imageInterval)
     }
-  }, [])
+  }, [displayData?.headerimage?.length])
 
   const nextImage = () => {
-    if (isTransitioning) return
+    if (isTransitioning || !displayData?.headerimage?.length) return
     setIsTransitioning(true)
-    setCurrentImageIndex((prev) => (prev + 1) % heroImages.length)
+    setCurrentImageIndex((prev) => (prev + 1) % displayData.headerimage.length)
     setTimeout(() => setIsTransitioning(false), 500)
   }
 
   const prevImage = () => {
-    if (isTransitioning) return
+    if (isTransitioning || !displayData?.headerimage?.length) return
     setIsTransitioning(true)
-    setCurrentImageIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length)
+    setCurrentImageIndex((prev) => (prev - 1 + displayData.headerimage.length) % displayData.headerimage.length)
     setTimeout(() => setIsTransitioning(false), 500)
   }
 
   const goToImage = (index: number) => {
-    if (isTransitioning || index === currentImageIndex) return
+    if (isTransitioning || index === currentImageIndex || !displayData?.headerimage?.length) return
     setIsTransitioning(true)
     setCurrentImageIndex(index)
     setTimeout(() => setIsTransitioning(false), 500)
   }
 
-  if (!mounted) return null
+  // Helper function to get image URL with fallback
+  const getImageUrl = (imageItem: typeof displayData.headerimage[0]) => {
+    const formats = imageItem?.images?.formats
+    return formats?.large?.url || 
+           (formats as any)?.medium?.url || 
+           (formats as any)?.small?.url || 
+           "/images/Gallery/header_pic.jpg"
+  }
+
+  // Helper function to get alt text
+  const getImageAlt = (index: number) => {
+    return `SLA German Language Academy - Image ${index + 1}`
+  }
+
+  // Show skeleton while loading and no cached data
+  if (!mounted || (heroDataLoading && !heroData)) {
+    return <HeroSkeleton />
+  }
+
+  // Get current testimonial safely
+  const currentTestimonialData = displayData?.testimonials?.[currentTestimonial] || displayData?.testimonials?.[0]
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -155,22 +287,22 @@ export function HeroSection() {
             {/* Premium Badge */}
             <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-yellow-400/20 via-yellow-500/20 to-orange-500/20 border border-yellow-400/40 backdrop-blur-lg shadow-lg hover:shadow-yellow-400/25 transition-all duration-300">
               <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2 sm:mr-3 animate-pulse" />
-              <span className="text-yellow-400 text-xs sm:text-sm font-semibold tracking-wide">Next-Gen Language Learning</span>
+              <span className="text-yellow-400 text-xs sm:text-sm font-semibold tracking-wide">{displayData.tagline}</span>
             </div>
 
             {/* Dynamic Heading */}
             <div className="space-y-4 sm:space-y-6">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
-                  Immerse Yourself In The World Of The{" "}
+                  {displayData.Header1}{" "}
                 </span>
                 <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent animate-pulse">
-                  German Language
+                  {displayData.Header2}
                 </span>
               </h1>
 
               <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed ">
-              SLA is an Initiative of the Secular Institute of Schoenstatt Fathers, which offers German language courses, levels A1, A2, B1 and B2. Our branches are sited in Thrissur, Chalakudy and Peravoor. Our institute is founded in Germany with a charism to renew the church and the society through the covenant of love with our heavenly Mother.
+                {displayData.description}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
@@ -196,24 +328,26 @@ export function HeroSection() {
               </Link>
               </div>
             {/* Rotating Testimonial */}
-            <div className="">
-              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <div className="flex -space-x-2">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full border-2 border-white/20"></div>
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-400 to-green-600 rounded-full border-2 border-white/20"></div>
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full border-2 border-white/20"></div>
+            {currentTestimonialData && (
+              <div className="">
+                <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                  <div className="flex -space-x-2">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full border-2 border-white/20"></div>
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-400 to-green-600 rounded-full border-2 border-white/20"></div>
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full border-2 border-white/20"></div>
+                  </div>
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-current" />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-current" />
-                  ))}
-                </div>
+                <p className="text-white/90 italic mb-2 sm:mb-3 text-sm sm:text-lg leading-relaxed">
+                  &quot;{currentTestimonialData.testimonialDescription}&quot;
+                </p>
+                <p className="text-gray-400 font-medium text-sm">— {currentTestimonialData.StudentName}</p>
               </div>
-              <p className="text-white/90 italic mb-2 sm:mb-3 text-sm sm:text-lg leading-relaxed">
-                "{testimonials[currentTestimonial].text}"
-              </p>
-              <p className="text-gray-400 font-medium text-sm">— {testimonials[currentTestimonial].author}</p>
-            </div>
+            )}
            
             {/* Enhanced Stats Grid */}
             <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-6 sm:pt-8 border-t border-white/10">
@@ -274,11 +408,10 @@ export function HeroSection() {
               <div className="relative bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl border border-white/30 rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 group-hover:scale-[1.02]">
                 {/* Image Slider */}
                 <div className="relative aspect-square overflow-hidden">
-                  {heroImages.map((image, index) => {
-                    const IconComponent = image.icon
+                  {displayData.headerimage.map((imageItem, index) => {
                     return (
                       <div
-                        key={index}
+                        key={imageItem.id}
                         className={`absolute inset-0 transition-all duration-700 ease-in-out ${
                           index === currentImageIndex
                             ? 'opacity-100 translate-x-0'
@@ -289,8 +422,8 @@ export function HeroSection() {
                       >
                         <div className="relative w-full h-full">
                           <Image
-                            src={image.src}
-                            alt={image.alt}
+                            src={getImageUrl(imageItem)}
+                            alt={getImageAlt(index)}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
                             className="object-cover group-hover:scale-105 transition-transform duration-700"
@@ -302,25 +435,7 @@ export function HeroSection() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-blue-600/10"></div>
                         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/30"></div>
-
-                        {/* Dynamic floating badge */}
-                        {/* <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 backdrop-blur-lg border border-yellow-400/50 rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 shadow-lg transform transition-all duration-500 hover:scale-105">
-                          <span className="text-yellow-300 text-xs sm:text-sm font-bold flex items-center">
-                            <IconComponent className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-pulse" />
-                            <span className="hidden sm:inline">{image.badge}</span>
-                            <span className="sm:hidden">{image.badge.split(' ')[0]}</span>
-                          </span>
-                        </div> */}
-
-                        {/* Content overlay for better readability */}
-                        {/* <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
-                          <div className="bg-black/40 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-white/20">
-                            <h3 className="text-white font-semibold text-sm sm:text-base mb-1">{image.alt}</h3>
-                            <p className="text-gray-300 text-xs sm:text-sm opacity-90">Professional German Language Learning</p>
-                          </div>
-                        </div> */}
                       </div>
-
                     )
                   })}
                 </div>
@@ -344,11 +459,12 @@ export function HeroSection() {
 
                 {/* Slide Indicators */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2">
-                  {heroImages.map((_, index) => (
+                  {displayData.headerimage.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => goToImage(index)}
                       disabled={isTransitioning}
+                      aria-label={`Go to image ${index + 1}`}
                       className={`w-3 h-3 rounded-full transition-all duration-300 hover:scale-125 disabled:cursor-not-allowed ${
                         index === currentImageIndex
                           ? 'bg-yellow-400 shadow-lg shadow-yellow-400/50'
@@ -362,7 +478,7 @@ export function HeroSection() {
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
                   <div 
                     className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-300 ease-linear"
-                    style={{ width: `${((currentImageIndex + 1) / heroImages.length) * 100}%` }}
+                    style={{ width: `${((currentImageIndex + 1) / displayData.headerimage.length) * 100}%` }}
                   />
                 </div>
               </div>

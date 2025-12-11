@@ -64,7 +64,7 @@ export function Footer() {
                 { name: "About Us", href: "/about" },
                 { name: "Centers", href: "#centers" },
                 // { name: "Graduates", href: "/graduates" },
-                { name: "Events", href: "/events" },
+                { name: "Updates", href: "/events" },
                 { name: "Gallery", href: "/gallery" },
                 { name: "Contact Us", href: "#contact" },
                 { name: "Admin Login", href: "/admin/login" },
