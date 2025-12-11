@@ -15,13 +15,13 @@ export function NoticeBoard() {
   const [currentNotice, setCurrentNotice] = useState(0)
   const [showBellIcon, setShowBellIcon] = useState(false)
   const [hasNewNotices, setHasNewNotices] = useState(true)
-  
-  const { 
-    events, 
-    eventsLoading, 
-    eventsError, 
-    fetchEvents, 
-    clearError 
+
+  const {
+    events,
+    eventsLoading,
+    eventsError,
+    fetchEvents,
+    clearError
   } = useApiStore();
 
 
@@ -35,7 +35,7 @@ export function NoticeBoard() {
     // Show notice board after page loads if not recently closed and we have notices
     const timer = setTimeout(() => {
       if (
-        notices.length > 0 && 
+        notices.length > 0 &&
         (!noticeBoardClosed ||
         (lastClosedTime && Date.now() - Number.parseInt(lastClosedTime) > 24 * 60 * 60 * 1000))
       ) {
@@ -96,19 +96,19 @@ export function NoticeBoard() {
   }
 
   // Loading state
-  if (eventsLoading) {
-    return (
-      <div className="fixed top-20 right-2 left-2 sm:top-24 sm:right-6 sm:left-auto z-40 max-w-sm sm:max-w-sm mx-auto sm:mx-0 animate-slide-in-right">
-        <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-2xl blur-lg opacity-30 animate-pulse"></div>
-          <div className="relative bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-center py-8 space-y-4">
-            <Loader2 className="h-8 w-8 text-yellow-400 animate-spin" />
-            <div className="text-gray-400 font-medium">Loading notices...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // if (eventsLoading) {
+  //   return (
+  //     <div className="fixed top-20 right-2 left-2 sm:top-24 sm:right-6 sm:left-auto z-40 max-w-sm sm:max-w-sm mx-auto sm:mx-0 animate-slide-in-right">
+  //       <div className="relative">
+  //         <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-2xl blur-lg opacity-30 animate-pulse"></div>
+  //         <div className="relative bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-center py-8 space-y-4">
+  //           <Loader2 className="h-8 w-8 text-yellow-400 animate-spin" />
+  //           <div className="text-gray-400 font-medium">Loading notices...</div>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // Error state
   if (eventsError && showBellIcon) {
@@ -153,7 +153,7 @@ export function NoticeBoard() {
 
   // If no notices available and bell icon is not showing, don't render anything
   if (notices.length === 0 && !showBellIcon) return null
-  
+
   // If no notices but bell icon is showing, show empty state
   if (notices.length === 0 && showBellIcon) {
     return (
