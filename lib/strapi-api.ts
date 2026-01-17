@@ -199,4 +199,46 @@ export async function checkStudentExists(
   }
 }
 
+// Get admin notification emails
+export interface AdminNotificationEmail {
+  id: number;
+  documentId: string;
+  UserName: string;
+  UserEmailForGettingNotifications: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
+export interface AdminNotificationEmailsResponse {
+  data: AdminNotificationEmail[];
+  meta: {
+    pagination: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    };
+  };
+}
+
+export async function getAdminNotificationEmails(): Promise<string[]> {
+  try {
+    const response = await strapiApi.get<AdminNotificationEmailsResponse>(
+      "/admin-notification-emails"
+    );
+
+    if (response.data.data && Array.isArray(response.data.data)) {
+      return response.data.data
+        .map((item) => item.UserEmailForGettingNotifications)
+        .filter((email) => email && email.trim());
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error fetching admin notification emails:", error);
+    return [];
+  }
+}
+
 export { strapiApi };

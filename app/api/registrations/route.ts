@@ -4,6 +4,7 @@ import {
   uploadPhotoToStrapi,
   registerStudentInStrapi,
   checkStudentExists,
+  getAdminNotificationEmails,
 } from "@/lib/strapi-api";
 
 // Initialize Resend
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
     const dateOfBirthRaw = formData.get("dateOfBirth") as string;
     const email = formData.get("email") as string;
     const phone = formData.get("phone") as string;
+    const turnstileToken = formData.get("turnstileToken") as string;
 
     // Convert DD/MM/YYYY to YYYY-MM-DD for database storage
     const convertDateFormat = (ddmmyyyy: string): string => {
@@ -39,6 +41,38 @@ export async function POST(request: NextRequest) {
     const aadhaarNumber = formData.get("aadhaarNumber") as string;
     const center = formData.get("center") as string;
     const courseLevel = formData.get("courseLevel") as string;
+
+    // Validate Turnstile token
+    if (!turnstileToken) {
+      return NextResponse.json(
+        { error: "Security verification is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify Turnstile token with Cloudflare
+    const turnstileVerifyUrl =
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+    const turnstileResponse = await fetch(turnstileVerifyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: turnstileToken,
+      }),
+    });
+
+    const turnstileResult = await turnstileResponse.json();
+
+    if (!turnstileResult.success) {
+      console.error("Turnstile verification failed:", turnstileResult);
+      return NextResponse.json(
+        { error: "Security verification failed. Please try again." },
+        { status: 400 }
+      );
+    }
 
     // Validate required fields
     if (
@@ -133,9 +167,19 @@ export async function POST(request: NextRequest) {
     const photoData = registrationData.data.photo;
 
     // Build photo URL - check if it's already an absolute URL
-    const photoUrl = photoData.url.startsWith('http') 
-      ? photoData.url 
-      : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "")}${photoData.url}`;
+    const photoUrl = photoData.url.startsWith("http")
+      ? photoData.url
+      : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "")}${
+          photoData.url
+        }`;
+
+    // Build logo URL for email - use deployed app URL or fallback to localhost
+    const appBaseUrl = process.env.NEXT_LOGO_PATH;
+    const logoUrl = `${appBaseUrl}`;
+
+    // Fetch admin notification emails for CC
+    const adminNotificationEmails = await getAdminNotificationEmails();
+    console.log("Admin notification emails fetched:", adminNotificationEmails);
 
     // Debug email sending conditions
     console.log("Email sending debug:", {
@@ -144,6 +188,7 @@ export async function POST(request: NextRequest) {
       hasPhotoUrl: !!photoUrl,
       resendFrom: process.env.RESEND_FROM,
       resendApiKey: process.env.RESEND_API_KEY ? "Set" : "Missing",
+      adminCCCount: adminNotificationEmails.length,
     });
 
     // Send email notification if center email is found
@@ -159,9 +204,15 @@ export async function POST(request: NextRequest) {
         }
 
         console.log("Attempting to send email to:", cleanEmail);
+        console.log("CC recipients:", adminNotificationEmails);
+
         const emailResult = await resend.emails.send({
           from: process.env.RESEND_FROM!,
           to: cleanEmail,
+          cc:
+            adminNotificationEmails.length > 0
+              ? adminNotificationEmails
+              : undefined,
           subject: `🎓 New Student Registration - ${firstName} ${lastName}`,
           html: `
           <!DOCTYPE html>
@@ -195,7 +246,7 @@ export async function POST(request: NextRequest) {
               <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%); padding: 40px 30px; text-align: center; position: relative; overflow: hidden;">
                 <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); animation: pulse 4s ease-in-out infinite;"></div>
                 <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; display: inline-block; position: relative; z-index: 1;">
-                  <img src="images/locations/Image (7).jpeg" alt="SLA" style="height: 70px; margin-bottom: 15px;" />
+                  <img src="${logoUrl}" alt="SLA" style="height: 70px; margin-bottom: 15px;" />
                 </div>
                 <h1 class="header-title" style="color: #1a1a2e; margin: 20px 0 8px 0; font-size: 28px; font-weight: 800; position: relative; z-index: 1; letter-spacing: -0.5px;">New Student Registration</h1>
                 <p style="color: rgba(26, 26, 46, 0.9); margin: 0; font-size: 15px; position: relative; z-index: 1; font-weight: 500;">Schoenstatt Language Academy</p>
@@ -346,7 +397,7 @@ export async function POST(request: NextRequest) {
               <!-- Header with Logo and Success Animation -->
               <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 20px; text-align: center; position: relative;">
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="success" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23success)"/></svg></div>
-                <img src="images/locations/Image (7).jpeg" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 20px; position: relative; z-index: 1;" />
+                <img src="${logoUrl}" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 20px; position: relative; z-index: 1;" />
 
                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; position: relative; z-index: 1;">Registration Confirmed!</h1>
                 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; position: relative; z-index: 1;">Thank you for joining Schoenstatt Language Academy</p>
