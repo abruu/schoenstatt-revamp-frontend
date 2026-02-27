@@ -6,6 +6,7 @@ import {
   checkStudentExists,
   getAdminNotificationEmails,
 } from "@/lib/strapi-api";
+import { generateRegistrationPDF } from "@/lib/pdf-generator";
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     if (!turnstileToken) {
       return NextResponse.json(
         { error: "Security verification is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       console.error("Turnstile verification failed:", turnstileResult);
       return NextResponse.json(
         { error: "Security verification failed. Please try again." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "All fields are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
         {
           error: "Invalid file type. Please upload a JPG, PNG, or WebP image.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
           error:
             "File size too large. Please upload an image smaller than 5MB.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
       console.error("Upload error:", uploadError);
       return NextResponse.json(
         { error: "Failed to upload photo" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
               ? registrationError.message
               : "Unknown error",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -206,6 +207,45 @@ export async function POST(request: NextRequest) {
         console.log("Attempting to send email to:", cleanEmail);
         console.log("CC recipients:", adminNotificationEmails);
 
+        // Generate PDF attachment
+        console.log("Generating PDF attachment...");
+        let pdfBuffer: Buffer | null = null;
+        try {
+          pdfBuffer = await generateRegistrationPDF({
+            firstName,
+            lastName,
+            dateOfBirth: dateOfBirthRaw,
+            email,
+            phone,
+            address,
+            parentName,
+            parentContact,
+            aadhaarNumber,
+            courseLevel: courseLevelData?.LabelFull || courseLevel,
+            centerName: centerData?.name || center,
+            registrationId: registrationData.data.id,
+            photoUrl,
+            logoUrl,
+            submittedDate: new Date().toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }),
+            submittedTime: new Date().toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          });
+          console.log(
+            "PDF generated successfully, size:",
+            pdfBuffer.length,
+            "bytes",
+          );
+        } catch (pdfError) {
+          console.error("PDF generation failed:", pdfError);
+          // Continue with email even if PDF generation fails
+        }
+
         const emailResult = await resend.emails.send({
           from: process.env.RESEND_FROM!,
           to: cleanEmail,
@@ -214,6 +254,14 @@ export async function POST(request: NextRequest) {
               ? adminNotificationEmails
               : undefined,
           subject: `🎓 New Student Registration - ${firstName} ${lastName}`,
+          attachments: pdfBuffer
+            ? [
+                {
+                  filename: `Registration_${firstName}_${lastName}_${registrationData.data.id}.pdf`,
+                  content: pdfBuffer,
+                },
+              ]
+            : undefined,
           html: `
           <!DOCTYPE html>
           <html>
@@ -270,7 +318,7 @@ export async function POST(request: NextRequest) {
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Phone</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${phone}</td></tr>
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Address</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${address}</td></tr>
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Aadhaar</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px; font-family: monospace;">${maskAadhaar(
-                      aadhaarNumber
+                      aadhaarNumber,
                     )}</td></tr>
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Course Level</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 15px;"><span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1a1a2e; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">${
                       courseLevelData?.LabelShort || courseLevel
@@ -319,11 +367,11 @@ export async function POST(request: NextRequest) {
                   }</span></p>
                   <p class="text-secondary" style="margin: 8px 0; color: #64748b; font-size: 14px;"><strong>Submitted:</strong> ${new Date().toLocaleDateString(
                     "en-GB",
-                    { day: "numeric", month: "long", year: "numeric" }
+                    { day: "numeric", month: "long", year: "numeric" },
                   )} at ${new Date().toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}</p>
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}</p>
                 </div>
 
               </div>
@@ -509,7 +557,7 @@ export async function POST(request: NextRequest) {
     console.error("Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
