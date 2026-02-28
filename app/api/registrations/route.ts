@@ -37,11 +37,33 @@ export async function POST(request: NextRequest) {
 
     const dateOfBirth = convertDateFormat(dateOfBirthRaw);
     const address = formData.get("address") as string;
-    const parentName = formData.get("parentName") as string;
+    const fathersName = formData.get("fathersName") as string;
+    const mothersName = formData.get("mothersName") as string;
     const parentContact = formData.get("parentContact") as string;
     const aadhaarNumber = formData.get("aadhaarNumber") as string;
     const center = formData.get("center") as string;
     const courseLevel = formData.get("courseLevel") as string;
+    const gender = formData.get("gender") as string;
+    const whatsappNumber = formData.get("whatsappNumber") as string;
+    const isWhatsappSameAsPhone =
+      formData.get("isWhatsappSameAsPhone") === "true";
+    const hostelFacility = formData.get("hostelFacility") === "true";
+    const highestQualification = formData.get("highestQualification") as string;
+    const otherQualification = formData.get("otherQualification") as string;
+    const studiedGerman = formData.get("studiedGerman") === "true";
+    const levelCompleted = formData.get("levelCompleted") as string;
+    const learningPurposeRaw = formData.getAll(
+      "purposeLearningGerman",
+    ) as string[];
+    const purposeLearningGerman =
+      learningPurposeRaw.length > 0 ? learningPurposeRaw : [];
+    const workExperience = formData.get("workExperience") === "true";
+
+    // Determine final qualification value (use otherQualification if "Other" was selected)
+    const finalQualification =
+      highestQualification === "Other"
+        ? otherQualification
+        : highestQualification;
 
     // Validate Turnstile token
     if (!turnstileToken) {
@@ -84,11 +106,20 @@ export async function POST(request: NextRequest) {
       !email ||
       !phone ||
       !address ||
-      !parentName ||
+      !fathersName ||
+      !mothersName ||
       !parentContact ||
       !aadhaarNumber ||
       !center ||
-      !courseLevel
+      !courseLevel ||
+      hostelFacility === undefined ||
+      hostelFacility === null ||
+      !finalQualification ||
+      studiedGerman === undefined ||
+      studiedGerman === null ||
+      !purposeLearningGerman ||
+      workExperience === undefined ||
+      workExperience === null
     ) {
       return NextResponse.json(
         { error: "All fields are required" },
@@ -136,16 +167,26 @@ export async function POST(request: NextRequest) {
       registrationData = await registerStudentInStrapi({
         firstName,
         lastName,
+        gender,
         dateOfBirth,
         email,
         phone,
+        whatsappNumber,
+        isWhatsappSameAsPhone,
         address,
-        parentName,
+        fathersName,
+        mothersName,
         parentContact,
         aadhaarNumber,
         center: center,
         photo: photoUploadResult.id,
         courseLevel: courseLevel,
+        hostelFacility,
+        highestQualification: finalQualification,
+        studiedGerman,
+        levelCompleted,
+        purposeLearningGerman,
+        workExperience,
       });
     } catch (registrationError) {
       console.error("Registration error:", registrationError);
@@ -214,15 +255,24 @@ export async function POST(request: NextRequest) {
           pdfBuffer = await generateRegistrationPDF({
             firstName,
             lastName,
+            gender,
             dateOfBirth: dateOfBirthRaw,
             email,
             phone,
+            whatsappNumber,
             address,
-            parentName,
+            fathersName,
+            mothersName,
             parentContact,
             aadhaarNumber,
             courseLevel: courseLevelData?.LabelFull || courseLevel,
             centerName: centerData?.name || center,
+            hostelFacility,
+            highestQualification: finalQualification,
+            studiedGerman,
+            levelCompleted,
+            purposeLearningGerman,
+            workExperience,
             registrationId: registrationData.data.id,
             photoUrl,
             logoUrl,
@@ -330,11 +380,26 @@ export async function POST(request: NextRequest) {
                 <div class="section-card" style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
                   <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
 
-                    <h3 class="section-title" style="color: #0f172a; margin: 0; font-size: 19px; font-weight: 700;">Parent/Guardian</h3>
+                    <h3 class="section-title" style="color: #0f172a; margin: 0; font-size: 19px; font-weight: 700;">Parent Details</h3>
                   </div>
                   <table style="width: 100%; border-collapse: collapse;">
-                    <tr><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%; font-size: 14px;">Name</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${parentName}</td></tr>
+                    <tr><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%; font-size: 14px;">Father's Name</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${fathersName}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Mother's Name</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${mothersName}</td></tr>
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Contact</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${parentContact}</td></tr>
+                  </table>
+                </div>
+
+                <!-- Educational & German Background -->
+                <div class="section-card" style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <h3 class="section-title" style="color: #0f172a; margin: 0; font-size: 19px; font-weight: 700;">Educational Background</h3>
+                  </div>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%; font-size: 14px;">Qualification</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${finalQualification}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Studied German</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${studiedGerman ? "Yes" : "No"}${studiedGerman && levelCompleted ? ` (${levelCompleted})` : ""}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Learning Purpose</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${purposeLearningGerman.join(", ")}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Work Experience</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${workExperience ? "Yes" : "No"}</td></tr>
+                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Hostel Required</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${hostelFacility ? "Yes" : "No"}</td></tr>
                   </table>
                 </div>
 
@@ -405,12 +470,55 @@ export async function POST(request: NextRequest) {
     }
 
     // Send confirmation email to candidate
+    let pdfBuffer: Buffer | null = null;
     try {
       console.log("Sending confirmation email to candidate:", email);
+      pdfBuffer = await generateRegistrationPDF({
+        firstName,
+        lastName,
+        gender,
+        dateOfBirth: dateOfBirthRaw,
+        email,
+        phone,
+        whatsappNumber,
+        address,
+        fathersName,
+        mothersName,
+        parentContact,
+        aadhaarNumber,
+        courseLevel: courseLevelData?.LabelFull || courseLevel,
+        centerName: centerData?.name || center,
+        hostelFacility,
+        highestQualification: finalQualification,
+        studiedGerman,
+        levelCompleted,
+        purposeLearningGerman,
+        workExperience,
+        registrationId: registrationData.data.id,
+        photoUrl,
+        logoUrl,
+        submittedDate: new Date().toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }),
+        submittedTime: new Date().toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
       const confirmationResult = await resend.emails.send({
         from: process.env.RESEND_FROM!,
         to: email,
         subject: "Registration Confirmation - Schoenstatt Language Academy",
+        attachments: pdfBuffer
+          ? [
+              {
+                filename: `Registration_${firstName}_${lastName}_${registrationData.data.id}.pdf`,
+                content: pdfBuffer,
+              },
+            ]
+          : undefined,
         html: `
           <!DOCTYPE html>
           <html>

@@ -4,15 +4,24 @@ import chromium from "@sparticuz/chromium";
 interface StudentData {
   firstName: string;
   lastName: string;
+  gender?: string;
   dateOfBirth: string;
   email: string;
   phone: string;
+  whatsappNumber?: string;
   address: string;
-  parentName: string;
+  fathersName: string;
+  mothersName: string;
   parentContact: string;
   aadhaarNumber: string;
   courseLevel: string;
   centerName: string;
+  hostelFacility?: boolean;
+  highestQualification?: string;
+  studiedGerman?: boolean;
+  levelCompleted?: string;
+  purposeLearningGerman?: string[];
+  workExperience?: boolean;
   registrationId: number;
   photoUrl: string;
   logoUrl: string;
@@ -41,34 +50,34 @@ function generatePDFHTML(data: StudentData): string {
         body {
           font-family: Arial, sans-serif;
           padding: 20px;
-          font-size: 11px;
-          line-height: 1.4;
+          font-size: 10px;
+          line-height: 1.3;
         }
 
         .header {
           text-align: center;
-          margin-bottom: 15px;
-          padding-bottom: 10px;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
           border-bottom: 2px solid #333;
         }
 
         .header h1 {
-          font-size: 18px;
-          margin-bottom: 3px;
+          font-size: 16px;
+          margin-bottom: 2px;
         }
 
         .header p {
-          font-size: 12px;
+          font-size: 11px;
           color: #666;
         }
 
         .content {
           display: flex;
-          gap: 15px;
+          gap: 12px;
         }
 
         .left-column {
-          width: 120px;
+          width: 100px;
           flex-shrink: 0;
         }
 
@@ -77,49 +86,60 @@ function generatePDFHTML(data: StudentData): string {
         }
 
         .student-photo {
-          width: 100px;
-          height: 100px;
+          width: 90px;
+          height: 90px;
           border: 1px solid #333;
           object-fit: cover;
           display: block;
-          margin-bottom: 5px;
+          margin-bottom: 4px;
         }
 
         .section {
-          margin-bottom: 12px;
+          margin-bottom: 8px;
         }
 
         .section-title {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: bold;
-          margin-bottom: 5px;
+          margin-bottom: 4px;
           padding-bottom: 2px;
           border-bottom: 1px solid #999;
+          color: #1a1a2e;
         }
 
         .info-row {
           display: flex;
-          padding: 3px 0;
+          padding: 2px 0;
         }
 
         .info-label {
-          width: 140px;
+          width: 120px;
           font-weight: bold;
           color: #333;
+          font-size: 9px;
         }
 
         .info-value {
           flex: 1;
           color: #000;
+          font-size: 9px;
         }
 
         .footer {
-          margin-top: 15px;
-          padding-top: 10px;
+          margin-top: 10px;
+          padding-top: 8px;
           border-top: 1px solid #999;
           text-align: center;
-          font-size: 9px;
+          font-size: 8px;
           color: #666;
+        }
+
+        .declaration {
+          margin-top: 10px;
+          padding: 8px;
+          border: 1px solid #ccc;
+          background: #f9f9f9;
+          font-size: 8px;
         }
       </style>
     </head>
@@ -127,22 +147,24 @@ function generatePDFHTML(data: StudentData): string {
       <div class="header">
         <h1>STUDENT REGISTRATION FORM</h1>
         <p>Schoenstatt Language Academy</p>
-        <p style="font-size: 10px; margin-top: 3px;">Registration ID: ${data.registrationId} | Date: ${data.submittedDate}</p>
+        <p style="font-size: 9px; margin-top: 2px;">Registration ID: ${data.registrationId} | Date: ${data.submittedDate}</p>
       </div>
 
       <div class="content">
         <div class="left-column">
           <img src="${data.photoUrl}" alt="Student Photo" class="student-photo" />
-          <p style="font-size: 9px; text-align: center; color: #666;">Student Photo</p>
+          <p style="font-size: 8px; text-align: center; color: #666;">Student Photo</p>
         </div>
 
         <div class="right-column">
+          <!-- Personal Information -->
           <div class="section">
-            <div class="section-title">Student Information</div>
+            <div class="section-title">Personal Information</div>
             <div class="info-row">
               <div class="info-label">Full Name:</div>
               <div class="info-value">${data.firstName} ${data.lastName}</div>
             </div>
+            ${data.gender ? `<div class="info-row"><div class="info-label">Gender:</div><div class="info-value">${data.gender}</div></div>` : ""}
             <div class="info-row">
               <div class="info-label">Date of Birth:</div>
               <div class="info-value">${data.dateOfBirth}</div>
@@ -152,43 +174,75 @@ function generatePDFHTML(data: StudentData): string {
               <div class="info-value">${data.email}</div>
             </div>
             <div class="info-row">
-              <div class="info-label">Phone:</div>
+              <div class="info-label">Mobile:</div>
               <div class="info-value">${data.phone}</div>
             </div>
+            ${data.whatsappNumber ? `<div class="info-row"><div class="info-label">WhatsApp:</div><div class="info-value">${data.whatsappNumber}</div></div>` : ""}
             <div class="info-row">
               <div class="info-label">Address:</div>
               <div class="info-value">${data.address}</div>
             </div>
+          </div>
+
+          <!-- Parent Details -->
+          <div class="section">
+            <div class="section-title">Parent Details</div>
+            <div class="info-row">
+              <div class="info-label">Father's Name:</div>
+              <div class="info-value">${data.fathersName}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Mother's Name:</div>
+              <div class="info-value">${data.mothersName}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Parent Contact:</div>
+              <div class="info-value">${data.parentContact}</div>
+            </div>
+          </div>
+
+          <!-- Identification -->
+          <div class="section">
+            <div class="section-title">Identification</div>
             <div class="info-row">
               <div class="info-label">Aadhaar Number:</div>
               <div class="info-value">${maskAadhaar(data.aadhaarNumber)}</div>
+            </div>
+          </div>
+
+          <!-- Course Information -->
+          <div class="section">
+            <div class="section-title">Course Information</div>
+            <div class="info-row">
+              <div class="info-label">Training Center:</div>
+              <div class="info-value"><strong>${data.centerName}</strong></div>
             </div>
             <div class="info-row">
               <div class="info-label">Course Level:</div>
               <div class="info-value"><strong>${data.courseLevel}</strong></div>
             </div>
+            ${data.hostelFacility !== undefined ? `<div class="info-row"><div class="info-label">Hostel Required:</div><div class="info-value">${data.hostelFacility ? "Yes" : "No"}</div></div>` : ""}
           </div>
 
+          <!-- Educational Qualification -->
           <div class="section">
-            <div class="section-title">Parent/Guardian Information</div>
-            <div class="info-row">
-              <div class="info-label">Name:</div>
-              <div class="info-value">${data.parentName}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Contact:</div>
-              <div class="info-value">${data.parentContact}</div>
-            </div>
+            <div class="section-title">Educational Qualification</div>
+            ${data.highestQualification ? `<div class="info-row"><div class="info-label">Qualification:</div><div class="info-value">${data.highestQualification}</div></div>` : ""}
           </div>
 
+          <!-- German Language Background -->
           <div class="section">
-            <div class="section-title">Training Center</div>
-            <div class="info-row">
-              <div class="info-label">Center Name:</div>
-              <div class="info-value"><strong>${data.centerName}</strong></div>
-            </div>
+            <div class="section-title">German Language Background</div>
+            ${data.studiedGerman !== undefined ? `<div class="info-row"><div class="info-label">Studied German:</div><div class="info-value">${data.studiedGerman ? "Yes" : "No"}${data.studiedGerman && data.levelCompleted ? ` (${data.levelCompleted})` : ""}</div></div>` : ""}
+            ${data.purposeLearningGerman && data.purposeLearningGerman.length > 0 ? `<div class="info-row"><div class="info-label">Learning Purpose:</div><div class="info-value">${data.purposeLearningGerman.join(", ")}</div></div>` : ""}
+            ${data.workExperience !== undefined ? `<div class="info-row"><div class="info-label">Work Experience:</div><div class="info-value">${data.workExperience ? "Yes" : "No"}</div></div>` : ""}
           </div>
         </div>
+      </div>
+
+      <!-- Declaration -->
+      <div class="declaration">
+        <strong>Declaration:</strong> I hereby declare that the information provided is true and correct to the best of my knowledge.
       </div>
 
       <div class="footer">

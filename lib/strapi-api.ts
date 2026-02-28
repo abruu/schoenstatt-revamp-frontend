@@ -19,12 +19,12 @@ strapiApi.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Upload photo to Strapi
 export async function uploadPhotoToStrapi(
-  file: File
+  file: File,
 ): Promise<{ id: number; documentId: string; name: string }> {
   try {
     const formData = new FormData();
@@ -55,16 +55,26 @@ export async function uploadPhotoToStrapi(
 export interface StudentRegistrationData {
   firstName: string;
   lastName: string;
+  gender?: string;
   dateOfBirth: string; // YYYY-MM-DD format
   email: string;
   phone: string;
+  whatsappNumber?: string;
+  isWhatsappSameAsPhone?: boolean;
   address: string;
-  parentName: string;
+  fathersName: string;
+  mothersName: string;
   parentContact: string;
   aadhaarNumber: string;
   center: string; // Branch ID
   photo: string | number; // Photo ID from upload
   courseLevel: string; // Language certification level ID
+  hostelFacility?: boolean;
+  highestQualification?: string;
+  studiedGerman?: boolean;
+  levelCompleted?: string;
+  purposeLearningGerman?: string[];
+  workExperience?: boolean;
 }
 
 export interface StudentRegistrationResponse {
@@ -106,7 +116,7 @@ export interface StudentRegistrationResponse {
 }
 
 export async function registerStudentInStrapi(
-  data: StudentRegistrationData
+  data: StudentRegistrationData,
 ): Promise<StudentRegistrationResponse> {
   try {
     console.log("Registering student in Strapi:", data);
@@ -116,18 +126,28 @@ export async function registerStudentInStrapi(
         data: {
           firstName: data.firstName,
           lastName: data.lastName,
+          gender: data.gender,
           dateOfBirth: data.dateOfBirth,
           email: data.email,
           phone: data.phone,
+          whatsappNumber: data.whatsappNumber,
+          isWhatsappSameAsPhone: data.isWhatsappSameAsPhone,
           address: data.address,
-          parentName: data.parentName,
+          fathersName: data.fathersName,
+          mothersName: data.mothersName,
           parentContact: data.parentContact,
           aadhaarNumber: data.aadhaarNumber,
           center: data.center,
           photo: data.photo,
           courseLevel: data.courseLevel,
+          hostelFacility: data.hostelFacility,
+          highestQualification: data.highestQualification,
+          studiedGerman: data.studiedGerman,
+          levelCompleted: data.levelCompleted,
+          purposeLearningGerman: data.purposeLearningGerman,
+          workExperience: data.workExperience,
         },
-      }
+      },
     );
 
     return response.data;
@@ -152,7 +172,7 @@ export async function registerStudentInStrapi(
 // Get student by email or phone (for duplicate check)
 export async function checkStudentExists(
   email: string,
-  phone: string
+  phone: string,
 ): Promise<{ exists: boolean; field?: string }> {
   try {
     // Check email
@@ -225,7 +245,7 @@ export interface AdminNotificationEmailsResponse {
 export async function getAdminNotificationEmails(): Promise<string[]> {
   try {
     const response = await strapiApi.get<AdminNotificationEmailsResponse>(
-      "/admin-notification-emails"
+      "/admin-notification-emails",
     );
 
     if (response.data.data && Array.isArray(response.data.data)) {
