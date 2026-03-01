@@ -1,127 +1,149 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, Users, CreditCard, BookOpen, Upload, Plus, X, Save, Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useStrapiAuth } from '@/contexts/strapi-auth-context'
-import { useCenters } from '@/hooks/use-centers'
-import { useCourseLevels } from '@/hooks/use-course-levels'
-import { StrapiProtectedRoute } from '@/components/strapi-protected-route'
-import { studentService } from '@/lib/services/student-service'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Users,
+  CreditCard,
+  BookOpen,
+  Upload,
+  Plus,
+  X,
+  Save,
+  Loader2,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { useStrapiAuth } from "@/contexts/strapi-auth-context";
+import { useCenters } from "@/hooks/use-centers";
+import { useCourseLevels } from "@/hooks/use-course-levels";
+import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
+import { studentService } from "@/lib/services/student-service";
 
 export default function NewStudentPage() {
   return (
     <StrapiProtectedRoute>
       <NewStudentContent />
     </StrapiProtectedRoute>
-  )
+  );
 }
 
 function NewStudentContent() {
-  const router = useRouter()
-  const { user } = useStrapiAuth()
-  const { centers } = useCenters()
-  const { courseLevels } = useCourseLevels()
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const router = useRouter();
+  const { user } = useStrapiAuth();
+  const { centers } = useCenters();
+  const { courseLevels } = useCourseLevels();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    dateOfBirth: '',
-    email: '',
-    phone: '',
-    address: '',
-    parentName: '',
-    parentContact: '',
-    aadhaarNumber: '',
-    center: user?.assignedCenter?.documentId || '',
-    courseLevel: '',
-  })
-
+    firstName: "",
+    lastName: "",
+    dateOfBirth: "",
+    email: "",
+    phone: "",
+    address: "",
+    parentName: "",
+    parentContact: "",
+    aadhaarNumber: "",
+    center: user?.assignedCenter?.documentId || "",
+    courseLevel: "",
+  });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setPhotoFile(file)
-      const reader = new FileReader()
+      setPhotoFile(file);
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const removePhoto = () => {
-    setPhotoFile(null)
-    setPhotoPreview(null)
-  }
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
 
   const uploadPhoto = async (studentId: string): Promise<void> => {
-    if (!photoFile) return
+    if (!photoFile) return;
 
     try {
-      await studentService.uploadPhoto(studentId, photoFile)
+      await studentService.uploadPhoto(studentId, photoFile);
     } catch (error) {
-      console.error('Error uploading photo:', error)
-      throw new Error('Failed to upload photo')
+      console.error("Error uploading photo:", error);
+      throw new Error("Failed to upload photo");
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setSaving(true)
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setSaving(true);
 
     try {
       // Check admin permissions
-      if (!user?.isSuperAdmin && user?.assignedCenter?.documentId !== formData.center) {
-        throw new Error('You can only add students to your center')
+      if (
+        !user?.isSuperAdmin &&
+        user?.assignedCenter?.documentId !== formData.center
+      ) {
+        throw new Error("You can only add students to your center");
       }
 
       // Create student first
       const studentData = {
         ...formData,
-        status: 'pending' as const
-      }
+        statuses: "pending" as const,
+      };
 
-      const newStudent = await studentService.create(studentData)
+      const newStudent = await studentService.create(studentData);
 
       // Upload photo if provided
       if (photoFile) {
-        await uploadPhoto(newStudent.documentId)
+        await uploadPhoto(newStudent.documentId);
       }
 
-      setSuccess('Student added successfully!')
-      
+      setSuccess("Student added successfully!");
+
       // Redirect after a short delay
       setTimeout(() => {
-        router.push(`/admin/students/${newStudent.documentId}`)
-      }, 1500)
-
+        router.push(`/admin/students/${newStudent.documentId}`);
+      }, 1500);
     } catch (error: any) {
-      setError(error.message || 'Failed to add student')
+      setError(error.message || "Failed to add student");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
@@ -131,7 +153,11 @@ function NewStudentContent() {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <Link href="/admin/dashboard">
-                <Button variant="ghost" size="sm" className="mr-4 text-white hover:bg-white/10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mr-4 text-white hover:bg-white/10"
+                >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back
                 </Button>
@@ -184,7 +210,10 @@ function NewStudentContent() {
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-center w-full">
-                  <label htmlFor="photo" className="flex flex-col items-center justify-center w-full h-64 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-gradient-to-br from-blue-50 to-slate-50 hover:from-blue-100 hover:to-slate-100 transition-all duration-300">
+                  <label
+                    htmlFor="photo"
+                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-gradient-to-br from-blue-50 to-slate-50 hover:from-blue-100 hover:to-slate-100 transition-all duration-300"
+                  >
                     {photoPreview ? (
                       <div className="relative w-full h-full">
                         <Image
@@ -196,8 +225,8 @@ function NewStudentContent() {
                         <button
                           type="button"
                           onClick={() => {
-                            setPhotoFile(null)
-                            setPhotoPreview(null)
+                            setPhotoFile(null);
+                            setPhotoPreview(null);
                           }}
                           className="absolute top-2 right-2 p-1 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full hover:from-red-600 hover:to-red-700 shadow-lg transition-all duration-300"
                         >
@@ -208,9 +237,14 @@ function NewStudentContent() {
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-4 text-blue-500" />
                         <p className="mb-2 text-sm text-gray-700">
-                          <span className="font-semibold text-blue-600">Click to upload</span> student photo
+                          <span className="font-semibold text-blue-600">
+                            Click to upload
+                          </span>{" "}
+                          student photo
                         </p>
-                        <p className="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 5MB)</p>
+                        <p className="text-xs text-gray-500">
+                          PNG, JPG or JPEG (MAX. 5MB)
+                        </p>
                       </div>
                     )}
                     <input
@@ -241,7 +275,9 @@ function NewStudentContent() {
                   <Input
                     id="firstName"
                     value={formData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("firstName", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -250,7 +286,9 @@ function NewStudentContent() {
                   <Input
                     id="lastName"
                     value={formData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("lastName", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -263,7 +301,9 @@ function NewStudentContent() {
                     id="dateOfBirth"
                     type="date"
                     value={formData.dateOfBirth}
-                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dateOfBirth", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -272,7 +312,9 @@ function NewStudentContent() {
                   <Input
                     id="aadhaarNumber"
                     value={formData.aadhaarNumber}
-                    onChange={(e) => handleInputChange('aadhaarNumber', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("aadhaarNumber", e.target.value)
+                    }
                     placeholder="1234 5678 9012"
                     required
                   />
@@ -297,7 +339,7 @@ function NewStudentContent() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     required
                   />
                 </div>
@@ -306,7 +348,7 @@ function NewStudentContent() {
                   <Input
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
                     placeholder="+91 9876543210"
                     required
                   />
@@ -318,7 +360,7 @@ function NewStudentContent() {
                 <Textarea
                   id="address"
                   value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
                   rows={3}
                   required
                 />
@@ -338,7 +380,9 @@ function NewStudentContent() {
                   <Input
                     id="parentName"
                     value={formData.parentName}
-                    onChange={(e) => handleInputChange('parentName', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("parentName", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -347,7 +391,9 @@ function NewStudentContent() {
                   <Input
                     id="parentContact"
                     value={formData.parentContact}
-                    onChange={(e) => handleInputChange('parentContact', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("parentContact", e.target.value)
+                    }
                     placeholder="+91 9876543210"
                     required
                   />
@@ -367,17 +413,22 @@ function NewStudentContent() {
                   <Label htmlFor="center">Center *</Label>
                   <Select
                     value={formData.center}
-                    onValueChange={(value) => handleInputChange('center', value)}
+                    onValueChange={(value) =>
+                      handleInputChange("center", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select center" />
                     </SelectTrigger>
                     <SelectContent>
-                      {centers.map(center => (
-                        <SelectItem 
-                          key={center.id} 
+                      {centers.map((center) => (
+                        <SelectItem
+                          key={center.id}
                           value={center.id}
-                          disabled={!user?.isSuperAdmin && user?.assignedCenter?.documentId !== center.id}
+                          disabled={
+                            !user?.isSuperAdmin &&
+                            user?.assignedCenter?.documentId !== center.id
+                          }
                         >
                           {center.name}
                         </SelectItem>
@@ -389,13 +440,15 @@ function NewStudentContent() {
                   <Label htmlFor="courseLevel">Course Level *</Label>
                   <Select
                     value={formData.courseLevel}
-                    onValueChange={(value) => handleInputChange('courseLevel', value)}
+                    onValueChange={(value) =>
+                      handleInputChange("courseLevel", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select course level" />
                     </SelectTrigger>
                     <SelectContent>
-                      {courseLevels.map(level => (
+                      {courseLevels.map((level) => (
                         <SelectItem key={level.id} value={level.id}>
                           {level.name}
                         </SelectItem>
@@ -409,7 +462,12 @@ function NewStudentContent() {
 
           {/* Submit Button */}
           <div className="flex justify-end">
-            <Button type="submit" disabled={saving} size="lg" className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105">
+            <Button
+              type="submit"
+              disabled={saving}
+              size="lg"
+              className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transition-all duration-300 hover:scale-105"
+            >
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -426,5 +484,5 @@ function NewStudentContent() {
         </form>
       </div>
     </div>
-  )
+  );
 }

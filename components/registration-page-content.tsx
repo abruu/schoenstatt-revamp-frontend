@@ -26,6 +26,11 @@ import {
   RotateCcw,
   XCircle,
   Building,
+  GraduationCap,
+  Languages,
+  Target,
+  Briefcase,
+  FileCheck,
 } from "lucide-react";
 import { useCourseLevels } from "@/hooks/use-course-levels";
 import { useCenters } from "@/hooks/use-centers";
@@ -40,17 +45,49 @@ interface FormValues {
   photo: File | null;
   firstName: string;
   lastName: string;
+  gender: string;
   dateOfBirth: string;
   email: string;
   phone: string;
+  whatsappNumber: string;
+  isWhatsappSameAsPhone: boolean;
   address: string;
-  parentName: string;
+  fathersName: string;
+  mothersName: string;
   parentContact: string;
   aadhaarNumber: string;
   center: string;
   courseLevel: string;
+  hostelFacility: boolean;
+  highestQualification: string;
+  otherQualification: string;
+  studiedGerman: boolean;
+  levelCompleted: string;
+  purposeLearningGerman: string[];
+  workExperience: boolean;
+  declaration: boolean;
   turnstileToken: string;
 }
+
+// Qualification options
+const qualificationOptions = [
+  "Plus Two",
+  "Diploma",
+  "Degree",
+  "Postgraduate",
+  "Nursing",
+  "Other",
+];
+
+// Learning purpose options
+const learningPurposeOptions = [
+  "Higher Studies in Germany",
+  "Ausbildung",
+  "Job in Germany",
+  "Migration",
+  "Personal Interest",
+  "Not Decided Yet",
+];
 
 // Aadhaar checksum validation using Verhoeff algorithm
 const verhoeffTable = [
@@ -105,9 +142,9 @@ const validationSchema = Yup.object({
         if (!value) return false;
         const file = value as File;
         return ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(
-          file.type
+          file.type,
         );
-      }
+      },
     )
     .test("fileSize", "File size must be 5MB or less", (value) => {
       if (!value) return false;
@@ -126,6 +163,7 @@ const validationSchema = Yup.object({
     .min(2, "Last name must be at least 2 characters")
     .max(50, "Last name cannot exceed 50 characters")
     .required("Last name is required"),
+  gender: Yup.string().required("Gender is required"),
   dateOfBirth: Yup.string()
     .required("Date of birth is required")
     .matches(/^\d{2}\/\d{2}\/\d{4}$/, "Please enter date in DD/MM/YYYY format")
@@ -139,7 +177,17 @@ const validationSchema = Yup.object({
         date.getFullYear() === year
       );
     })
-    .test("age", "You must be at least 5 years old", (value) => {
+    .test(
+      "year-range",
+      "Year must be between 1950 and current year",
+      (value) => {
+        if (!value) return false;
+        const [day, month, year] = value.split("/").map(Number);
+        const currentYear = new Date().getFullYear();
+        return year >= 1950 && year <= currentYear;
+      },
+    )
+    .test("age", "You must be at least 10 years old", (value) => {
       if (!value) return false;
       const [day, month, year] = value.split("/").map(Number);
       const birthDate = new Date(year, month - 1, day);
@@ -150,9 +198,9 @@ const validationSchema = Yup.object({
         monthDiff < 0 ||
         (monthDiff === 0 && today.getDate() < birthDate.getDate())
       ) {
-        return age - 1 >= 5;
+        return age - 1 >= 10;
       }
-      return age >= 5;
+      return age >= 10;
     })
     .test("not-future", "Date of birth cannot be in the future", (value) => {
       if (!value) return false;
@@ -168,7 +216,7 @@ const validationSchema = Yup.object({
     .transform((value) => (value ? value.replace(/\D/g, "") : value))
     .matches(
       /^(\+91)?[6-9]\d{9}$/,
-      "Please enter a valid Indian phone number (10 digits, starting with 6-9, optionally with +91)"
+      "Please enter a valid Indian phone number (10 digits, starting with 6-9, optionally with +91)",
     )
     .test("no-leading-zero", "Phone number cannot start with 0", (value) => {
       if (!value) return true;
@@ -176,22 +224,46 @@ const validationSchema = Yup.object({
       return !cleanNumber.startsWith("0");
     })
     .required("Phone number is required"),
+  whatsappNumber: Yup.string()
+    .transform((value) => (value ? value.replace(/\D/g, "") : value))
+    .when("isWhatsappSameAsPhone", {
+      is: false,
+      then: (schema) =>
+        schema.matches(
+          /^(\+91)?[6-9]\d{9}$/,
+          "Please enter a valid Indian phone number",
+        ),
+      otherwise: (schema) => schema,
+    }),
+  isWhatsappSameAsPhone: Yup.boolean(),
   address: Yup.string()
     .transform((value) => sanitizeInput(value))
     .min(10, "Address must be at least 10 characters")
     .max(250, "Address cannot exceed 250 characters")
     .required("Address is required"),
-  parentName: Yup.string()
+  fathersName: Yup.string()
     .transform((value) => sanitizeInput(value))
-    .matches(/^[a-zA-Z\s]+$/, "Parent name can only contain letters and spaces")
-    .min(2, "Parent name must be at least 2 characters")
-    .max(50, "Parent name cannot exceed 50 characters")
-    .required("Parent/Guardian name is required"),
+    .matches(
+      /^[a-zA-Z\s]+$/,
+      "Father's name can only contain letters and spaces",
+    )
+    .min(2, "Father's name must be at least 2 characters")
+    .max(50, "Father's name cannot exceed 50 characters")
+    .required("Father's name is required"),
+  mothersName: Yup.string()
+    .transform((value) => sanitizeInput(value))
+    .matches(
+      /^[a-zA-Z\s]+$/,
+      "Mother's name can only contain letters and spaces",
+    )
+    .min(2, "Mother's name must be at least 2 characters")
+    .max(50, "Mother's name cannot exceed 50 characters")
+    .required("Mother's name is required"),
   parentContact: Yup.string()
     .transform((value) => (value ? value.replace(/\D/g, "") : value))
     .matches(
       /^(\+91)?[6-9]\d{9}$/,
-      "Please enter a valid Indian phone number (10 digits, starting with 6-9, optionally with +91)"
+      "Please enter a valid Indian phone number (10 digits, starting with 6-9, optionally with +91)",
     )
     .test("no-leading-zero", "Phone number cannot start with 0", (value) => {
       if (!value) return true;
@@ -202,15 +274,43 @@ const validationSchema = Yup.object({
   aadhaarNumber: Yup.string()
     .transform((value) => (value ? value.replace(/\D/g, "") : value))
     .matches(/^\d{12}$/, "Aadhaar number must be exactly 12 digits")
-    // .test("valid-aadhaar", "Please enter a valid Aadhaar number", (value) => {
-    //   if (!value) return true
-    //   return validateAadhaar(value)
-    // })
     .required("Aadhaar number is required"),
   center: Yup.string().required("Please select a training center"),
   courseLevel: Yup.string().required("Please select a course level"),
+  hostelFacility: Yup.boolean().required(
+    "Please select hostel facility preference",
+  ),
+  highestQualification: Yup.string().required(
+    "Please select your highest qualification",
+  ),
+  otherQualification: Yup.string().when("highestQualification", {
+    is: "Other",
+    then: (schema) =>
+      schema
+        .required("Please specify your qualification")
+        .min(2, "Qualification must be at least 2 characters"),
+    otherwise: (schema) => schema,
+  }),
+  studiedGerman: Yup.boolean().required(
+    "Please select if you have studied German before",
+  ),
+  levelCompleted: Yup.string().when("studiedGerman", {
+    is: true,
+    then: (schema) => schema.required("Please specify the level completed"),
+    otherwise: (schema) => schema,
+  }),
+  purposeLearningGerman: Yup.array()
+    .of(Yup.string())
+    .min(1, "Please select at least one purpose")
+    .required("Please select your purpose of learning German"),
+  workExperience: Yup.boolean().required(
+    "Please select your work experience status",
+  ),
+  declaration: Yup.boolean()
+    .oneOf([true], "You must accept the declaration to proceed")
+    .required("Declaration is required"),
   turnstileToken: Yup.string().required(
-    "Please complete the security verification"
+    "Please complete the security verification",
   ),
 });
 
@@ -219,15 +319,27 @@ const initialValues: FormValues = {
   photo: null,
   firstName: "",
   lastName: "",
+  gender: "",
   dateOfBirth: "",
   email: "",
   phone: "",
+  whatsappNumber: "",
+  isWhatsappSameAsPhone: false,
   address: "",
-  parentName: "",
+  fathersName: "",
+  mothersName: "",
   parentContact: "",
   aadhaarNumber: "",
   center: "",
   courseLevel: "",
+  hostelFacility: false,
+  highestQualification: "",
+  otherQualification: "",
+  studiedGerman: false,
+  levelCompleted: "",
+  purposeLearningGerman: [],
+  workExperience: false,
+  declaration: false,
   turnstileToken: "",
 };
 
@@ -245,7 +357,7 @@ export function RegistrationPageContent() {
   const [turnstileLoaded, setTurnstileLoaded] = useState(false);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const [turnstileWidgetId, setTurnstileWidgetId] = useState<string | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -287,7 +399,7 @@ export function RegistrationPageContent() {
 
   const handlePhotoChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
-    setFieldValue: any
+    setFieldValue: any,
   ) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -298,7 +410,7 @@ export function RegistrationPageContent() {
         event.target.value = "";
         setSubmitStatus("error");
         setSubmitMessage(
-          "File size must be 5MB or less. Please choose a smaller image."
+          "File size must be 5MB or less. Please choose a smaller image.",
         );
         return;
       }
@@ -347,7 +459,7 @@ export function RegistrationPageContent() {
         console.error("Image compression error:", error);
         setSubmitStatus("error");
         setSubmitMessage(
-          "Failed to compress image. Please try a different image."
+          "Failed to compress image. Please try a different image.",
         );
         setPhotoUploading(false);
         event.target.value = "";
@@ -374,7 +486,7 @@ export function RegistrationPageContent() {
 
   const handleSubmit = async (
     values: FormValues,
-    { setSubmitting, resetForm }: FormikHelpers<FormValues>
+    { setSubmitting, resetForm }: FormikHelpers<FormValues>,
   ) => {
     try {
       setSubmitStatus("idle");
@@ -403,9 +515,12 @@ export function RegistrationPageContent() {
       if (duplicateResult.exists) {
         setSubmitStatus("error");
         setSubmitMessage(
-          `A registration already exists with this ${duplicateResult.field}. Please contact the institution if you need assistance.`
+          `A registration already exists with this ${duplicateResult.field}. Please contact the institution if you need assistance.`,
         );
         setSubmitting(false);
+        if (turnstileWidgetId && (window as any).turnstile) {
+          (window as any).turnstile.reset(turnstileWidgetId);
+        }
         return;
       }
 
@@ -427,7 +542,7 @@ export function RegistrationPageContent() {
       if (response.ok) {
         setSubmitStatus("success");
         setSubmitMessage(
-          "Registration successful! You will be contacted by the institution."
+          "Registration successful! You will be contacted by the institution.",
         );
         setRegistrationComplete(true);
         resetForm();
@@ -437,14 +552,24 @@ export function RegistrationPageContent() {
         }
       } else {
         setSubmitStatus("error");
-        setSubmitMessage(result.details || "Failed to submit registration");
+        setSubmitMessage(
+          result.details ||
+            result.error ||
+            "Failed to submit registration. Please try again later",
+        );
+        if (turnstileWidgetId && (window as any).turnstile) {
+          (window as any).turnstile.reset(turnstileWidgetId);
+        }
       }
     } catch (error) {
       console.error("Submission error:", error);
       setSubmitStatus("error");
       setSubmitMessage(
-        "Network error. Please check your connection and try again."
+        "Network error. Please check your connection and try again.",
       );
+      if (turnstileWidgetId && (window as any).turnstile) {
+        (window as any).turnstile.reset(turnstileWidgetId);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -572,7 +697,7 @@ export function RegistrationPageContent() {
             </div>
 
             {/* Registration Form */}
-            <div className="relative mx-4 sm:mx-0">
+            <div className="relative  sm:mx-0">
               {/* Glow effect */}
               <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20"></div>
 
@@ -589,346 +714,504 @@ export function RegistrationPageContent() {
                     errors,
                     touched,
                     isValid,
+                    submitForm,
                   }) => {
+                    const submitAttemptedRef = useRef(false);
+
                     useEffect(() => {
                       renderTurnstile(setFieldValue);
                     }, [turnstileLoaded, setFieldValue]);
 
+                    // Auto-sync WhatsApp number when phone changes and checkbox is checked
+                    useEffect(() => {
+                      if (values.isWhatsappSameAsPhone) {
+                        setFieldValue("whatsappNumber", values.phone);
+                      }
+                    }, [
+                      values.phone,
+                      values.isWhatsappSameAsPhone,
+                      setFieldValue,
+                    ]);
+
+                    // Focus on first error field only after submit attempt
+                    useEffect(() => {
+                      if (
+                        submitAttemptedRef.current &&
+                        Object.keys(errors).length > 0 &&
+                        Object.keys(touched).length > 0
+                      ) {
+                        const firstErrorField = Object.keys(errors)[0];
+                        const errorElement = document.querySelector(
+                          `[name="${firstErrorField}"]`,
+                        ) as HTMLElement;
+
+                        if (errorElement) {
+                          errorElement.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                          errorElement.focus();
+                        }
+                        submitAttemptedRef.current = false;
+                      }
+                    }, [errors, touched]);
+
+                    const handleFormSubmit = (e: React.FormEvent) => {
+                      submitAttemptedRef.current = true;
+                      e.preventDefault();
+                      submitForm();
+                    };
+
                     return (
-                      <Form className="space-y-6 sm:space-y-8">
-                        {/* Photo Upload with Preview */}
-                        <div className="space-y-2 sm:space-y-3">
-                          <label
-                            htmlFor="photo"
-                            className="text-sm font-medium text-white flex items-center gap-2"
-                          >
-                            <Upload className="h-4 w-4" />
-                            Upload Photo *
-                          </label>
-                          <div className="relative">
-                            {photoUploading ? (
-                              <div className="border-2 border-dashed border-yellow-400/30 rounded-lg p-6 text-center bg-yellow-400/5">
-                                <div className="flex flex-col items-center space-y-3">
-                                  <div className="w-8 h-8 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin"></div>
-                                  <p className="text-yellow-400 font-medium">
-                                    Processing image...
-                                  </p>
-                                  <p className="text-xs text-gray-400">
-                                    Compressing and preparing your photo
-                                  </p>
+                      <Form className="space-y-8 sm:space-y-10">
+                        {/* Error Message Display */}
+                        {submitStatus === "error" && submitMessage && (
+                          <div className="p-4 rounded-xl border bg-red-500/10 border-red-500/30 text-red-400">
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-5 w-5 flex-shrink-0" />
+                              <span className="text-sm">{submitMessage}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ==================== SECTION 1: Personal Information ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center">
+                              <User className="h-5 w-5 text-black" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Personal Information
+                            </h2>
+                          </div>
+
+                          {/* Photo Upload */}
+                          <div className="space-y-2 sm:space-y-3">
+                            <label
+                              htmlFor="photo"
+                              className="text-sm font-medium text-white flex items-center gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              Photo <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              {photoUploading ? (
+                                <div className="border-2 border-dashed border-yellow-400/30 rounded-lg p-6 text-center bg-yellow-400/5">
+                                  <div className="flex flex-col items-center space-y-3">
+                                    <div className="w-8 h-8 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin"></div>
+                                    <p className="text-yellow-400 font-medium">
+                                      Processing image...
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      Compressing and preparing your photo
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            ) : photoPreview ? (
-                              <div className="space-y-3">
-                                <div className="relative w-32 h-32 mx-auto">
-                                  <img
-                                    src={photoPreview}
-                                    alt="Photo preview"
-                                    className="w-full h-full object-cover rounded-lg border-2 border-white/20"
-                                  />
+                              ) : photoPreview ? (
+                                <div className="space-y-3">
+                                  <div className="relative w-32 h-32 mx-auto">
+                                    <img
+                                      src={photoPreview}
+                                      alt="Photo preview"
+                                      className="w-full h-full object-cover rounded-lg border-2 border-white/20"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removePhoto(setFieldValue)}
+                                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm transition-colors"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
                                   <button
                                     type="button"
-                                    onClick={() => removePhoto(setFieldValue)}
-                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm transition-colors"
+                                    onClick={() =>
+                                      fileInputRef.current?.click()
+                                    }
+                                    className="w-full py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors flex items-center justify-center gap-2"
                                   >
-                                    ×
+                                    <RotateCcw className="h-4 w-4" />
+                                    Change Photo
                                   </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => fileInputRef.current?.click()}
-                                  className="w-full py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors flex items-center justify-center gap-2"
-                                >
-                                  <RotateCcw className="h-4 w-4" />
-                                  Change Photo
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/30 transition-colors">
-                                <Upload className="h-8 w-8 text-white/50 mx-auto mb-2" />
-                                <p className="text-white/70 mb-2">
-                                  Click to upload photo
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  JPG, PNG, WebP - Max 5MB
-                                </p>
-                              </div>
-                            )}
-                            <input
-                              ref={fileInputRef}
-                              id="photo"
-                              name="photo"
-                              type="file"
-                              accept="image/jpeg,image/jpg,image/png,image/webp"
-                              onChange={(event) =>
-                                handlePhotoChange(event, setFieldValue)
-                              }
-                              disabled={photoUploading}
-                              className={
-                                photoPreview || photoUploading
-                                  ? "hidden"
-                                  : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                              }
-                            />
-                            <ErrorMessage
-                              name="photo"
-                              component="div"
-                              className="text-red-400 text-xs mt-1"
-                            />
-                          </div>
-
-                          {/* File validation error messages */}
-                          {submitStatus === "error" && submitMessage && (
-                            <div className="mt-3 p-3 rounded-lg border bg-red-500/10 border-red-500/30 text-red-400">
-                              <div className="flex items-center gap-2">
-                                <XCircle className="h-4 w-4" />
-                                <span className="text-sm">{submitMessage}</span>
-                              </div>
+                              ) : (
+                                <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/30 transition-colors">
+                                  <Upload className="h-8 w-8 text-white/50 mx-auto mb-2" />
+                                  <p className="text-white/70 mb-2">
+                                    Click to upload photo
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    JPG, PNG, WebP - Max 5MB
+                                  </p>
+                                </div>
+                              )}
+                              <input
+                                ref={fileInputRef}
+                                id="photo"
+                                name="photo"
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
+                                onChange={(event) =>
+                                  handlePhotoChange(event, setFieldValue)
+                                }
+                                disabled={photoUploading}
+                                className={
+                                  photoPreview || photoUploading
+                                    ? "hidden"
+                                    : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                }
+                              />
+                              <ErrorMessage
+                                name="photo"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
                             </div>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                          {/* First Name */}
-                          <div className="space-y-2 sm:space-y-3">
-                            <label
-                              htmlFor="firstName"
-                              className="text-sm font-medium text-white"
-                            >
-                              First Name *
-                            </label>
-                            <Field
-                              id="firstName"
-                              name="firstName"
-                              type="text"
-                              placeholder="Enter your first name"
-                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                            />
-                            <ErrorMessage
-                              name="firstName"
-                              component="div"
-                              className="text-red-400 text-xs mt-1"
-                            />
                           </div>
 
-                          {/* Last Name */}
-                          <div className="space-y-2 sm:space-y-3">
-                            <label
-                              htmlFor="lastName"
-                              className="text-sm font-medium text-white"
-                            >
-                              Last Name *
-                            </label>
-                            <Field
-                              id="lastName"
-                              name="lastName"
-                              type="text"
-                              placeholder="Enter your last name"
-                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                            />
-                            <ErrorMessage
-                              name="lastName"
-                              component="div"
-                              className="text-red-400 text-xs mt-1"
-                            />
+                          {/* First Name & Last Name */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="firstName"
+                                className="text-sm font-medium text-white"
+                              >
+                                First Name{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="firstName"
+                                name="firstName"
+                                type="text"
+                                placeholder="Enter your first name"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="firstName"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="lastName"
+                                className="text-sm font-medium text-white"
+                              >
+                                Last Name{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="lastName"
+                                name="lastName"
+                                type="text"
+                                placeholder="Enter your last name"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="lastName"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                          {/* Date of Birth */}
-                          <div className="space-y-2 sm:space-y-3">
-                            <label
-                              htmlFor="dateOfBirth"
-                              className="text-sm font-medium text-white flex items-center gap-2"
-                            >
-                              <Calendar className="h-4 w-4" />
-                              Date of Birth *
-                            </label>
-                            <Field
-                              id="dateOfBirth"
-                              name="dateOfBirth"
-                              type="text"
-                              placeholder="DD/MM/YYYY"
-                              maxLength={10}
-                              onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>
-                              ) => {
-                                const inputValue = e.target.value;
-                                const currentValue = values.dateOfBirth || "";
-
-                                // Handle backspace - if user is deleting and hits a slash, remove it too
-                                if (inputValue.length < currentValue.length) {
-                                  // User is deleting
-                                  if (inputValue.endsWith("/")) {
-                                    setFieldValue(
-                                      "dateOfBirth",
-                                      inputValue.slice(0, -1)
-                                    );
+                          {/* Gender & Date of Birth */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="gender"
+                                className="text-sm font-medium text-white"
+                              >
+                                Gender <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                as="select"
+                                id="gender"
+                                name="gender"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              >
+                                <option
+                                  value=""
+                                  className="bg-black text-gray-400"
+                                >
+                                  Select gender
+                                </option>
+                                <option
+                                  value="Male"
+                                  className="bg-black text-white"
+                                >
+                                  Male
+                                </option>
+                                <option
+                                  value="Female"
+                                  className="bg-black text-white"
+                                >
+                                  Female
+                                </option>
+                                <option
+                                  value="Other"
+                                  className="bg-black text-white"
+                                >
+                                  Other
+                                </option>
+                              </Field>
+                              <ErrorMessage
+                                name="gender"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="dateOfBirth"
+                                className="text-sm font-medium text-white flex items-center gap-2"
+                              >
+                                <Calendar className="h-4 w-4" />
+                                Date of Birth{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="dateOfBirth"
+                                name="dateOfBirth"
+                                type="text"
+                                placeholder="DD/MM/YYYY"
+                                maxLength={10}
+                                onChange={(
+                                  e: React.ChangeEvent<HTMLInputElement>,
+                                ) => {
+                                  const inputValue = e.target.value;
+                                  const currentValue = values.dateOfBirth || "";
+                                  if (inputValue.length < currentValue.length) {
+                                    if (inputValue.endsWith("/")) {
+                                      setFieldValue(
+                                        "dateOfBirth",
+                                        inputValue.slice(0, -1),
+                                      );
+                                      return;
+                                    }
+                                    setFieldValue("dateOfBirth", inputValue);
                                     return;
                                   }
-                                  setFieldValue("dateOfBirth", inputValue);
-                                  return;
-                                }
-
-                                // Handle forward typing - add slashes automatically
-                                let value = inputValue.replace(/\D/g, ""); // Remove non-digits
-                                if (value.length >= 2) {
-                                  value =
-                                    value.substring(0, 2) +
-                                    "/" +
-                                    value.substring(2);
-                                }
-                                if (value.length >= 5) {
-                                  value =
-                                    value.substring(0, 5) +
-                                    "/" +
-                                    value.substring(5, 9);
-                                }
-                                setFieldValue("dateOfBirth", value);
-                              }}
-                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                            />
-                            <ErrorMessage
-                              name="dateOfBirth"
-                              component="div"
-                              className="text-red-400 text-xs mt-1"
-                            />
+                                  let value = inputValue.replace(/\D/g, "");
+                                  if (value.length >= 2)
+                                    value =
+                                      value.substring(0, 2) +
+                                      "/" +
+                                      value.substring(2);
+                                  if (value.length >= 5)
+                                    value =
+                                      value.substring(0, 5) +
+                                      "/" +
+                                      value.substring(5, 9);
+                                  setFieldValue("dateOfBirth", value);
+                                }}
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="dateOfBirth"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
                           </div>
 
-                          {/* Email */}
-                          <div className="space-y-2 sm:space-y-3">
+                          {/* Email & Phone */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="email"
+                                className="text-sm font-medium text-white flex items-center gap-2"
+                              >
+                                <Mail className="h-4 w-4" />
+                                Email Address{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="Enter your email"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="email"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="phone"
+                                className="text-sm font-medium text-white flex items-center gap-2"
+                              >
+                                <Phone className="h-4 w-4" />
+                                Mobile Number{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                placeholder="Enter your mobile number"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="phone"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+
+                          {/* WhatsApp Number with Checkbox */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <Field
+                                type="checkbox"
+                                id="isWhatsappSameAsPhone"
+                                name="isWhatsappSameAsPhone"
+                                onChange={(
+                                  e: React.ChangeEvent<HTMLInputElement>,
+                                ) => {
+                                  setFieldValue(
+                                    "isWhatsappSameAsPhone",
+                                    e.target.checked,
+                                  );
+                                  if (e.target.checked) {
+                                    setFieldValue(
+                                      "whatsappNumber",
+                                      values.phone,
+                                    );
+                                  }
+                                }}
+                                className="w-5 h-5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20"
+                              />
+                              <label
+                                htmlFor="isWhatsappSameAsPhone"
+                                className="text-base text-white/80"
+                              >
+                                Same as mobile number?
+                              </label>
+                            </div>
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="whatsappNumber"
+                                className="text-sm font-medium text-white"
+                              >
+                                WhatsApp Number
+                              </label>
+                              <Field
+                                id="whatsappNumber"
+                                name="whatsappNumber"
+                                type="tel"
+                                placeholder="Enter your WhatsApp number"
+                                disabled={values.isWhatsappSameAsPhone}
+                                className={`w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base ${values.isWhatsappSameAsPhone ? "opacity-50 cursor-not-allowed" : ""}`}
+                              />
+                              <ErrorMessage
+                                name="whatsappNumber"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Address */}
+                          <div className="space-y-2">
                             <label
-                              htmlFor="email"
+                              htmlFor="address"
                               className="text-sm font-medium text-white flex items-center gap-2"
                             >
-                              <Mail className="h-4 w-4" />
-                              Email Address *
+                              <MapPin className="h-4 w-4" />
+                              Full Address{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field
-                              id="email"
-                              name="email"
-                              type="email"
-                              placeholder="Enter your email (e.g. name@example.com)"
-                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              as="textarea"
+                              id="address"
+                              name="address"
+                              placeholder="Enter your complete address"
+                              rows={3}
+                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base resize-none"
                             />
                             <ErrorMessage
-                              name="email"
+                              name="address"
                               component="div"
                               className="text-red-400 text-xs mt-1"
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                          {/* Phone Number */}
-                          <div className="space-y-2 sm:space-y-3">
-                            <label
-                              htmlFor="phone"
-                              className="text-sm font-medium text-white flex items-center gap-2"
-                            >
-                              <Phone className="h-4 w-4" />
-                              Phone Number *
-                            </label>
-                            <Field
-                              id="phone"
-                              name="phone"
-                              type="tel"
-                              placeholder="Enter your phone number"
-                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                            />
-                            <ErrorMessage
-                              name="phone"
-                              component="div"
-                              className="text-red-400 text-xs mt-1"
-                            />
+                        {/* ==================== SECTION 2: Parent Details ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+                              <Users className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Parent Details
+                            </h2>
                           </div>
 
-                          {/* Aadhaar Number */}
-                          <div className="space-y-2 sm:space-y-3">
-                            <label
-                              htmlFor="aadhaarNumber"
-                              className="text-sm font-medium text-white flex items-center gap-2"
-                            >
-                              <CreditCard className="h-4 w-4" />
-                              Aadhaar Card Number *
-                            </label>
-                            <Field
-                              id="aadhaarNumber"
-                              name="aadhaarNumber"
-                              type="text"
-                              placeholder="Enter your Aadhaar card number"
-                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                            />
-                            <ErrorMessage
-                              name="aadhaarNumber"
-                              component="div"
-                              className="text-red-400 text-xs mt-1"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Address */}
-                        <div className="space-y-2 sm:space-y-3">
-                          <label
-                            htmlFor="address"
-                            className="text-sm font-medium text-white flex items-center gap-2"
-                          >
-                            <MapPin className="h-4 w-4" />
-                            Residential Address *
-                          </label>
-                          <Field
-                            as="textarea"
-                            id="address"
-                            name="address"
-                            placeholder="Enter your complete address"
-                            rows={3}
-                            className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base resize-none"
-                          />
-                          <ErrorMessage
-                            name="address"
-                            component="div"
-                            className="text-red-400 text-xs mt-1"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                          {/* Parent's Name */}
-                          <div className="space-y-2 sm:space-y-3">
-                            <label
-                              htmlFor="parentName"
-                              className="text-sm font-medium text-white flex items-center gap-2"
-                            >
-                              <Users className="h-4 w-4" />
-                              Parent's Name *
-                            </label>
-                            <Field
-                              id="parentName"
-                              name="parentName"
-                              type="text"
-                              placeholder="Enter parent/guardian's full name"
-                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                            />
-                            <ErrorMessage
-                              name="parentName"
-                              component="div"
-                              className="text-red-400 text-xs mt-1"
-                            />
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="fathersName"
+                                className="text-sm font-medium text-white"
+                              >
+                                Father's Name{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="fathersName"
+                                name="fathersName"
+                                type="text"
+                                placeholder="Enter father's full name"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="fathersName"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="mothersName"
+                                className="text-sm font-medium text-white"
+                              >
+                                Mother's Name{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="mothersName"
+                                name="mothersName"
+                                type="text"
+                                placeholder="Enter mother's full name"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="mothersName"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
                           </div>
 
-                          {/* Parent's Contact */}
-                          <div className="space-y-2 sm:space-y-3">
+                          <div className="space-y-2">
                             <label
                               htmlFor="parentContact"
                               className="text-sm font-medium text-white flex items-center gap-2"
                             >
                               <Phone className="h-4 w-4" />
-                              Parent's Contact Number *
+                              Parent Mobile Number{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field
                               id="parentContact"
                               name="parentContact"
                               type="tel"
-                              placeholder="Enter parent/guardian's phone number"
+                              placeholder="Enter parent's phone number"
                               className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
                             />
                             <ErrorMessage
@@ -939,20 +1222,177 @@ export function RegistrationPageContent() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                          {/* Training Center */}
-                          <div className="space-y-2 sm:space-y-3">
+                        {/* ==================== SECTION 3: Identification ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
+                              <CreditCard className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Identification
+                            </h2>
+                          </div>
+
+                          <div className="space-y-2">
                             <label
-                              htmlFor="center"
+                              htmlFor="aadhaarNumber"
+                              className="text-sm font-medium text-white"
+                            >
+                              Aadhaar Number{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <Field
+                              id="aadhaarNumber"
+                              name="aadhaarNumber"
+                              type="text"
+                              placeholder="Enter your 12-digit Aadhaar number"
+                              maxLength={12}
+                              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                            />
+                            <ErrorMessage
+                              name="aadhaarNumber"
+                              component="div"
+                              className="text-red-400 text-xs mt-1"
+                            />
+                          </div>
+                        </div>
+
+                        {/* ==================== SECTION 4: Course Information ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-green-600 rounded-xl flex items-center justify-center">
+                              <Building className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Course Information
+                            </h2>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="center"
+                                className="text-sm font-medium text-white"
+                              >
+                                Training Center{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field name="center">
+                                {({ field }: any) => (
+                                  <select
+                                    {...field}
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  >
+                                    <option
+                                      value=""
+                                      disabled
+                                      className="bg-black text-gray-400"
+                                    >
+                                      Select your training center
+                                    </option>
+                                    {centersLoading ? (
+                                      <option
+                                        value=""
+                                        disabled
+                                        className="bg-black"
+                                      >
+                                        Loading centers...
+                                      </option>
+                                    ) : (
+                                      centers.map((center) => (
+                                        <option
+                                          key={center.id}
+                                          value={center.id}
+                                          className="bg-black text-white"
+                                        >
+                                          {center.name}
+                                        </option>
+                                      ))
+                                    )}
+                                  </select>
+                                )}
+                              </Field>
+                              <ErrorMessage
+                                name="center"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="courseLevel"
+                                className="text-sm font-medium text-white flex items-center gap-2"
+                              >
+                                <BookOpen className="h-4 w-4" />
+                                Course Level{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                as="select"
+                                id="courseLevel"
+                                name="courseLevel"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              >
+                                <option
+                                  value=""
+                                  disabled
+                                  className="bg-black text-gray-400"
+                                >
+                                  Select your level
+                                </option>
+                                {courseLevelsLoading ? (
+                                  <option
+                                    disabled
+                                    className="bg-black text-gray-400"
+                                  >
+                                    Loading levels...
+                                  </option>
+                                ) : (
+                                  courseLevels.map((level) => (
+                                    <option
+                                      key={level.id}
+                                      value={level.id}
+                                      className="bg-black text-white"
+                                    >
+                                      {level.name}
+                                    </option>
+                                  ))
+                                )}
+                              </Field>
+                              <ErrorMessage
+                                name="courseLevel"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label
+                              htmlFor="hostelFacility"
                               className="text-sm font-medium text-white flex items-center gap-2"
                             >
-                              <Building className="h-4 w-4" />
-                              Training Center *
+                              <Home className="h-4 w-4" />
+                              Hostel Facility Needed{" "}
+                              <span className="text-red-500">*</span>
                             </label>
-                            <Field name="center">
+                            <Field name="hostelFacility">
                               {({ field, form }: any) => (
                                 <select
                                   {...field}
+                                  onChange={(e) =>
+                                    form.setFieldValue(
+                                      "hostelFacility",
+                                      e.target.value === "true",
+                                    )
+                                  }
+                                  value={
+                                    field.value === true
+                                      ? "true"
+                                      : field.value === false
+                                        ? "false"
+                                        : ""
+                                  }
                                   className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
                                 >
                                   <option
@@ -960,50 +1400,65 @@ export function RegistrationPageContent() {
                                     disabled
                                     className="bg-black text-gray-400"
                                   >
-                                    Select your training center
+                                    Select option
                                   </option>
-                                  {centersLoading ? (
-                                    <option
-                                      value=""
-                                      disabled
-                                      className="bg-black"
-                                    >
-                                      Loading centers...
-                                    </option>
-                                  ) : (
-                                    centers.map((center) => (
-                                      <option
-                                        key={center.id}
-                                        value={center.id}
-                                        className="bg-black text-white"
-                                      >
-                                        {center.name}
-                                      </option>
-                                    ))
-                                  )}
+                                  <option
+                                    value="true"
+                                    className="bg-black text-white"
+                                  >
+                                    Yes
+                                  </option>
+                                  <option
+                                    value="false"
+                                    className="bg-black text-white"
+                                  >
+                                    No
+                                  </option>
                                 </select>
                               )}
                             </Field>
                             <ErrorMessage
-                              name="center"
+                              name="hostelFacility"
                               component="div"
                               className="text-red-400 text-xs mt-1"
                             />
                           </div>
+                        </div>
 
-                          {/* Course Level */}
-                          <div className="space-y-2 sm:space-y-3">
+                        {/* ==================== SECTION 5: Educational Qualification ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
+                              <GraduationCap className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Educational Qualification
+                            </h2>
+                          </div>
+
+                          <div className="space-y-2">
                             <label
-                              htmlFor="courseLevel"
-                              className="text-sm font-medium text-white flex items-center gap-2"
+                              htmlFor="highestQualification"
+                              className="text-sm font-medium text-white"
                             >
-                              <BookOpen className="h-4 w-4" />
-                              Course Level *
+                              Highest Qualification{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field
                               as="select"
-                              id="courseLevel"
-                              name="courseLevel"
+                              id="highestQualification"
+                              name="highestQualification"
+                              onChange={(
+                                e: React.ChangeEvent<HTMLSelectElement>,
+                              ) => {
+                                setFieldValue(
+                                  "highestQualification",
+                                  e.target.value,
+                                );
+                                if (e.target.value !== "Other") {
+                                  setFieldValue("otherQualification", "");
+                                }
+                              }}
                               className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
                             >
                               <option
@@ -1011,40 +1466,292 @@ export function RegistrationPageContent() {
                                 disabled
                                 className="bg-black text-gray-400"
                               >
-                                Select your level (A1, A2, B1, B2)
+                                Select your qualification
                               </option>
-                              {courseLevelsLoading ? (
+                              {qualificationOptions.map((option) => (
                                 <option
-                                  disabled
-                                  className="bg-black text-gray-400"
+                                  key={option}
+                                  value={option}
+                                  className="bg-black text-white"
                                 >
-                                  Loading levels...
+                                  {option}
                                 </option>
-                              ) : (
-                                courseLevels.map((level) => (
+                              ))}
+                            </Field>
+                            <ErrorMessage
+                              name="highestQualification"
+                              component="div"
+                              className="text-red-400 text-xs mt-1"
+                            />
+                          </div>
+
+                          {values.highestQualification === "Other" && (
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="otherQualification"
+                                className="text-sm font-medium text-white"
+                              >
+                                Please specify qualification{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="otherQualification"
+                                name="otherQualification"
+                                type="text"
+                                placeholder="e.g., ITI Electrical"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="otherQualification"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ==================== SECTION 6: German Language Background ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-red-400 to-red-600 rounded-xl flex items-center justify-center">
+                              <Languages className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              German Language Background
+                            </h2>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label
+                              htmlFor="studiedGerman"
+                              className="text-sm font-medium text-white"
+                            >
+                              Have you studied German before?{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <Field name="studiedGerman">
+                              {({ field, form }: any) => (
+                                <select
+                                  {...field}
+                                  onChange={(e) => {
+                                    const boolValue = e.target.value === "true";
+                                    form.setFieldValue(
+                                      "studiedGerman",
+                                      boolValue,
+                                    );
+                                    if (!boolValue) {
+                                      form.setFieldValue("levelCompleted", "");
+                                    }
+                                  }}
+                                  value={
+                                    field.value === true
+                                      ? "true"
+                                      : field.value === false
+                                        ? "false"
+                                        : ""
+                                  }
+                                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                >
                                   <option
-                                    key={level.id}
-                                    value={level.id}
+                                    value=""
+                                    disabled
+                                    className="bg-black text-gray-400"
+                                  >
+                                    Select option
+                                  </option>
+                                  <option
+                                    value="true"
                                     className="bg-black text-white"
                                   >
-                                    {level.name}
+                                    Yes
                                   </option>
-                                ))
+                                  <option
+                                    value="false"
+                                    className="bg-black text-white"
+                                  >
+                                    No
+                                  </option>
+                                </select>
                               )}
                             </Field>
                             <ErrorMessage
-                              name="courseLevel"
+                              name="studiedGerman"
+                              component="div"
+                              className="text-red-400 text-xs mt-1"
+                            />
+                          </div>
+
+                          {values.studiedGerman === true && (
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="levelCompleted"
+                                className="text-sm font-medium text-white"
+                              >
+                                Level Completed{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field
+                                id="levelCompleted"
+                                name="levelCompleted"
+                                type="text"
+                                placeholder="e.g., A1, A2, B1"
+                                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                              />
+                              <ErrorMessage
+                                name="levelCompleted"
+                                component="div"
+                                className="text-red-400 text-xs mt-1"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ==================== SECTION 7: Purpose of Learning German ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-teal-400 to-teal-600 rounded-xl flex items-center justify-center">
+                              <Target className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Purpose of Learning German
+                            </h2>
+                          </div>
+
+                          <div className="space-y-3">
+                            <label className="text-sm font-medium text-white">
+                              Select your purpose(s){" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {learningPurposeOptions.map((purpose) => (
+                                <label
+                                  key={purpose}
+                                  className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 transition-colors cursor-pointer"
+                                >
+                                  <Field
+                                    type="checkbox"
+                                    name="purposeLearningGerman"
+                                    value={purpose}
+                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20"
+                                  />
+                                  <span className="text-sm text-white/90">
+                                    {purpose}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                            <ErrorMessage
+                              name="purposeLearningGerman"
                               component="div"
                               className="text-red-400 text-xs mt-1"
                             />
                           </div>
                         </div>
 
-                        {/* Cloudflare Turnstile Widget */}
+                        {/* ==================== SECTION 8: Work Experience ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-xl flex items-center justify-center">
+                              <Briefcase className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Work Experience
+                            </h2>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label
+                              htmlFor="workExperience"
+                              className="text-sm font-medium text-white"
+                            >
+                              Do you have work experience?{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <Field name="workExperience">
+                              {({ field, form }: any) => (
+                                <select
+                                  {...field}
+                                  onChange={(e) =>
+                                    form.setFieldValue(
+                                      "workExperience",
+                                      e.target.value === "true",
+                                    )
+                                  }
+                                  value={
+                                    field.value === true
+                                      ? "true"
+                                      : field.value === false
+                                        ? "false"
+                                        : ""
+                                  }
+                                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                >
+                                  <option
+                                    value=""
+                                    disabled
+                                    className="bg-black text-gray-400"
+                                  >
+                                    Select option
+                                  </option>
+                                  <option
+                                    value="true"
+                                    className="bg-black text-white"
+                                  >
+                                    Yes
+                                  </option>
+                                  <option
+                                    value="false"
+                                    className="bg-black text-white"
+                                  >
+                                    No
+                                  </option>
+                                </select>
+                              )}
+                            </Field>
+                            <ErrorMessage
+                              name="workExperience"
+                              component="div"
+                              className="text-red-400 text-xs mt-1"
+                            />
+                          </div>
+                        </div>
+
+                        {/* ==================== SECTION 9: Declaration ==================== */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                            <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-pink-600 rounded-xl flex items-center justify-center">
+                              <FileCheck className="h-5 w-5 text-white" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-white">
+                              Declaration
+                            </h2>
+                          </div>
+
+                          <label className="flex items-start gap-3 p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:border-white/20 transition-colors">
+                            <Field
+                              type="checkbox"
+                              name="declaration"
+                              className="w-6 h-6 mt-0.5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20"
+                            />
+                            <span className="text-sm text-white/90">
+                              I hereby declare that the information provided is
+                              true and correct to the best of my knowledge.{" "}
+                              <span className="text-red-500">*</span>
+                            </span>
+                          </label>
+                          <ErrorMessage
+                            name="declaration"
+                            component="div"
+                            className="text-red-400 text-xs"
+                          />
+                        </div>
+
+                        {/* ==================== SECTION 10: Security Verification ==================== */}
                         <div className="space-y-2 sm:space-y-3">
                           <label className="text-sm font-medium text-white flex items-center gap-2">
                             <CheckCircle className="h-4 w-4" />
-                            Security Verification *
+                            Security Verification{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <div className="flex justify-center">
                             {turnstileLoaded ? (
@@ -1092,13 +1799,14 @@ export function RegistrationPageContent() {
                         <div className="pt-2 sm:pt-4">
                           <Button
                             type="submit"
-                            disabled={isSubmitting || !isValid}
+                            disabled={isSubmitting}
+                            onClick={handleFormSubmit}
                             className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                           >
                             {isSubmitting ? (
                               <div className="flex items-center justify-center gap-2">
                                 <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
-                                <span>Submitting...</span>
+                                <span>Submitting please wait...</span>
                               </div>
                             ) : (
                               <div className="flex items-center justify-center gap-2">

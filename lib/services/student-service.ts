@@ -1,19 +1,30 @@
-import strapiClient from '@/lib/strapi-client';
-import qs from 'qs';
+import strapiClient from "@/lib/strapi-client";
+import qs from "qs";
 
 export interface StrapiStudent {
   id: number;
   documentId: string;
   firstName: string;
   lastName: string;
+  gender?: string;
   email: string;
   phone: string;
+  whatsappNumber?: string;
   dateOfBirth: string;
   address: string;
+  fathersName?: string;
+  mothersName?: string;
   parentName: string;
   parentContact: string;
   aadhaarNumber: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'enquired';
+  hostelFacility?: boolean;
+  highestQualification?: string;
+  otherQualification?: string;
+  studiedGerman?: boolean;
+  levelCompleted?: string;
+  purposeLearningGerman?: string[];
+  workExperience?: boolean;
+  statuses: "pending" | "accepted" | "rejected" | "enquired";
   photo?: {
     id: number;
     url: string;
@@ -51,7 +62,7 @@ export interface StudentParams {
   pageSize?: number;
   search?: string;
   courseLevel?: string;
-  status?: string;
+  statuses?: string;
   center?: string;
   populate?: string[];
 }
@@ -68,8 +79,8 @@ export const studentService = {
         courseLevel: true,
         photo: true,
       },
-      sort: ['createdAt:desc'],
-      filters: {}
+      sort: ["createdAt:desc"],
+      filters: {},
     };
 
     // Add search filter
@@ -78,22 +89,24 @@ export const studentService = {
         { firstName: { $containsi: params.search } },
         { lastName: { $containsi: params.search } },
         { email: { $containsi: params.search } },
-        { aadhaarNumber: { $containsi: params.search } }
+        { aadhaarNumber: { $containsi: params.search } },
       ];
     }
 
     // Add course level filter
-    if (params?.courseLevel && params.courseLevel !== 'all') {
-      queryParams.filters.courseLevel = { documentId: { $eq: params.courseLevel } };
+    if (params?.courseLevel && params.courseLevel !== "all") {
+      queryParams.filters.courseLevel = {
+        documentId: { $eq: params.courseLevel },
+      };
     }
 
     // Add status filter
-    if (params?.status && params.status !== 'all') {
-      queryParams.filters.status = { $eq: params.status };
+    if (params?.statuses && params.statuses !== "all") {
+      queryParams.filters.statuses = { $eq: params.statuses };
     }
 
     // Add center filter (for super admin)
-    if (params?.center && params.center !== 'all') {
+    if (params?.center && params.center !== "all") {
       queryParams.filters.center = { documentId: { $eq: params.center } };
     }
 
@@ -108,27 +121,37 @@ export const studentService = {
         center: true,
         courseLevel: true,
         photo: true,
-      }
+      },
     };
-    
+
     const queryString = qs.stringify(queryParams, { encodeValuesOnly: true });
-    const response = await strapiClient.get(`/students/${documentId}?${queryString}`);
+    const response = await strapiClient.get(
+      `/students/${documentId}?${queryString}`,
+    );
     return response.data.data;
   },
 
   async create(data: Partial<StrapiStudent>): Promise<StrapiStudent> {
-    const response = await strapiClient.post('/students', { data });
+    const response = await strapiClient.post("/students", { data });
     return response.data.data;
   },
 
-  async update(documentId: string, data: Partial<StrapiStudent>): Promise<StrapiStudent> {
-    const response = await strapiClient.put(`/students/${documentId}`, { data });
+  async update(
+    documentId: string,
+    data: Partial<StrapiStudent>,
+  ): Promise<StrapiStudent> {
+    const response = await strapiClient.put(`/students/${documentId}`, {
+      data,
+    });
     return response.data.data;
   },
 
-  async updateStatus(documentId: string, status: 'pending' | 'accepted' | 'rejected' | 'enquired'): Promise<StrapiStudent> {
-    const response = await strapiClient.put(`/students/${documentId}`, { 
-      data: { status } 
+  async updateStatus(
+    documentId: string,
+    statuses: "pending" | "accepted" | "rejected" | "enquired",
+  ): Promise<StrapiStudent> {
+    const response = await strapiClient.put(`/students/${documentId}`, {
+      data: { statuses },
     });
     return response.data.data;
   },
@@ -139,18 +162,18 @@ export const studentService = {
 
   async uploadPhoto(documentId: string, file: File): Promise<StrapiStudent> {
     const formData = new FormData();
-    formData.append('files', file);
-    formData.append('ref', 'api::student.student');
-    formData.append('refId', documentId);
-    formData.append('field', 'photo');
+    formData.append("files", file);
+    formData.append("ref", "api::student.student");
+    formData.append("refId", documentId);
+    formData.append("field", "photo");
 
-    await strapiClient.post('/upload', formData, {
+    await strapiClient.post("/upload", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
 
     // Fetch updated student
     return this.getOne(documentId);
-  }
+  },
 };
