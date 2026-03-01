@@ -1274,7 +1274,8 @@ export function RegistrationPageContent() {
                                 htmlFor="center"
                                 className="text-sm font-medium text-white"
                               >
-                                Center <span className="text-red-500">*</span>
+                                Training Center{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field name="center">
                                 {({ field }: any) => (
