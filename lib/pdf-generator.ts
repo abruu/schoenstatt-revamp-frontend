@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
-
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 interface StudentData {
   firstName: string;
   lastName: string;
@@ -267,20 +268,31 @@ export async function generateRegistrationPDF(
 
   try {
     const isDev = process.env.NODE_ENV === "development";
+    const execPath = isDev
+      ? process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome"
+      : await chromium.executablePath();
+
+    console.log("PDF Generation Environment:", {
+      isDev,
+      nodeEnv: process.env.NODE_ENV,
+      executablePath: execPath,
+    });
 
     browser = await puppeteer.launch({
       args: isDev
         ? puppeteer.defaultArgs()
-        : [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+        : [
+            ...chromium.args,
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--single-process",
+          ],
       defaultViewport: {
         width: 1920,
         height: 1080,
       },
-      executablePath: isDev
-        ? process.env.PUPPETEER_EXECUTABLE_PATH ||
-          "/usr/bin/google-chrome-stable" ||
-          "/usr/bin/chromium-browser"
-        : await chromium.executablePath(),
+      executablePath: execPath,
       headless: true,
     });
 
@@ -306,12 +318,21 @@ export async function generateRegistrationPDF(
     return Buffer.from(pdfBuffer);
   } catch (error) {
     console.error("PDF generation error:", error);
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      nodeEnv: process.env.NODE_ENV,
+    });
     throw new Error(
       `Failed to generate PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
     );
   } finally {
     if (browser) {
-      await browser.close();
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error("Error closing browser:", closeError);
+      }
     }
   }
 }
