@@ -1,15 +1,18 @@
+# ---------------------------
 # Stage 1: Install dependencies
+# ---------------------------
 FROM node:22 AS deps
 WORKDIR /app
-COPY package.json ./
+COPY package.json package-lock.json* ./
 RUN npm install
 
 
-# Stage 2: Build the Next.js app
+# ---------------------------
+# Stage 2: Build Next.js
+# ---------------------------
 FROM node:22 AS builder
 WORKDIR /app
 
-# Accept environment variables from Railway at build time
 ARG NEXT_PUBLIC_STRAPI_URL
 ARG RESEND_API_KEY
 ARG RESEND_FROM
@@ -19,31 +22,50 @@ ARG TURNSTILE_SECRET_KEY
 ARG PUPPETEER_SKIP_DOWNLOAD
 ARG NODE_ENV
 
-# Promote them to ENV so Next.js can read them
 ENV NEXT_PUBLIC_STRAPI_URL=$NEXT_PUBLIC_STRAPI_URL
 ENV RESEND_API_KEY=$RESEND_API_KEY
 ENV RESEND_FROM=$RESEND_FROM
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NEXT_LOGO_PATH=$NEXT_LOGO_PATH
 ENV TURNSTILE_SECRET_KEY=$TURNSTILE_SECRET_KEY
-ENV PUPPETEER_SKIP_DOWNLOAD=$PUPPETEER_SKIP_DOWNLOAD
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
-# Copy deps
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy source files
 COPY . .
 
-# Build Next.js (now env vars are available)
 RUN npm run build
 
 
-# Stage 3: Run the app
-FROM node:22 AS runner
+# ---------------------------
+# Stage 3: Runner (PRODUCTION)
+# ---------------------------
+FROM node:22-bullseye AS runner
 WORKDIR /app
 
-ENV NODE_ENV=$NODE_ENV
+ENV NODE_ENV=production
 ENV PORT=3000
+
+# ⭐ INSTALL CHROMIUM + REQUIRED LIBRARIES
+RUN apt-get update && apt-get install -y \
+    chromium \
+    libnspr4 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpangocairo-1.0-0 \
+    libgtk-3-0 \
+    libxshmfence1 \
+    fonts-liberation \
+    ca-certificates \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy built app
 COPY --from=builder /app/public ./public

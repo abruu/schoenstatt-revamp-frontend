@@ -1,5 +1,4 @@
-import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import puppeteer, { Browser } from "puppeteer-core";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 interface StudentData {
@@ -264,36 +263,31 @@ function generatePDFHTML(data: StudentData): string {
 export async function generateRegistrationPDF(
   studentData: StudentData,
 ): Promise<Buffer> {
-  let browser = null;
+  let browser: Browser | null = null;
 
   try {
-    const isDev = process.env.NODE_ENV === "development";
-    const execPath = isDev
-      ? process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome"
-      : await chromium.executablePath();
+    const isDev = process.env.NODE_ENV !== "production";
+
+    const executablePath = isDev
+      ? process.env.PUPPETEER_EXECUTABLE_PATH
+      : "/usr/bin/chromium"; // installed via Docker on Railway
 
     console.log("PDF Generation Environment:", {
       isDev,
       nodeEnv: process.env.NODE_ENV,
-      executablePath: execPath,
+      executablePath,
     });
 
     browser = await puppeteer.launch({
-      args: isDev
-        ? puppeteer.defaultArgs()
-        : [
-            ...chromium.args,
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--single-process",
-          ],
-      defaultViewport: {
-        width: 1920,
-        height: 1080,
-      },
-      executablePath: execPath,
+      executablePath,
       headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--no-zygote",
+        "--single-process",
+      ],
     });
 
     const page = await browser.newPage();
@@ -301,8 +295,10 @@ export async function generateRegistrationPDF(
     const htmlContent = generatePDFHTML(studentData);
 
     await page.setContent(htmlContent, {
-      waitUntil: ["networkidle0", "load"],
+      waitUntil: "networkidle0",
     });
+
+    await page.emulateMediaType("screen");
 
     const pdfBuffer = await page.pdf({
       format: "A4",
