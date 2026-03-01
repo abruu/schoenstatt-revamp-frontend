@@ -43,6 +43,7 @@ function StudentDetailContent() {
   const [student, setStudent] = useState<StrapiStudent | null>(null);
   const [loading, setLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -104,6 +105,48 @@ function StudentDetailContent() {
     } catch (error) {
       console.error("Error downloading photo:", error);
       alert("Failed to download photo");
+    }
+  };
+
+  const downloadStudentPdf = async () => {
+    if (!student) return;
+
+    setDownloadingPdf(true);
+    try {
+      const token = localStorage.getItem("strapi_jwt");
+      if (!token) {
+        alert("Please log in to download the PDF");
+        return;
+      }
+
+      const response = await fetch(
+        `/api/students/${student.documentId}/download-pdf`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to download PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${student.firstName}-${student.lastName}-${student.id}_Details.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      console.error("Error downloading PDF:", error);
+      alert(error.message || "Failed to download PDF. Please try again.");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -196,20 +239,32 @@ function StudentDetailContent() {
                 {student.statuses?.charAt(0).toUpperCase() +
                   student.statuses?.slice(1)}
               </Badge>
-              {/* <Button
-                onClick={() => window.print()}
+              <Button
+                onClick={downloadStudentPdf}
                 variant="outline"
                 size="sm"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                disabled={downloadingPdf}
+                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
               >
-                <Printer className="h-4 w-4" />
-              </Button> */}
+                {downloadingPdf ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Student Detail
+                  </>
+                )}
+              </Button>
               {student.photo && (
                 <Button
                   onClick={downloadPhoto}
                   variant="outline"
                   size="sm"
                   className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  title="Download Photo"
                 >
                   <Download className="h-4 w-4" />
                 </Button>

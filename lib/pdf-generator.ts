@@ -1,7 +1,7 @@
 import puppeteer, { Browser } from "puppeteer-core";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-interface StudentData {
+export interface StudentData {
   firstName: string;
   lastName: string;
   gender?: string;
@@ -234,7 +234,18 @@ function generatePDFHTML(data: StudentData): string {
           <div class="section">
             <div class="section-title">German Language Background</div>
             ${data.studiedGerman !== undefined ? `<div class="info-row"><div class="info-label">Studied German:</div><div class="info-value">${data.studiedGerman ? "Yes" : "No"}${data.studiedGerman && data.levelCompleted ? ` (${data.levelCompleted})` : ""}</div></div>` : ""}
-            ${data.purposeLearningGerman && data.purposeLearningGerman.length > 0 ? `<div class="info-row"><div class="info-label">Learning Purpose:</div><div class="info-value">${data.purposeLearningGerman.join(", ")}</div></div>` : ""}
+            ${
+              data.purposeLearningGerman &&
+              data.purposeLearningGerman.length > 0
+                ? `<div class="info-row"><div class="info-label">Learning Purpose:</div><div class="info-value">${
+                    data.purposeLearningGerman
+                      ?.flatMap((v) => v.split(","))
+                      .map((v) => v.trim())
+                      .filter(Boolean)
+                      .join(", ") || ""
+                  }</div></div>`
+                : ""
+            }
             ${data.workExperience !== undefined ? `<div class="info-row"><div class="info-label">Work Experience:</div><div class="info-value">${data.workExperience ? "Yes" : "No"}</div></div>` : ""}
           </div>
         </div>
@@ -258,6 +269,76 @@ function generatePDFHTML(data: StudentData): string {
     </body>
     </html>
   `;
+}
+
+export function formatStudentDataForPDF(
+  student: any,
+  baseUrl: string,
+): StudentData {
+  const strapiUrl =
+    process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
+    "http://localhost:1337";
+
+  let photoUrl = "";
+  if (student.photo?.url) {
+    photoUrl = student.photo.url.startsWith("http")
+      ? student.photo.url
+      : `${strapiUrl}${student.photo.url}`;
+  }
+
+  const createdDate = new Date(student.createdAt);
+
+  return {
+    firstName: student.firstName || "",
+    lastName: student.lastName || "",
+    gender: student.gender,
+    dateOfBirth: student.dateOfBirth
+      ? new Date(student.dateOfBirth).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "",
+    email: student.email || "",
+    phone: student.phone || "",
+    whatsappNumber: student.whatsappNumber,
+    address: student.address || "",
+    fathersName: student.fathersName || student.parentName || "",
+    mothersName: student.mothersName || "",
+    parentContact: student.parentContact || "",
+    aadhaarNumber: student.aadhaarNumber || "",
+    courseLevel: student.courseLevel?.LabelFull || "Not assigned",
+    centerName: student.center?.name || "Not assigned",
+    hostelFacility: student.hostelFacility,
+    highestQualification:
+      student.highestQualification === "Other"
+        ? student.otherQualification
+        : student.highestQualification,
+    studiedGerman: student.studiedGerman,
+    levelCompleted: student.levelCompleted,
+    purposeLearningGerman: student.purposeLearningGerman,
+    workExperience: student.workExperience,
+    registrationId: student.id,
+    photoUrl,
+    logoUrl: `${baseUrl}/images/logo.png`,
+    submittedDate: createdDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }),
+    submittedTime: createdDate.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+}
+
+export async function generateStudentPDF(
+  student: any,
+  baseUrl: string,
+): Promise<Buffer> {
+  const studentData = formatStudentDataForPDF(student, baseUrl);
+  return generateRegistrationPDF(studentData);
 }
 
 export async function generateRegistrationPDF(

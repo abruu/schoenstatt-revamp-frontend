@@ -163,7 +163,7 @@ const validationSchema = Yup.object({
     .min(2, "Last name must be at least 2 characters")
     .max(50, "Last name cannot exceed 50 characters")
     .required("Last name is required"),
-  gender: Yup.string(),
+  gender: Yup.string().required("Gender is required"),
   dateOfBirth: Yup.string()
     .required("Date of birth is required")
     .matches(/^\d{2}\/\d{2}\/\d{4}$/, "Please enter date in DD/MM/YYYY format")
@@ -177,7 +177,17 @@ const validationSchema = Yup.object({
         date.getFullYear() === year
       );
     })
-    .test("age", "You must be at least 5 years old", (value) => {
+    .test(
+      "year-range",
+      "Year must be between 1950 and current year",
+      (value) => {
+        if (!value) return false;
+        const [day, month, year] = value.split("/").map(Number);
+        const currentYear = new Date().getFullYear();
+        return year >= 1950 && year <= currentYear;
+      },
+    )
+    .test("age", "You must be at least 10 years old", (value) => {
       if (!value) return false;
       const [day, month, year] = value.split("/").map(Number);
       const birthDate = new Date(year, month - 1, day);
@@ -188,9 +198,9 @@ const validationSchema = Yup.object({
         monthDiff < 0 ||
         (monthDiff === 0 && today.getDate() < birthDate.getDate())
       ) {
-        return age - 1 >= 5;
+        return age - 1 >= 10;
       }
-      return age >= 5;
+      return age >= 10;
     })
     .test("not-future", "Date of birth cannot be in the future", (value) => {
       if (!value) return false;
@@ -687,7 +697,7 @@ export function RegistrationPageContent() {
             </div>
 
             {/* Registration Form */}
-            <div className="relative mx-4 sm:mx-0">
+            <div className="relative  sm:mx-0">
               {/* Glow effect */}
               <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20"></div>
 
@@ -704,7 +714,10 @@ export function RegistrationPageContent() {
                     errors,
                     touched,
                     isValid,
+                    submitForm,
                   }) => {
+                    const submitAttemptedRef = useRef(false);
+
                     useEffect(() => {
                       renderTurnstile(setFieldValue);
                     }, [turnstileLoaded, setFieldValue]);
@@ -719,6 +732,35 @@ export function RegistrationPageContent() {
                       values.isWhatsappSameAsPhone,
                       setFieldValue,
                     ]);
+
+                    // Focus on first error field only after submit attempt
+                    useEffect(() => {
+                      if (
+                        submitAttemptedRef.current &&
+                        Object.keys(errors).length > 0 &&
+                        Object.keys(touched).length > 0
+                      ) {
+                        const firstErrorField = Object.keys(errors)[0];
+                        const errorElement = document.querySelector(
+                          `[name="${firstErrorField}"]`,
+                        ) as HTMLElement;
+
+                        if (errorElement) {
+                          errorElement.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                          errorElement.focus();
+                        }
+                        submitAttemptedRef.current = false;
+                      }
+                    }, [errors, touched]);
+
+                    const handleFormSubmit = (e: React.FormEvent) => {
+                      submitAttemptedRef.current = true;
+                      e.preventDefault();
+                      submitForm();
+                    };
 
                     return (
                       <Form className="space-y-8 sm:space-y-10">
@@ -750,7 +792,7 @@ export function RegistrationPageContent() {
                               className="text-sm font-medium text-white flex items-center gap-2"
                             >
                               <Upload className="h-4 w-4" />
-                              Photo *
+                              Photo <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               {photoUploading ? (
@@ -834,7 +876,8 @@ export function RegistrationPageContent() {
                                 htmlFor="firstName"
                                 className="text-sm font-medium text-white"
                               >
-                                First Name *
+                                First Name{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="firstName"
@@ -854,7 +897,8 @@ export function RegistrationPageContent() {
                                 htmlFor="lastName"
                                 className="text-sm font-medium text-white"
                               >
-                                Last Name *
+                                Last Name{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="lastName"
@@ -878,7 +922,7 @@ export function RegistrationPageContent() {
                                 htmlFor="gender"
                                 className="text-sm font-medium text-white"
                               >
-                                Gender
+                                Gender <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 as="select"
@@ -923,7 +967,8 @@ export function RegistrationPageContent() {
                                 className="text-sm font-medium text-white flex items-center gap-2"
                               >
                                 <Calendar className="h-4 w-4" />
-                                Date of Birth *
+                                Date of Birth{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="dateOfBirth"
@@ -978,7 +1023,8 @@ export function RegistrationPageContent() {
                                 className="text-sm font-medium text-white flex items-center gap-2"
                               >
                                 <Mail className="h-4 w-4" />
-                                Email Address *
+                                Email Address{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="email"
@@ -999,7 +1045,8 @@ export function RegistrationPageContent() {
                                 className="text-sm font-medium text-white flex items-center gap-2"
                               >
                                 <Phone className="h-4 w-4" />
-                                Mobile Number *
+                                Mobile Number{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="phone"
@@ -1037,13 +1084,13 @@ export function RegistrationPageContent() {
                                     );
                                   }
                                 }}
-                                className="w-4 h-4 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20"
+                                className="w-5 h-5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20"
                               />
                               <label
                                 htmlFor="isWhatsappSameAsPhone"
-                                className="text-sm text-white/80"
+                                className="text-base text-white/80"
                               >
-                                Same as Mobile Number
+                                Same as mobile number?
                               </label>
                             </div>
                             <div className="space-y-2">
@@ -1076,7 +1123,8 @@ export function RegistrationPageContent() {
                               className="text-sm font-medium text-white flex items-center gap-2"
                             >
                               <MapPin className="h-4 w-4" />
-                              Full Address *
+                              Full Address{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field
                               as="textarea"
@@ -1111,7 +1159,8 @@ export function RegistrationPageContent() {
                                 htmlFor="fathersName"
                                 className="text-sm font-medium text-white"
                               >
-                                Father's Name *
+                                Father's Name{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="fathersName"
@@ -1131,7 +1180,8 @@ export function RegistrationPageContent() {
                                 htmlFor="mothersName"
                                 className="text-sm font-medium text-white"
                               >
-                                Mother's Name *
+                                Mother's Name{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="mothersName"
@@ -1154,7 +1204,8 @@ export function RegistrationPageContent() {
                               className="text-sm font-medium text-white flex items-center gap-2"
                             >
                               <Phone className="h-4 w-4" />
-                              Parent Mobile Number *
+                              Parent Mobile Number{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field
                               id="parentContact"
@@ -1187,7 +1238,8 @@ export function RegistrationPageContent() {
                               htmlFor="aadhaarNumber"
                               className="text-sm font-medium text-white"
                             >
-                              Aadhaar Number *
+                              Aadhaar Number{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field
                               id="aadhaarNumber"
@@ -1222,7 +1274,7 @@ export function RegistrationPageContent() {
                                 htmlFor="center"
                                 className="text-sm font-medium text-white"
                               >
-                                Center *
+                                Center <span className="text-red-500">*</span>
                               </label>
                               <Field name="center">
                                 {({ field }: any) => (
@@ -1271,7 +1323,8 @@ export function RegistrationPageContent() {
                                 className="text-sm font-medium text-white flex items-center gap-2"
                               >
                                 <BookOpen className="h-4 w-4" />
-                                Course Level *
+                                Course Level{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 as="select"
@@ -1319,7 +1372,8 @@ export function RegistrationPageContent() {
                               className="text-sm font-medium text-white flex items-center gap-2"
                             >
                               <Home className="h-4 w-4" />
-                              Hostel Facility Needed *
+                              Hostel Facility Needed{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field name="hostelFacility">
                               {({ field, form }: any) => (
@@ -1386,7 +1440,8 @@ export function RegistrationPageContent() {
                               htmlFor="highestQualification"
                               className="text-sm font-medium text-white"
                             >
-                              Highest Qualification *
+                              Highest Qualification{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field
                               as="select"
@@ -1435,7 +1490,8 @@ export function RegistrationPageContent() {
                                 htmlFor="otherQualification"
                                 className="text-sm font-medium text-white"
                               >
-                                Please specify qualification *
+                                Please specify qualification{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="otherQualification"
@@ -1469,7 +1525,8 @@ export function RegistrationPageContent() {
                               htmlFor="studiedGerman"
                               className="text-sm font-medium text-white"
                             >
-                              Have you studied German before? *
+                              Have you studied German before?{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field name="studiedGerman">
                               {({ field, form }: any) => (
@@ -1529,7 +1586,8 @@ export function RegistrationPageContent() {
                                 htmlFor="levelCompleted"
                                 className="text-sm font-medium text-white"
                               >
-                                Level Completed *
+                                Level Completed{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <Field
                                 id="levelCompleted"
@@ -1560,7 +1618,8 @@ export function RegistrationPageContent() {
 
                           <div className="space-y-3">
                             <label className="text-sm font-medium text-white">
-                              Select your purpose(s) *
+                              Select your purpose(s){" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {learningPurposeOptions.map((purpose) => (
@@ -1604,7 +1663,8 @@ export function RegistrationPageContent() {
                               htmlFor="workExperience"
                               className="text-sm font-medium text-white"
                             >
-                              Do you have work experience? *
+                              Do you have work experience?{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <Field name="workExperience">
                               {({ field, form }: any) => (
@@ -1670,11 +1730,12 @@ export function RegistrationPageContent() {
                             <Field
                               type="checkbox"
                               name="declaration"
-                              className="w-5 h-5 mt-0.5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20"
+                              className="w-6 h-6 mt-0.5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20"
                             />
                             <span className="text-sm text-white/90">
                               I hereby declare that the information provided is
-                              true and correct to the best of my knowledge. *
+                              true and correct to the best of my knowledge.{" "}
+                              <span className="text-red-500">*</span>
                             </span>
                           </label>
                           <ErrorMessage
@@ -1688,7 +1749,8 @@ export function RegistrationPageContent() {
                         <div className="space-y-2 sm:space-y-3">
                           <label className="text-sm font-medium text-white flex items-center gap-2">
                             <CheckCircle className="h-4 w-4" />
-                            Security Verification *
+                            Security Verification{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <div className="flex justify-center">
                             {turnstileLoaded ? (
@@ -1737,6 +1799,7 @@ export function RegistrationPageContent() {
                           <Button
                             type="submit"
                             disabled={isSubmitting}
+                            onClick={handleFormSubmit}
                             className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                           >
                             {isSubmitting ? (

@@ -73,6 +73,7 @@ function DashboardContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
   const studentsPerPage = 10;
 
   // Debounce search term with 3 second delay
@@ -157,87 +158,63 @@ function DashboardContent() {
     }
   };
 
-  const exportToCSV = () => {
-    const headers = [
-      "First Name",
-      "Last Name",
-      "Email",
-      "Phone",
-      "Date of Birth",
-      "Address",
-      "Parent Name",
-      "Parent Contact",
-      "Aadhaar Number",
-      "Center",
-      "Course Level",
-      "Status",
-      "Registration Date",
-    ];
-
-    const csvContent = [
-      headers.join(","),
-      ...students.map((student) =>
-        [
-          student.firstName,
-          student.lastName,
-          student.email,
-          student.phone,
-          student.dateOfBirth,
-          `"${student.address}"`,
-          student.parentName,
-          student.parentContact,
-          student.aadhaarNumber,
-          student.center?.name || "",
-          student.courseLevel?.LabelFull || "",
-          student.statuses,
-          format(new Date(student.createdAt), "yyyy-MM-dd"),
-        ].join(","),
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `students-${centerName || "all"}-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const exportToExcel = async () => {
+  const handleExport = async (format: "csv" | "xlsx") => {
+    setExporting(format);
     try {
-      const XLSX = await import("xlsx");
-      const worksheet = XLSX.utils.json_to_sheet(
-        students.map((student) => ({
-          "First Name": student.firstName,
-          "Last Name": student.lastName,
-          Email: student.email,
-          Phone: student.phone,
-          "Date of Birth": student.dateOfBirth,
-          Address: student.address,
-          "Parent Name": student.parentName,
-          "Parent Contact": student.parentContact,
-          "Aadhaar Number": student.aadhaarNumber,
-          Center: student.center?.name || "",
-          "Course Level": student.courseLevel?.LabelFull || "",
-          Status: student.statuses,
-          "Registration Date": format(
-            new Date(student.createdAt),
-            "yyyy-MM-dd",
-          ),
-        })),
+      // Get auth token
+      const token = localStorage.getItem("strapi_jwt");
+      if (!token) {
+        alert("Please log in again to export data.");
+        return;
+      }
+
+      // Build query params for filters
+      const params = new URLSearchParams();
+      params.set("format", format);
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (courseFilter !== "all") params.set("courseLevel", courseFilter);
+      if (institutionFilter !== "all") params.set("center", institutionFilter);
+
+      const response = await fetch(
+        `/api/students/export?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `Export failed with status ${response.status}`,
+        );
+      }
 
-      XLSX.writeFile(
-        workbook,
-        `students-${centerName || "all"}-${format(new Date(), "yyyy-MM-dd")}.xlsx`,
-      );
-    } catch (error) {
-      console.error("Error exporting to Excel:", error);
-      alert("Failed to export to Excel. Please try CSV export instead.");
+      // Get filename from Content-Disposition header or generate one
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `students_export_${format === "csv" ? "csv" : "xlsx"}`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error("Export error:", error);
+      alert(error.message || "Failed to export. Please try again.");
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -440,22 +417,32 @@ function DashboardContent() {
                 {/* Download Buttons */}
                 <div className="flex gap-2">
                   <Button
-                    onClick={exportToCSV}
+                    onClick={() => handleExport("csv")}
+                    disabled={exporting !== null}
                     variant="outline"
                     size="sm"
-                    className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400"
+                    className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400 disabled:opacity-50"
                   >
-                    <Download className="h-4 w-4 mr-2" />
-                    CSV
+                    {exporting === "csv" ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    {exporting === "csv" ? "Exporting..." : "CSV"}
                   </Button>
                   <Button
-                    onClick={exportToExcel}
+                    onClick={() => handleExport("xlsx")}
+                    disabled={exporting !== null}
                     variant="outline"
                     size="sm"
-                    className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400"
+                    className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400 disabled:opacity-50"
                   >
-                    <FileSpreadsheet className="h-4 w-4 mr-2" />
-                    Excel
+                    {exporting === "xlsx" ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    )}
+                    {exporting === "xlsx" ? "Exporting..." : "Excel"}
                   </Button>
                 </div>
               </div>
