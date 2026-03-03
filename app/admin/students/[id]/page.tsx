@@ -269,14 +269,14 @@ function StudentDetailContent() {
                   <Download className="h-4 w-4" />
                 </Button>
               )}
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 onClick={handleDeleteStudent}
                 className="bg-red-600 hover:bg-red-700 text-white border-red-600"
               >
                 <Trash2 className="h-4 w-4" />
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
