@@ -1,141 +1,153 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
-import { Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { NAVIGATION_ITEMS, SITE_CONFIG } from "@/lib/constants"
-import { useScroll } from "@/hooks/use-scroll"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { NAVIGATION_ITEMS, SITE_CONFIG } from "@/lib/constants";
+import { useScroll } from "@/hooks/use-scroll";
+import { cn } from "@/lib/utils";
 
 export function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [activeSection, setActiveSection] = useState("home")
-  const scrolled = useScroll()
-  const router = useRouter()
-  const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("home");
+  const scrolled = useScroll();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = "unset";
     }
 
     // Cleanup on unmount
     return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen])
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   // Track active section on homepage
   useEffect(() => {
-    if (pathname !== "/") return
+    if (pathname !== "/") return;
 
     const handleScroll = () => {
-      const sections = ["home", "courses", "about", "centers", "gallery", "contact"]
-      const scrollPosition = window.scrollY + 100
+      const sections = [
+        "home",
+        "courses",
+        "about",
+        "centers",
+        "gallery",
+        "contact",
+      ];
+      const scrollPosition = window.scrollY + 100;
 
       for (const section of sections) {
-        const element = document.getElementById(section)
+        const element = document.getElementById(section);
         if (element) {
-          const { offsetTop, offsetHeight } = element
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section)
-            break
+          const { offsetTop, offsetHeight } = element;
+          if (
+            scrollPosition >= offsetTop &&
+            scrollPosition < offsetTop + offsetHeight
+          ) {
+            setActiveSection(section);
+            break;
           }
         }
       }
-    }
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    handleScroll() // Initial check
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Initial check
 
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [pathname])
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [pathname]);
 
   // Handle hash navigation and update active section
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.substring(1)
+      const hash = window.location.hash.substring(1);
       if (hash && pathname === "/") {
-        setActiveSection(hash)
+        setActiveSection(hash);
       }
-    }
+    };
 
     // Set initial active section from hash
-    handleHashChange()
+    handleHashChange();
 
     // Listen for hash changes
-    window.addEventListener("hashchange", handleHashChange)
+    window.addEventListener("hashchange", handleHashChange);
 
     return () => {
-      window.removeEventListener("hashchange", handleHashChange)
-    }
-  }, [pathname])
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, [pathname]);
 
   const handleNavigation = (href: string, itemName: string) => {
-    setIsOpen(false) // Close mobile menu immediately
+    setIsOpen(false); // Close mobile menu immediately
 
     if (href.startsWith("#")) {
-      const sectionId = href.substring(1)
+      const sectionId = href.substring(1);
 
       if (pathname === "/") {
         // We're on homepage, smooth scroll to section WITHOUT page refresh
-        setActiveSection(sectionId)
-        const element = document.querySelector(href)
+        setActiveSection(sectionId);
+        const element = document.querySelector(href);
         if (element) {
           element.scrollIntoView({
             behavior: "smooth",
             block: "start",
-          })
+          });
         }
         // Update URL hash without triggering navigation or page refresh
         if (window.location.hash !== href) {
-          window.history.replaceState(null, "", href)
+          window.history.replaceState(null, "", href);
         }
       } else {
         // We're on a different page, use Next.js router to navigate
-        setActiveSection(sectionId)
-        router.push(`/${href}`)
+        setActiveSection(sectionId);
+        router.push(`/${href}`);
       }
     } else {
       // External page navigation
-      router.push(href)
+      router.push(href);
       // Reset active section when navigating to other pages
-      setActiveSection("")
+      setActiveSection("");
       // Scroll to top after navigation
       setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: "smooth" })
-      }, 100)
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 100);
     }
-  }
+  };
 
   const isActiveItem = (item: (typeof NAVIGATION_ITEMS)[0]) => {
     if (item.href.startsWith("#")) {
       // For anchor links
-      const sectionId = item.href.substring(1)
+      const sectionId = item.href.substring(1);
 
       if (pathname === "/") {
         // On homepage, check scroll-based active section
-        return activeSection === sectionId
+        return activeSection === sectionId;
       } else {
         // On other pages, no section is active
-        return false
+        return false;
       }
     } else {
       // For page links, check pathname
-      return pathname === item.href
+      return pathname === item.href;
     }
-  }
+  };
 
   return (
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled ? "bg-black/20 backdrop-blur-xl border-b border-white/10" : "bg-transparent",
+        scrolled
+          ? "bg-black/20 backdrop-blur-xl border-b border-white/10"
+          : "bg-transparent",
       )}
     >
       <div className="container mx-auto px-4 sm:px-6">
@@ -144,9 +156,9 @@ export function Header() {
           <button
             onClick={() => {
               if (pathname === "/") {
-                window.scrollTo({ top: 0, behavior: "smooth" })
+                window.scrollTo({ top: 0, behavior: "smooth" });
               } else {
-                router.push("/")
+                router.push("/");
               }
             }}
             className="flex items-center space-x-2 sm:space-x-3 group hover:scale-105 transition-transform duration-300"
@@ -155,28 +167,32 @@ export function Header() {
               <img
                 src="/images/logo/transparent-logo.png"
                 alt="Schoenstatt Logo"
-                className="w-8 h-8 sm:w-10 sm:h-10 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_10px_rgba(255,255,0,0.6)] hover:drop-shadow-[0_0_15px_rgba(255,255,0,0.8)]"
+                className="w-8 h-16 sm:w-11 sm:h-16 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_10px_rgba(255,255,0,0.6)] hover:drop-shadow-[0_0_15px_rgba(255,255,0,0.8)]"
               />
             </div>
             <div className="flex flex-col">
               <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              {SITE_CONFIG.shortName}
+                {SITE_CONFIG.shortName}
               </span>
-              <span className="text-xs sm:text-sm text-yellow-400 font-medium tracking-wider ml-3">LANGUAGE ACADEMY</span>
+              <span className="text-xs sm:text-sm text-yellow-400 font-medium tracking-wider ml-3">
+                LANGUAGE ACADEMY
+              </span>
             </div>
           </button>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
             {NAVIGATION_ITEMS.map((item) => {
-              const isActive = isActiveItem(item)
+              const isActive = isActiveItem(item);
               return (
                 <button
                   key={item.name}
                   onClick={() => handleNavigation(item.href, item.name)}
                   className={cn(
                     "relative transition-all duration-300 group py-2 px-1",
-                    isActive ? "text-yellow-400" : "text-white/80 hover:text-white",
+                    isActive
+                      ? "text-yellow-400"
+                      : "text-white/80 hover:text-white",
                   )}
                 >
                   {item.name}
@@ -187,7 +203,7 @@ export function Header() {
                     )}
                   ></span>
                 </button>
-              )
+              );
             })}
           </nav>
 
@@ -217,29 +233,33 @@ export function Header() {
         style={{
           top: "80px",
           backgroundColor: "rgba(0, 0, 0, 0.98)",
-          backgroundImage: "none"
+          backgroundImage: "none",
         }}
       >
         <div className="container mx-auto px-4  bg-black/95 sm:px-6 py-6 sm:py-8">
           <nav className="space-y-4 sm:space-y-6">
             {NAVIGATION_ITEMS.map((item, index) => {
-              const isActive = isActiveItem(item)
+              const isActive = isActiveItem(item);
               return (
                 <button
                   key={item.name}
                   onClick={() => handleNavigation(item.href, item.name)}
                   className={cn(
                     "block text-xl sm:text-2xl font-medium transition-all duration-300 hover:translate-x-2 sm:hover:translate-x-4 text-left w-full",
-                    isActive ? "text-yellow-400" : "text-white/80 hover:text-white",
+                    isActive
+                      ? "text-yellow-400"
+                      : "text-white/80 hover:text-white",
                   )}
                   style={{
                     animationDelay: `${index * 100}ms`,
-                    animation: isOpen ? "slideInLeft 0.5s ease-out forwards" : "none",
+                    animation: isOpen
+                      ? "slideInLeft 0.5s ease-out forwards"
+                      : "none",
                   }}
                 >
                   {item.name}
                 </button>
-              )
+              );
             })}
             <Link href="/register" className="block mt-8">
               <Button className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold px-8 py-3 rounded-full w-full">
@@ -250,5 +270,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
