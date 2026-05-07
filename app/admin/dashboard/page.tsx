@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useStrapiAuth } from "@/contexts/strapi-auth-context";
 import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
 import { studentService, StrapiStudent } from "@/lib/services/student-service";
@@ -46,14 +46,41 @@ import {
   X,
   HelpCircle,
   FileSpreadsheet,
+  User,
+  Phone,
+  MessageCircle,
+  Calendar,
+  CreditCard,
+  Building,
+  BookOpen,
+  Briefcase,
+  Home,
+  Camera,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
 export default function AdminDashboard() {
   return (
     <StrapiProtectedRoute>
-      <DashboardContent />
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
+          </div>
+        }
+      >
+        <DashboardContent />
+      </Suspense>
     </StrapiProtectedRoute>
   );
 }
@@ -63,6 +90,11 @@ function DashboardContent() {
     useStrapiAuth();
   const { courseLevels, loading: courseLevelsLoading } = useCourseLevels();
   const { centers, loading: centersLoading } = useCenters();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const isInitialMount = useRef(true);
   const [students, setStudents] = useState<StrapiStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,19 +102,44 @@ function DashboardContent() {
   const [courseFilter, setCourseFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [institutionFilter, setInstitutionFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StrapiStudent | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
   const studentsPerPage = 10;
 
-  // Debounce search term with 3 second delay
+  const updatePage = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newPage === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", newPage.toString());
+    }
+    const query = params.toString();
+    router.push(`${pathname}${query ? `?${query}` : ""}`);
+  };
+
+  // Debounce search term with 1 second delay
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
     }, 1000);
 
     return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete("page");
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
   useEffect(() => {
@@ -216,6 +273,57 @@ function DashboardContent() {
     } finally {
       setExporting(null);
     }
+  };
+
+  const handleDownloadPdf = async (student: StrapiStudent) => {
+    setDownloadingPdf(student.documentId);
+    try {
+      const token = localStorage.getItem("strapi_jwt");
+      if (!token) {
+        alert("Please log in to download the PDF");
+        return;
+      }
+      const response = await fetch(
+        `/api/students/${student.documentId}/download-pdf`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to download PDF");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${student.firstName}-${student.lastName}-${student.id}_Details.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      console.error("Error downloading PDF:", error);
+      alert(error.message || "Failed to download PDF. Please try again.");
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
+
+  const handleDownloadPhoto = (student: StrapiStudent) => {
+    if (!student.photo?.url) {
+      alert("No photo available to download");
+      return;
+    }
+    const photoUrl = student.photo.url.startsWith("http")
+      ? student.photo.url
+      : `${
+          process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
+          "http://localhost:1337"
+        }${student.photo.url}`;
+    const a = document.createElement("a");
+    a.href = photoUrl;
+    a.download = `${student.firstName}_${student.lastName}_photo.jpg`;
+    a.target = "_blank";
+    a.click();
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -582,7 +690,7 @@ function DashboardContent() {
                           <div className="flex items-center gap-2">
                             {/* Status Action Buttons */}
                             <div className="flex gap-1">
-                              <Button
+                              {/* <Button
                                 onClick={() =>
                                   handleStatusUpdate(
                                     student.documentId,
@@ -656,12 +764,12 @@ function DashboardContent() {
                                 ) : (
                                   <HelpCircle className="h-3 w-3" />
                                 )}
-                              </Button>
+                              </Button> */}
                             </div>
 
                             {/* View Button */}
                             <Link
-                              href={`/admin/students/${student.documentId}`}
+                              href={`/admin/students/${student.documentId}${currentPage > 1 ? `?returnPage=${currentPage}` : ""}`}
                             >
                               <Button
                                 variant="outline"
@@ -672,6 +780,44 @@ function DashboardContent() {
                                 View
                               </Button>
                             </Link>
+                            {/* Detail Button */}
+                            {/* <Button
+                              onClick={() => setSelectedStudent(student)}
+                              variant="outline"
+                              size="sm"
+                              className="text-purple-400 hover:text-black hover:bg-purple-400 border-purple-400/50 hover:border-purple-400"
+                              title="Quick Student Detail"
+                            >
+                              <User className="h-4 w-4 mr-1" />
+                              Detail
+                            </Button> */}
+                            {/* Download PDF Button */}
+                            <Button
+                              onClick={() => handleDownloadPdf(student)}
+                              disabled={downloadingPdf === student.documentId}
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-sky-400 hover:text-black hover:bg-sky-400 border-sky-400/50 hover:border-sky-400 disabled:opacity-50"
+                              title="Download PDF"
+                            >
+                              {downloadingPdf === student.documentId ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Download className="h-3 w-3" />
+                              )}
+                            </Button>
+                            {/* Download Photo Button */}
+                            {student.photo?.url && (
+                              <Button
+                                onClick={() => handleDownloadPhoto(student)}
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-cyan-400 hover:text-black hover:bg-cyan-400 border-cyan-400/50 hover:border-cyan-400"
+                                title="Download Photo"
+                              >
+                                <Camera className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -695,7 +841,7 @@ function DashboardContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                onClick={() => updatePage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
               >
@@ -709,7 +855,7 @@ function DashboardContent() {
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  updatePage(Math.min(totalPages, currentPage + 1))
                 }
                 disabled={currentPage === totalPages}
                 className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
@@ -721,6 +867,313 @@ function DashboardContent() {
           </div>
         )}
       </div>
+
+      {/* Student Detail Modal */}
+      <Dialog
+        open={!!selectedStudent}
+        onOpenChange={(open) => !open && setSelectedStudent(null)}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 border border-blue-500/20 text-white overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-blue-500/20 flex-shrink-0">
+            <DialogTitle className="text-white flex items-center gap-3 flex-wrap">
+              <User className="h-5 w-5 text-blue-400" />
+              {selectedStudent?.firstName} {selectedStudent?.lastName}
+              {selectedStudent && (
+                <span
+                  className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusBadgeColor(selectedStudent.statuses)}`}
+                >
+                  {selectedStudent.statuses?.charAt(0).toUpperCase() +
+                    selectedStudent.statuses?.slice(1)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="overflow-y-auto max-h-[calc(90vh-5rem)]">
+            {selectedStudent && (
+              <div className="px-6 py-4 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left – Photo & Quick Info */}
+                  <div className="lg:col-span-3 space-y-4">
+                    <div className="bg-slate-800/50 rounded-xl border border-blue-500/20 overflow-hidden">
+                      <div className="aspect-square relative bg-slate-900/50">
+                        {selectedStudent.photo?.url ? (
+                          <Image
+                            src={
+                              selectedStudent.photo.url.startsWith("http")
+                                ? selectedStudent.photo.url
+                                : `${
+                                    process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
+                                      "/api",
+                                      "",
+                                    ) || "http://localhost:1337"
+                                  }${selectedStudent.photo.url}`
+                            }
+                            alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <User className="h-16 w-16 text-slate-500" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 text-center border-t border-blue-500/20">
+                        <h2 className="font-semibold text-white text-sm">
+                          {selectedStudent.firstName} {selectedStudent.lastName}
+                        </h2>
+                        <p className="text-xs text-blue-300 mt-0.5">
+                          {selectedStudent.courseLevel?.LabelFull ||
+                            "No course assigned"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-xl border border-blue-500/20 p-4">
+                      <h3 className="text-xs font-semibold text-blue-300 uppercase tracking-wide mb-3">
+                        Quick Info
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Building className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                          <span className="text-blue-100 truncate">
+                            {selectedStudent.center?.name || "No center"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                          <span className="text-blue-100">
+                            {format(
+                              new Date(selectedStudent.createdAt),
+                              "MMM dd, yyyy",
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Home className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                          <span className="text-blue-100">
+                            {selectedStudent.hostelFacility
+                              ? "Hostel Required"
+                              : "Day Scholar"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right – Details */}
+                  <div className="lg:col-span-9 space-y-4">
+                    {/* Personal Info */}
+                    <div className="bg-slate-800/50 rounded-xl border border-blue-500/20">
+                      <div className="px-4 py-3 border-b border-blue-500/20 flex items-center gap-2">
+                        <User className="w-4 h-4 text-blue-400" />
+                        <h3 className="font-semibold text-white text-sm">
+                          Personal Information
+                        </h3>
+                      </div>
+                      <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[
+                          {
+                            label: "First Name",
+                            value: selectedStudent.firstName,
+                          },
+                          {
+                            label: "Last Name",
+                            value: selectedStudent.lastName,
+                          },
+                          { label: "Gender", value: selectedStudent.gender },
+                          {
+                            label: "Date of Birth",
+                            value: selectedStudent.dateOfBirth
+                              ? format(
+                                  new Date(selectedStudent.dateOfBirth),
+                                  "PPP",
+                                )
+                              : undefined,
+                          },
+                          {
+                            label: "Aadhaar Number",
+                            value: selectedStudent.aadhaarNumber,
+                          },
+                        ].map(({ label, value }) => (
+                          <div
+                            key={label}
+                            className="py-2 border-b border-blue-500/10 last:border-0"
+                          >
+                            <p className="text-xs font-medium text-blue-300 uppercase tracking-wide">
+                              {label}
+                            </p>
+                            <p className="text-sm text-white mt-0.5">
+                              {value || "—"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="bg-slate-800/50 rounded-xl border border-blue-500/20">
+                      <div className="px-4 py-3 border-b border-blue-500/20 flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-blue-400" />
+                        <h3 className="font-semibold text-white text-sm">
+                          Contact Information
+                        </h3>
+                      </div>
+                      <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[
+                          { label: "Email", value: selectedStudent.email },
+                          { label: "Phone", value: selectedStudent.phone },
+                          {
+                            label: "WhatsApp",
+                            value: selectedStudent.whatsappNumber,
+                          },
+                          {
+                            label: "Address",
+                            value: selectedStudent.address,
+                            wide: true,
+                          },
+                        ].map(({ label, value, wide }) => (
+                          <div
+                            key={label}
+                            className={`py-2 border-b border-blue-500/10 last:border-0 ${wide ? "col-span-2 md:col-span-3" : ""}`}
+                          >
+                            <p className="text-xs font-medium text-blue-300 uppercase tracking-wide">
+                              {label}
+                            </p>
+                            <p className="text-sm text-white mt-0.5">
+                              {value || "—"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Family Info */}
+                    <div className="bg-slate-800/50 rounded-xl border border-blue-500/20">
+                      <div className="px-4 py-3 border-b border-blue-500/20 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-400" />
+                        <h3 className="font-semibold text-white text-sm">
+                          Family Information
+                        </h3>
+                      </div>
+                      <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[
+                          {
+                            label: "Father's Name",
+                            value: selectedStudent.fathersName,
+                          },
+                          {
+                            label: "Mother's Name",
+                            value: selectedStudent.mothersName,
+                          },
+                          {
+                            label: "Parent Contact",
+                            value: selectedStudent.parentContact,
+                          },
+                        ].map(({ label, value }) => (
+                          <div
+                            key={label}
+                            className="py-2 border-b border-blue-500/10 last:border-0"
+                          >
+                            <p className="text-xs font-medium text-blue-300 uppercase tracking-wide">
+                              {label}
+                            </p>
+                            <p className="text-sm text-white mt-0.5">
+                              {value || "—"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Academic Info */}
+                    <div className="bg-slate-800/50 rounded-xl border border-blue-500/20">
+                      <div className="px-4 py-3 border-b border-blue-500/20 flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-blue-400" />
+                        <h3 className="font-semibold text-white text-sm">
+                          Academic Information
+                        </h3>
+                      </div>
+                      <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[
+                          {
+                            label: "Center",
+                            value: selectedStudent.center?.name,
+                          },
+                          {
+                            label: "Course Level",
+                            value: selectedStudent.courseLevel?.LabelFull,
+                          },
+                          {
+                            label: "Highest Qualification",
+                            value:
+                              selectedStudent.highestQualification === "Other"
+                                ? selectedStudent.otherQualification
+                                : selectedStudent.highestQualification,
+                          },
+                          {
+                            label: "Work Experience",
+                            value: selectedStudent.workExperience ? "Yes" : "No",
+                          },
+                          {
+                            label: "Studied German",
+                            value: selectedStudent.studiedGerman
+                              ? `Yes (${selectedStudent.levelCompleted || "Level not specified"})`
+                              : "No",
+                          },
+                          {
+                            label: "Hostel Facility",
+                            value: selectedStudent.hostelFacility
+                              ? "Required"
+                              : "Not Required",
+                          },
+                        ].map(({ label, value }) => (
+                          <div
+                            key={label}
+                            className="py-2 border-b border-blue-500/10 last:border-0"
+                          >
+                            <p className="text-xs font-medium text-blue-300 uppercase tracking-wide">
+                              {label}
+                            </p>
+                            <p className="text-sm text-white mt-0.5">
+                              {value || "—"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Purpose of Learning */}
+                    {selectedStudent.purposeLearningGerman &&
+                      selectedStudent.purposeLearningGerman.length > 0 && (
+                        <div className="bg-slate-800/50 rounded-xl border border-blue-500/20">
+                          <div className="px-4 py-3 border-b border-blue-500/20 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-blue-400" />
+                            <h3 className="font-semibold text-white text-sm">
+                              Purpose of Learning German
+                            </h3>
+                          </div>
+                          <div className="p-4 flex flex-wrap gap-2">
+                            {selectedStudent.purposeLearningGerman.map(
+                              (purpose, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="bg-blue-500/20 text-blue-200 border border-blue-500/30"
+                                >
+                                  {purpose}
+                                </Badge>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
