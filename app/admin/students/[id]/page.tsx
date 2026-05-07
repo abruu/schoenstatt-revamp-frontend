@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
 import { studentService, StrapiStudent } from "@/lib/services/student-service";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   Home,
   MessageCircle,
 } from "lucide-react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import Image from "next/image";
@@ -32,7 +33,9 @@ import Image from "next/image";
 export default function StudentDetailPage() {
   return (
     <StrapiProtectedRoute>
-      <StudentDetailContent />
+      <Suspense>
+        <StudentDetailContent />
+      </Suspense>
     </StrapiProtectedRoute>
   );
 }
@@ -40,6 +43,9 @@ export default function StudentDetailPage() {
 function StudentDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnPage = searchParams.get("returnPage");
+  const backHref = returnPage ? `/admin/dashboard?page=${returnPage}` : "/admin/dashboard";
   const [student, setStudent] = useState<StrapiStudent | null>(null);
   const [loading, setLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -84,7 +90,7 @@ function StudentDetailContent() {
     }
     try {
       await studentService.delete(student.documentId);
-      router.push("/admin/dashboard");
+      router.push(backHref);
     } catch (error) {
       console.error("Error deleting student:", error);
       alert("Failed to delete student");
@@ -214,16 +220,15 @@ function StudentDetailContent() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
-              <Link href="/admin/dashboard">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/10"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={() => router.push(backHref)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
               <div className="h-6 w-px bg-blue-700/30" />
               <div>
                 <h1 className="text-lg font-semibold text-white">
