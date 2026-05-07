@@ -195,10 +195,18 @@ function formatStatus(status: string): string {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
+function getPhotoUrl(photo?: { id: number; url: string }): string {
+  if (!photo?.url) return "";
+  const url = photo.url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${STRAPI_URL}${url}`;
+}
+
 function transformStudentForExport(
   student: StrapiStudent,
 ): Record<string, any> {
   return {
+    "Photo URL": getPhotoUrl(student.photo),
     "First Name": student.firstName || "",
     "Last Name": student.lastName || "",
     Gender: student.gender || "",
