@@ -922,7 +922,36 @@ export function RegistrationPageContent() {
                         Object.keys(errors).length > 0 &&
                         Object.keys(touched).length > 0
                       ) {
-                        const firstErrorField = Object.keys(errors)[0];
+                        // Field order matching the form layout (top to bottom)
+                        const fieldOrder = [
+                          "firstName",
+                          "lastName",
+                          "gender",
+                          "dateOfBirth",
+                          "email",
+                          "phone",
+                          "whatsappNumber",
+                          "address",
+                          "fathersName",
+                          "mothersName",
+                          "parentContact",
+                          "center",
+                          "courseLevel",
+                          "hostelFacility",
+                          "highestQualification",
+                          "otherQualification",
+                          "studiedGerman",
+                          "levelCompleted",
+                          "purposeLearningGerman",
+                          "workExperience",
+                          "photo",
+                          "aadhaarFile",
+                          "declaration",
+                          "turnstileToken",
+                        ];
+                        const firstErrorField = fieldOrder.find(
+                          (f) => errors[f as keyof typeof errors],
+                        );
 
                         // For upload fields, scroll to the section container
                         // since there's no native input with [name=...] to focus
@@ -943,6 +972,11 @@ export function RegistrationPageContent() {
                               behavior: "smooth",
                               block: "center",
                             });
+                          submitAttemptedRef.current = false;
+                          return;
+                        }
+
+                        if (!firstErrorField) {
                           submitAttemptedRef.current = false;
                           return;
                         }

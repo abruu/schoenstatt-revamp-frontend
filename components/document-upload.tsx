@@ -443,7 +443,6 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
         setFrontError(
           "This appears to be the same file as the back side. Please upload different files.",
         );
-        onFilesChange(null, back?.file ?? null);
         return;
       }
       const state = await buildFileState(file);
@@ -471,7 +470,6 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
         setBackError(
           "This appears to be the same file as the front side. Please upload different files.",
         );
-        onFilesChange(front?.file ?? null, null);
         return;
       }
       const state = await buildFileState(file);
@@ -484,6 +482,7 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
   const removeFront = () => {
     setFront(null);
     setFrontError(null);
+    setBackError(null);
     setMergeError(null);
     onFilesChange(null, back?.file ?? null);
     if (frontInputRef.current) frontInputRef.current.value = "";
@@ -492,6 +491,7 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
   const removeBack = () => {
     setBack(null);
     setBackError(null);
+    setFrontError(null);
     setMergeError(null);
     onFilesChange(front?.file ?? null, null);
     if (backInputRef.current) backInputRef.current.value = "";
