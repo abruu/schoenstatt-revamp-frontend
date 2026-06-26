@@ -34,6 +34,7 @@ export async function uploadPhotoToStrapi(
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 180000,
     });
 
     if (response.data && response.data.length > 0) {
@@ -51,6 +52,47 @@ export async function uploadPhotoToStrapi(
   }
 }
 
+// Upload Aadhaar document to Strapi
+export async function uploadAadhaarToStrapi(
+  file: File,
+  firstName: string,
+): Promise<{ id: number; documentId: string; name: string; url: string }> {
+  try {
+    const formData = new FormData();
+    formData.append("files", file);
+    formData.append(
+      "data",
+      JSON.stringify({
+        fileInfo: {
+          name: "proof",
+          caption: firstName,
+        },
+      }),
+    );
+
+    const response = await strapiApi.post("/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 180000,
+    });
+
+    if (response.data && response.data.length > 0) {
+      return {
+        id: response.data[0].id,
+        documentId: response.data[0].documentId,
+        name: response.data[0].name,
+        url: response.data[0].url,
+      };
+    }
+
+    throw new Error("No file data returned from upload");
+  } catch (error) {
+    console.error("Aadhaar upload error:", error);
+    throw new Error("Failed to upload Aadhaar file to Strapi");
+  }
+}
+
 // Register student in Strapi
 export interface StudentRegistrationData {
   firstName: string;
@@ -65,9 +107,9 @@ export interface StudentRegistrationData {
   fathersName: string;
   mothersName: string;
   parentContact: string;
-  aadhaarNumber: string;
   center: string; // Branch ID
   photo: string | number; // Photo ID from upload
+  aadhaarFile: number; // Uploaded file ID from Strapi
   courseLevel: string; // Language certification level ID
   hostelFacility?: boolean;
   highestQualification?: string;
@@ -88,7 +130,6 @@ export interface StudentRegistrationResponse {
     address: string;
     parentName: string;
     parentContact: string;
-    aadhaarNumber: string;
     dateOfBirth: string;
     center: {
       id: number;
@@ -136,9 +177,9 @@ export async function registerStudentInStrapi(
           fathersName: data.fathersName,
           mothersName: data.mothersName,
           parentContact: data.parentContact,
-          aadhaarNumber: data.aadhaarNumber,
           center: data.center,
           photo: data.photo,
+          aadhaarFile: data.aadhaarFile,
           courseLevel: data.courseLevel,
           hostelFacility: data.hostelFacility,
           highestQualification: data.highestQualification,

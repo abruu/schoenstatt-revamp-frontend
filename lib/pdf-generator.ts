@@ -1,6 +1,121 @@
 import puppeteer, { Browser } from "puppeteer-core";
+import { PDFDocument, rgb } from "pdf-lib";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+export type RecipientType = "admin" | "student";
+
+export interface GeneratePdfOptions {
+  studentDetails: StudentData;
+  proofFile?: Buffer;
+  recipientType: RecipientType;
+}
+
+/**
+ * Generates the final PDF buffer based on recipient type.
+ *
+ * - admin:   student details page + all pages of proofFile merged into one PDF
+ * - student: student details page only; proofFile is never included
+ *
+ * Does NOT send any email — the caller handles that.
+ */
+export async function generatePdfForRecipient(
+  options: GeneratePdfOptions,
+): Promise<Buffer> {
+  const { studentDetails, proofFile, recipientType } = options;
+
+  if (recipientType === "admin" && !proofFile) {
+    throw new Error(
+      "proofFile is required for admin recipient but was not provided.",
+    );
+  }
+
+  // Generate the student details PDF page
+  const studentPdfBuffer = await generateRegistrationPDF(studentDetails);
+
+  if (recipientType === "student") {
+    return studentPdfBuffer;
+  }
+
+  // recipientType === "admin": merge studentPdf + proofFile
+  const merged = await PDFDocument.create();
+
+  // Copy student details pages
+  const studentDoc = await PDFDocument.load(studentPdfBuffer);
+  const studentPages = await merged.copyPages(
+    studentDoc,
+    studentDoc.getPageIndices(),
+  );
+  studentPages.forEach((p) => merged.addPage(p));
+
+  // Copy proof pages
+  let proofDoc: PDFDocument;
+  try {
+    proofDoc = await PDFDocument.load(proofFile!);
+  } catch (err: any) {
+    const msg: string = err?.message ?? "";
+    if (
+      msg.toLowerCase().includes("encrypt") ||
+      msg.toLowerCase().includes("password")
+    ) {
+      throw new Error(
+        "The uploaded proof PDF is password protected and cannot be merged.",
+      );
+    }
+    throw new Error(
+      "The uploaded proof file appears to be corrupted and cannot be merged.",
+    );
+  }
+
+  const proofPages = await merged.copyPages(
+    proofDoc,
+    proofDoc.getPageIndices(),
+  );
+  proofPages.forEach((p) => merged.addPage(p));
+
+  // Draw "ID Proof" header at the top of the first proof page
+  const helvBold = await merged.embedFont("Helvetica-Bold");
+  const firstProofPage = proofPages[0];
+  const { width: pw, height: ph } = firstProofPage.getSize();
+  const headerText = "ID Proof";
+  const headerSize = 14;
+  firstProofPage.drawText(headerText, {
+    x: pw / 2 - helvBold.widthOfTextAtSize(headerText, headerSize) / 2,
+    y: ph - 20,
+    size: headerSize,
+    font: helvBold,
+    color: rgb(0, 0, 0),
+  });
+
+  // Add page numbers to all pages
+  const helvSmall = await merged.embedFont("Helvetica");
+  const totalPages = merged.getPageCount();
+  merged.getPages().forEach((page, idx) => {
+    const pageLabel = `Page ${idx + 1} of ${totalPages}`;
+    const textWidth = helvSmall.widthOfTextAtSize(pageLabel, 9);
+    const { width } = page.getSize();
+    page.drawText(pageLabel, {
+      x: width - textWidth - 20,
+      y: 12,
+      size: 9,
+      font: helvSmall,
+      color: rgb(0.5, 0.5, 0.5),
+    });
+  });
+
+  const mergedBytes = await merged.save();
+  const finalBuffer = Buffer.from(mergedBytes);
+
+  if (finalBuffer.byteLength > 10 * 1024 * 1024) {
+    console.warn(
+      "[pdf-generator] Admin combined PDF exceeds 10 MB:",
+      (finalBuffer.byteLength / (1024 * 1024)).toFixed(2),
+      "MB",
+    );
+  }
+
+  return finalBuffer;
+}
 export interface StudentData {
   firstName: string;
   lastName: string;
@@ -13,7 +128,6 @@ export interface StudentData {
   fathersName: string;
   mothersName: string;
   parentContact: string;
-  aadhaarNumber: string;
   courseLevel: string;
   centerName: string;
   hostelFacility?: boolean;
@@ -27,10 +141,6 @@ export interface StudentData {
   logoUrl: string;
   submittedDate: string;
   submittedTime: string;
-}
-
-function maskAadhaar(aadhaar: string): string {
-  return `XXXX-XXXX-${aadhaar.slice(-4)}`;
 }
 
 function generatePDFHTML(data: StudentData): string {
@@ -201,15 +311,6 @@ function generatePDFHTML(data: StudentData): string {
             </div>
           </div>
 
-          <!-- Identification -->
-          <div class="section">
-            <div class="section-title">Identification</div>
-            <div class="info-row">
-              <div class="info-label">Aadhaar Number:</div>
-              <div class="info-value">${maskAadhaar(data.aadhaarNumber)}</div>
-            </div>
-          </div>
-
           <!-- Course Information -->
           <div class="section">
             <div class="section-title">Course Information</div>
@@ -306,7 +407,6 @@ export function formatStudentDataForPDF(
     fathersName: student.fathersName || student.parentName || "",
     mothersName: student.mothersName || "",
     parentContact: student.parentContact || "",
-    aadhaarNumber: student.aadhaarNumber || "",
     courseLevel: student.courseLevel?.LabelFull || "Not assigned",
     centerName: student.center?.name || "Not assigned",
     hostelFacility: student.hostelFacility,

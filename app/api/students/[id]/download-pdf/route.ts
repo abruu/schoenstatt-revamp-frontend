@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import * as qs from "qs";
-import { generateStudentPDF } from "@/lib/pdf-generator";
+import {
+  generateStudentPDF,
+  generatePdfForRecipient,
+  formatStudentDataForPDF,
+} from "@/lib/pdf-generator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,18 +39,41 @@ async function fetchStudent(token: string, documentId: string) {
       center: true,
       courseLevel: true,
       photo: true,
+      aadhaarFile: true,
     },
   };
 
   const queryString = qs.stringify(queryParams, { encodeValuesOnly: true });
   const response = await axios.get(
-    `${STRAPI_URL}/students/${documentId}?${queryString}`,
+    `${STRAPI_URL}/students?filters[documentId][$eq]=${documentId}&${queryString}`,
     {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 30000,
     },
   );
-  return response.data.data;
+  return response.data.data[0];
+}
+
+async function fetchProofFile(
+  token: string,
+  fileUrl: string,
+): Promise<Buffer | null> {
+  try {
+    const strapiBase =
+      STRAPI_URL?.replace("/api", "") || "http://localhost:1337";
+    const fullUrl = fileUrl.startsWith("http")
+      ? fileUrl
+      : `${strapiBase}${fileUrl}`;
+    const response = await axios.get(fullUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "arraybuffer",
+      timeout: 30000,
+    });
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error("Failed to fetch proof file:", error);
+    return null;
+  }
 }
 
 function sanitizeFilename(name: string): string {
@@ -113,8 +140,24 @@ export async function GET(
     // Get base URL for assets
     const baseUrl = request.nextUrl.origin;
 
-    // Generate PDF
-    const pdfBuffer = await generateStudentPDF(student, baseUrl);
+    // Fetch ID proof file if available
+    let proofFile: Buffer | null = null;
+    if (student.aadhaarFile?.url) {
+      proofFile = await fetchProofFile(token, student.aadhaarFile.url);
+    }
+
+    // Generate PDF — merge with ID proof if available, otherwise student details only
+    let pdfBuffer: Buffer;
+    if (proofFile) {
+      const studentData = formatStudentDataForPDF(student, baseUrl);
+      pdfBuffer = await generatePdfForRecipient({
+        studentDetails: studentData,
+        proofFile,
+        recipientType: "admin",
+      });
+    } else {
+      pdfBuffer = await generateStudentPDF(student, baseUrl);
+    }
 
     // Create filename
     const firstName = sanitizeFilename(student.firstName || "Student");

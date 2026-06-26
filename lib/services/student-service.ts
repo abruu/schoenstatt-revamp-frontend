@@ -16,7 +16,6 @@ export interface StrapiStudent {
   mothersName?: string;
   parentName: string;
   parentContact: string;
-  aadhaarNumber: string;
   hostelFacility?: boolean;
   highestQualification?: string;
   otherQualification?: string;
@@ -29,6 +28,13 @@ export interface StrapiStudent {
     id: number;
     url: string;
     formats?: any;
+  };
+  aadhaarFile?: {
+    id: number;
+    url: string;
+    name?: string;
+    ext?: string;
+    mime?: string;
   };
   center?: {
     id: number;
@@ -78,6 +84,7 @@ export const studentService = {
         center: true,
         courseLevel: true,
         photo: true,
+        aadhaarFile: true,
       },
       sort: ["createdAt:desc"],
       filters: {},
@@ -89,7 +96,6 @@ export const studentService = {
         { firstName: { $containsi: params.search } },
         { lastName: { $containsi: params.search } },
         { email: { $containsi: params.search } },
-        { aadhaarNumber: { $containsi: params.search } },
       ];
     }
 
@@ -117,18 +123,13 @@ export const studentService = {
 
   async getOne(documentId: string): Promise<StrapiStudent> {
     const queryParams = {
-      populate: {
-        center: true,
-        courseLevel: true,
-        photo: true,
-      },
+      populate: ["center", "courseLevel", "photo", "aadhaarFile"],
+      filters: { documentId: { $eq: documentId } },
     };
 
     const queryString = qs.stringify(queryParams, { encodeValuesOnly: true });
-    const response = await strapiClient.get(
-      `/students/${documentId}?${queryString}`,
-    );
-    return response.data.data;
+    const response = await strapiClient.get(`/students?${queryString}`);
+    return response.data.data[0];
   },
 
   async create(data: Partial<StrapiStudent>): Promise<StrapiStudent> {

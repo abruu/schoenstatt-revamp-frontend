@@ -20,7 +20,6 @@ interface StrapiStudent {
   mothersName?: string;
   parentName: string;
   parentContact: string;
-  aadhaarNumber: string;
   hostelFacility?: boolean;
   highestQualification?: string;
   otherQualification?: string;
@@ -218,7 +217,6 @@ function transformStudentForExport(
     "Father's Name": student.fathersName || "",
     "Mother's Name": student.mothersName || "",
     "Parent Contact": student.parentContact || "",
-    "Aadhaar Number": student.aadhaarNumber || "",
     "Hostel Facility": student.hostelFacility ? "Yes" : "No",
     "Highest Qualification": student.highestQualification || "",
     "Other Qualification": student.otherQualification || "",

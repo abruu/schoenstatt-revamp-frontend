@@ -2,19 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import {
   uploadPhotoToStrapi,
+  uploadAadhaarToStrapi,
   registerStudentInStrapi,
   checkStudentExists,
   getAdminNotificationEmails,
 } from "@/lib/strapi-api";
-import { generateRegistrationPDF } from "@/lib/pdf-generator";
+import { generatePdfForRecipient } from "@/lib/pdf-generator";
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY!);
-
-// Helper function to mask Aadhaar number
-function maskAadhaar(aadhaar: string): string {
-  return `XXXX-XXXX-${aadhaar.slice(-4)}`;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Extract form fields
     const photo = formData.get("photo") as File;
+    const aadhaarFile = formData.get("aadhaarFile") as File;
     const firstName = formData.get("firstName") as string;
     const lastName = formData.get("lastName") as string;
     const dateOfBirthRaw = formData.get("dateOfBirth") as string;
@@ -40,7 +37,6 @@ export async function POST(request: NextRequest) {
     const fathersName = formData.get("fathersName") as string;
     const mothersName = formData.get("mothersName") as string;
     const parentContact = formData.get("parentContact") as string;
-    const aadhaarNumber = formData.get("aadhaarNumber") as string;
     const center = formData.get("center") as string;
     const courseLevel = formData.get("courseLevel") as string;
     const gender = formData.get("gender") as string;
@@ -109,7 +105,6 @@ export async function POST(request: NextRequest) {
       !fathersName ||
       !mothersName ||
       !parentContact ||
-      !aadhaarNumber ||
       !center ||
       !courseLevel ||
       hostelFacility === undefined ||
@@ -149,6 +144,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate Aadhaar file
+    if (!aadhaarFile) {
+      return NextResponse.json(
+        { error: "Aadhaar document is required" },
+        { status: 400 },
+      );
+    }
+
+    if (aadhaarFile.type !== "application/pdf") {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid document type. The ID proof must be a PDF. Please re-upload using the document uploader.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (aadhaarFile.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        {
+          error:
+            "Document file size too large. Please upload a file smaller than 5MB.",
+        },
+        { status: 400 },
+      );
+    }
+
     // Upload photo to Strapi
     let photoUploadResult;
     try {
@@ -157,6 +180,18 @@ export async function POST(request: NextRequest) {
       console.error("Upload error:", uploadError);
       return NextResponse.json(
         { error: "Failed to upload photo" },
+        { status: 500 },
+      );
+    }
+
+    // Upload Aadhaar document to Strapi
+    let aadhaarUploadResult;
+    try {
+      aadhaarUploadResult = await uploadAadhaarToStrapi(aadhaarFile, firstName);
+    } catch (uploadError) {
+      console.error("Aadhaar upload error:", uploadError);
+      return NextResponse.json(
+        { error: "Failed to upload Aadhaar document" },
         { status: 500 },
       );
     }
@@ -177,9 +212,9 @@ export async function POST(request: NextRequest) {
         fathersName,
         mothersName,
         parentContact,
-        aadhaarNumber,
         center: center,
         photo: photoUploadResult.id,
+        aadhaarFile: aadhaarUploadResult.id,
         courseLevel: courseLevel,
         hostelFacility,
         highestQualification: finalQualification,
@@ -215,6 +250,13 @@ export async function POST(request: NextRequest) {
           photoData.url
         }`;
 
+    // Build Aadhaar file URL - use the url returned by Strapi upload
+    const aadhaarFileUrl = aadhaarUploadResult.url.startsWith("http")
+      ? aadhaarUploadResult.url
+      : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "")}${
+          aadhaarUploadResult.url
+        }`;
+
     // Build logo URL for email - use deployed app URL or fallback to localhost
     const appBaseUrl = process.env.NEXT_LOGO_PATH;
     const logoUrl = `${appBaseUrl}`;
@@ -248,11 +290,13 @@ export async function POST(request: NextRequest) {
         console.log("Attempting to send email to:", cleanEmail);
         console.log("CC recipients:", adminNotificationEmails);
 
-        // Generate PDF attachment
-        console.log("Generating PDF attachment...");
+        // Generate admin PDF attachment (student details + proof document merged)
+        console.log("Generating admin PDF attachment (details + proof)...");
         let pdfBuffer: Buffer | null = null;
         try {
-          pdfBuffer = await generateRegistrationPDF({
+          const proofBytes = await aadhaarFile.arrayBuffer();
+          const proofBuffer = Buffer.from(proofBytes);
+          const studentDetails = {
             firstName,
             lastName,
             gender,
@@ -264,7 +308,6 @@ export async function POST(request: NextRequest) {
             fathersName,
             mothersName,
             parentContact,
-            aadhaarNumber,
             courseLevel: courseLevelData?.LabelFull || courseLevel,
             centerName: centerData?.name || center,
             hostelFacility,
@@ -285,14 +328,19 @@ export async function POST(request: NextRequest) {
               hour: "2-digit",
               minute: "2-digit",
             }),
+          };
+          pdfBuffer = await generatePdfForRecipient({
+            studentDetails,
+            proofFile: proofBuffer,
+            recipientType: "admin",
           });
           console.log(
-            "PDF generated successfully, size:",
+            "Admin PDF generated successfully, size:",
             pdfBuffer.length,
             "bytes",
           );
         } catch (pdfError) {
-          console.error("PDF generation failed:", pdfError);
+          console.error("Admin PDF generation failed:", pdfError);
           // Continue with email even if PDF generation fails
         }
 
@@ -367,9 +415,6 @@ export async function POST(request: NextRequest) {
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Email</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${email}</td></tr>
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Phone</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${phone}</td></tr>
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Address</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px;">${address}</td></tr>
-                    <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Aadhaar</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-size: 15px; font-family: monospace;">${maskAadhaar(
-                      aadhaarNumber,
-                    )}</td></tr>
                     <tr style="border-top: 1px solid #e2e8f0;"><td class="text-secondary" style="padding: 10px 0; font-weight: 600; color: #64748b; font-size: 14px;">Course Level</td><td class="text-primary" style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 15px;"><span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1a1a2e; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">${
                       courseLevelData?.LabelShort || courseLevel
                     }</span></td></tr>
@@ -416,9 +461,10 @@ export async function POST(request: NextRequest) {
                   </div>
                 </div>
 
-                <!-- Photo Button -->
-                <div style="text-align: center; margin: 30px 0;">
+                <!-- Photo & Aadhaar Buttons -->
+                <div style="text-align: center; margin: 30px 0; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
                   <a href="${photoUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); transition: all 0.3s ease;">📸 View Student Photo</a>
+                  <a href="${aadhaarFileUrl}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4); transition: all 0.3s ease;">🪪 View Aadhaar Document</a>
                 </div>
 
                 <!-- Registration Meta -->
@@ -469,53 +515,55 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Send confirmation email to candidate
-    let pdfBuffer: Buffer | null = null;
+    // Send confirmation email to candidate (student details only — no proof)
+    let studentPdfBuffer: Buffer | null = null;
     try {
       console.log("Sending confirmation email to candidate:", email);
-      pdfBuffer = await generateRegistrationPDF({
-        firstName,
-        lastName,
-        gender,
-        dateOfBirth: dateOfBirthRaw,
-        email,
-        phone,
-        whatsappNumber,
-        address,
-        fathersName,
-        mothersName,
-        parentContact,
-        aadhaarNumber,
-        courseLevel: courseLevelData?.LabelFull || courseLevel,
-        centerName: centerData?.name || center,
-        hostelFacility,
-        highestQualification: finalQualification,
-        studiedGerman,
-        levelCompleted,
-        purposeLearningGerman,
-        workExperience,
-        registrationId: registrationData.data.id,
-        photoUrl,
-        logoUrl,
-        submittedDate: new Date().toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }),
-        submittedTime: new Date().toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+      studentPdfBuffer = await generatePdfForRecipient({
+        studentDetails: {
+          firstName,
+          lastName,
+          gender,
+          dateOfBirth: dateOfBirthRaw,
+          email,
+          phone,
+          whatsappNumber,
+          address,
+          fathersName,
+          mothersName,
+          parentContact,
+          courseLevel: courseLevelData?.LabelFull || courseLevel,
+          centerName: centerData?.name || center,
+          hostelFacility,
+          highestQualification: finalQualification,
+          studiedGerman,
+          levelCompleted,
+          purposeLearningGerman,
+          workExperience,
+          registrationId: registrationData.data.id,
+          photoUrl,
+          logoUrl,
+          submittedDate: new Date().toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }),
+          submittedTime: new Date().toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+        recipientType: "student",
       });
       const confirmationResult = await resend.emails.send({
         from: process.env.RESEND_FROM!,
         to: email,
         subject: "Registration Confirmation - Schoenstatt Language Academy",
-        attachments: pdfBuffer
+        attachments: studentPdfBuffer
           ? [
               {
                 filename: `${firstName}_${lastName}_${registrationData.data.id}_Registration.pdf`,
-                content: pdfBuffer,
+                content: studentPdfBuffer,
               },
             ]
           : undefined,

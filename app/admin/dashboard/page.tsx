@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useStrapiAuth } from "@/contexts/strapi-auth-context";
 import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
 import { studentService, StrapiStudent } from "@/lib/services/student-service";
 import { useCourseLevels } from "@/hooks/use-course-levels";
 import { useCenters } from "@/hooks/use-centers";
+import { useStudents } from "@/hooks/use-students-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +58,7 @@ import {
   Briefcase,
   Home,
   Camera,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -94,20 +97,38 @@ function DashboardContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
-  const isInitialMount = useRef(true);
-  const [students, setStudents] = useState<StrapiStudent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const pageSizeParam = searchParams.get("pageSize");
+  const studentsPerPage =
+    pageSizeParam === "all" ? 999999 : parseInt(pageSizeParam || "10", 10);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [courseFilter, setCourseFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [institutionFilter, setInstitutionFilter] = useState("all");
-  const [totalCount, setTotalCount] = useState(0);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<StrapiStudent | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StrapiStudent | null>(
+    null,
+  );
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
-  const studentsPerPage = 10;
+  const prevSearchTerm = useRef(searchTerm);
+
+  const {
+    data: studentsData,
+    isLoading: loading,
+    isFetching,
+  } = useStudents({
+    page: currentPage,
+    pageSize: studentsPerPage,
+    search: debouncedSearchTerm,
+    courseLevel: courseFilter,
+    statuses: statusFilter,
+    center: institutionFilter,
+  });
+
+  const students = studentsData?.data ?? [];
+  const totalCount = studentsData?.meta?.pagination?.total ?? 0;
 
   const updatePage = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -129,12 +150,13 @@ function DashboardContent() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Reset to page 1 when search term changes
+  // Reset to page 1 only when search term actually changes
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
+    if (prevSearchTerm.current === searchTerm) {
       return;
     }
+    prevSearchTerm.current = searchTerm;
+
     const params = new URLSearchParams(window.location.search);
     params.delete("page");
     const query = params.toString();
@@ -142,35 +164,16 @@ function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
-  useEffect(() => {
-    fetchStudents();
-  }, [
-    currentPage,
-    debouncedSearchTerm,
-    courseFilter,
-    statusFilter,
-    institutionFilter,
-  ]);
-
-  const fetchStudents = async () => {
-    setLoading(true);
-    try {
-      const response = await studentService.getAll({
-        page: currentPage,
-        pageSize: studentsPerPage,
-        search: debouncedSearchTerm || undefined,
-        courseLevel: courseFilter !== "all" ? courseFilter : undefined,
-        statuses: statusFilter !== "all" ? statusFilter : undefined,
-        center: institutionFilter !== "all" ? institutionFilter : undefined,
-      });
-
-      setStudents(response.data || []);
-      setTotalCount(response.meta.pagination.total || 0);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    } finally {
-      setLoading(false);
+  const handlePageSizeChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "10") {
+      params.delete("pageSize");
+    } else {
+      params.set("pageSize", value);
     }
+    params.delete("page");
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`);
   };
 
   const handleDeleteStudent = async (documentId: string) => {
@@ -184,7 +187,7 @@ function DashboardContent() {
 
     try {
       await studentService.delete(documentId);
-      fetchStudents();
+      queryClient.invalidateQueries({ queryKey: ["students"] });
     } catch (error) {
       console.error("Error deleting student:", error);
       alert("Failed to delete student");
@@ -199,14 +202,8 @@ function DashboardContent() {
     try {
       await studentService.updateStatus(documentId, newStatus);
 
-      // Update the local state immediately
-      setStudents((prev) =>
-        prev.map((student) =>
-          student.documentId === documentId
-            ? { ...student, statuses: newStatus }
-            : student,
-        ),
-      );
+      // Invalidate cache so the table refetches with updated status
+      queryClient.invalidateQueries({ queryKey: ["students"] });
     } catch (error) {
       console.error("Error updating student status:", error);
       alert("Failed to update student status");
@@ -315,13 +312,32 @@ function DashboardContent() {
     }
     const photoUrl = student.photo.url.startsWith("http")
       ? student.photo.url
-      : `${
-          process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-          "http://localhost:1337"
-        }${student.photo.url}`;
+      : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
+          "/api",
+          "",
+        )}${student.photo.url}`;
     const a = document.createElement("a");
     a.href = photoUrl;
     a.download = `${student.firstName}_${student.lastName}_photo.jpg`;
+    a.target = "_blank";
+    a.click();
+  };
+
+  const handleDownloadIdProof = (student: StrapiStudent) => {
+    if (!student.aadhaarFile?.url) {
+      alert("No ID proof available to download");
+      return;
+    }
+    const fileUrl = student.aadhaarFile.url.startsWith("http")
+      ? student.aadhaarFile.url
+      : `${
+          process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
+          "http://localhost:1337"
+        }${student.aadhaarFile.url}`;
+    const a = document.createElement("a");
+    a.href = fileUrl;
+    const ext = student.aadhaarFile.ext || ".pdf";
+    a.download = `${student.firstName}_${student.lastName}_id_proof${ext}`;
     a.target = "_blank";
     a.click();
   };
@@ -567,21 +583,32 @@ function DashboardContent() {
                 Students ({totalCount})
               </div>
               <Button
-                onClick={fetchStudents}
-                disabled={loading}
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ["students"] })
+                }
+                disabled={loading || isFetching}
                 variant="outline"
                 size="sm"
                 className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400"
               >
                 <RefreshCw
-                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                  className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
                 />
                 Refresh
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
+              {/* Fetching overlay (shows on top of cached data during page change / refresh) */}
+              {isFetching && !loading && (
+                <div className="absolute inset-0 z-10 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm pt-12">
+                  <div className="flex items-center gap-2 bg-slate-800/90 px-4 py-2 rounded-lg border border-blue-500/30 shadow-xl">
+                    <Loader2 className="h-5 w-5 animate-spin text-yellow-400" />
+                    <span className="text-sm text-blue-200">Loading…</span>
+                  </div>
+                </div>
+              )}
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-slate-700/80 to-blue-800/80 border-b border-blue-600/30">
                   <tr>
@@ -769,7 +796,7 @@ function DashboardContent() {
 
                             {/* View Button */}
                             <Link
-                              href={`/admin/students/${student.documentId}${currentPage > 1 ? `?returnPage=${currentPage}` : ""}`}
+                              href={`/admin/students/${student.documentId}?returnPage=${currentPage}${pageSizeParam ? `&returnPageSize=${pageSizeParam}` : ""}`}
                             >
                               <Button
                                 variant="outline"
@@ -818,6 +845,18 @@ function DashboardContent() {
                                 <Camera className="h-3 w-3" />
                               </Button>
                             )}
+                            {/* Download ID Proof Button */}
+                            {student.aadhaarFile?.url && (
+                              <Button
+                                onClick={() => handleDownloadIdProof(student)}
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-amber-400 hover:text-black hover:bg-amber-400 border-amber-400/50 hover:border-amber-400"
+                                title="Download ID Proof"
+                              >
+                                <FileText className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -830,42 +869,63 @@ function DashboardContent() {
         </Card>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-blue-300">
-              Showing {(currentPage - 1) * studentsPerPage + 1} to{" "}
-              {Math.min(currentPage * studentsPerPage, totalCount)} of{" "}
-              {totalCount} students
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => updatePage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              <span className="text-sm text-blue-300">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  updatePage(Math.min(totalPages, currentPage + 1))
+        {totalCount > 0 ? (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-blue-300">
+                Showing {(currentPage - 1) * studentsPerPage + 1} to{" "}
+                {Math.min(currentPage * studentsPerPage, totalCount)} of{" "}
+                {totalCount} students
+              </div>
+              {/* Page size selector */}
+              <Select
+                value={
+                  studentsPerPage >= 999999 ? "all" : String(studentsPerPage)
                 }
-                disabled={currentPage === totalPages}
-                className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
+                onValueChange={handlePageSizeChange}
               >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
+                <SelectTrigger className="w-[90px] h-8 bg-slate-700/50 border-blue-600/30 text-white text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updatePage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <span className="text-sm text-blue-300">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    updatePage(Math.min(totalPages, currentPage + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Student Detail Modal */}
@@ -990,10 +1050,6 @@ function DashboardContent() {
                                 )
                               : undefined,
                           },
-                          {
-                            label: "Aadhaar Number",
-                            value: selectedStudent.aadhaarNumber,
-                          },
                         ].map(({ label, value }) => (
                           <div
                             key={label}
@@ -1112,7 +1168,9 @@ function DashboardContent() {
                           },
                           {
                             label: "Work Experience",
-                            value: selectedStudent.workExperience ? "Yes" : "No",
+                            value: selectedStudent.workExperience
+                              ? "Yes"
+                              : "No",
                           },
                           {
                             label: "Studied German",

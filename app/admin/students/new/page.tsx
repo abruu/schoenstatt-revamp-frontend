@@ -67,7 +67,6 @@ function NewStudentContent() {
     address: "",
     parentName: "",
     parentContact: "",
-    aadhaarNumber: "",
     center: user?.assignedCenter?.documentId || "",
     courseLevel: "",
   });
@@ -304,18 +303,6 @@ function NewStudentContent() {
                     onChange={(e) =>
                       handleInputChange("dateOfBirth", e.target.value)
                     }
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="aadhaarNumber">Aadhaar Number *</Label>
-                  <Input
-                    id="aadhaarNumber"
-                    value={formData.aadhaarNumber}
-                    onChange={(e) =>
-                      handleInputChange("aadhaarNumber", e.target.value)
-                    }
-                    placeholder="1234 5678 9012"
                     required
                   />
                 </div>

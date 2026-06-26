@@ -1,14 +1,15 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { SITE_CONFIG } from "@/lib/constants"
-import { BackToTop } from "@/components/common/back-to-top"
-import { NavigationProvider } from "@/components/providers/navigation-provider"
-import { StrapiAuthProvider } from "@/contexts/strapi-auth-context"
-import { AppDataProvider } from "@/components/providers/app-data-provider"
+import type React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { SITE_CONFIG } from "@/lib/constants";
+import { BackToTop } from "@/components/common/back-to-top";
+import { NavigationProvider } from "@/components/providers/navigation-provider";
+import { StrapiAuthProvider } from "@/contexts/strapi-auth-context";
+import { AppDataProvider } from "@/components/providers/app-data-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
@@ -16,7 +17,14 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_CONFIG.name}`,
   },
   description: SITE_CONFIG.description,
-  keywords: ["German language", "Language learning", "Kerala", "Telc exam", "German courses", "Schoenstatt"],
+  keywords: [
+    "German language",
+    "Language learning",
+    "Kerala",
+    "Telc exam",
+    "German courses",
+    "Schoenstatt",
+  ],
   authors: [
     {
       name: "Schoenstatt Language Academy",
@@ -59,45 +67,47 @@ export const metadata: Metadata = {
       },
       {
         rel: "icon",
-        type: "image/png", 
+        type: "image/png",
         sizes: "16x16",
         url: "/favicon-16x16.png",
       },
     ],
   },
   manifest: "/site.webmanifest",
-    generator: 'v0.dev'
-}
+  generator: "v0.dev",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AppDataProvider>
-          <StrapiAuthProvider>
-            <NavigationProvider>
-              {children}
-              <BackToTop />
-            </NavigationProvider>
-          </StrapiAuthProvider>
-        </AppDataProvider>
+        <QueryProvider>
+          <AppDataProvider>
+            <StrapiAuthProvider>
+              <NavigationProvider>
+                {children}
+                <BackToTop />
+              </NavigationProvider>
+            </StrapiAuthProvider>
+          </AppDataProvider>
+        </QueryProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               // Enhanced hash navigation handler - NO PAGE REFRESH
               function scrollToHash(hash, retries = 0) {
                 if (!hash) return;
-                
+
                 const element = document.getElementById(hash);
                 if (element) {
                   // Add a small delay to ensure page is fully loaded
                   setTimeout(() => {
-                    element.scrollIntoView({ 
-                      behavior: 'smooth', 
+                    element.scrollIntoView({
+                      behavior: 'smooth',
                       block: 'start',
                       inline: 'nearest'
                     });
@@ -107,21 +117,21 @@ export default function RootLayout({
                   setTimeout(() => scrollToHash(hash, retries + 1), 200);
                 }
               }
-              
+
               function handleHashNavigation() {
                 const hash = window.location.hash.substring(1);
                 if (hash && window.location.pathname === '/') {
                   scrollToHash(hash);
                 }
               }
-              
+
               // Handle initial page load
               if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', handleHashNavigation);
               } else {
                 handleHashNavigation();
               }
-              
+
               // Handle route changes (for Next.js navigation) - NO PAGE REFRESH
               let currentUrl = window.location.href;
               const observer = new MutationObserver(() => {
@@ -133,21 +143,21 @@ export default function RootLayout({
                   }
                 }
               });
-              
-              observer.observe(document.body, { 
-                childList: true, 
+
+              observer.observe(document.body, {
+                childList: true,
                 subtree: true,
                 attributes: true,
                 attributeFilter: ['data-nextjs-scroll-focus-boundary']
               });
-              
+
               // Handle popstate events (browser back/forward) - NO PAGE REFRESH
               window.addEventListener('popstate', () => {
                 if (window.location.pathname === '/') {
                   setTimeout(handleHashNavigation, 100);
                 }
               });
-              
+
               // Handle hashchange events - NO PAGE REFRESH
               window.addEventListener('hashchange', () => {
                 if (window.location.pathname === '/') {
@@ -159,5 +169,5 @@ export default function RootLayout({
         />
       </body>
     </html>
-  )
+  );
 }

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
-import { studentService, StrapiStudent } from "@/lib/services/student-service";
+import { studentService } from "@/lib/services/student-service";
+import { useStudent } from "@/hooks/use-students-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,6 +26,7 @@ import {
   Briefcase,
   Home,
   MessageCircle,
+  FileText,
 } from "lucide-react";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -45,39 +48,47 @@ function StudentDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnPage = searchParams.get("returnPage");
-  const backHref = returnPage ? `/admin/dashboard?page=${returnPage}` : "/admin/dashboard";
-  const [student, setStudent] = useState<StrapiStudent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const returnPageSize = searchParams.get("returnPageSize");
+  const backHref = returnPage
+    ? `/admin/dashboard?page=${returnPage}${returnPageSize ? `&pageSize=${returnPageSize}` : ""}`
+    : "/admin/dashboard";
+  const queryClient = useQueryClient();
+  const documentId = (params.id as string) || null;
+
+  const goBack = () => {
+    router.push(backHref);
+  };
+
+  const { data: student, isLoading: loading, isError } = useStudent(documentId);
+
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
+  const strapiBaseUrl = useMemo(
+    () =>
+      process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
+      "http://localhost:1337",
+    [],
+  );
+
+  const photoUrl = useMemo(() => {
+    if (!student?.photo?.url) return null;
+    return student.photo.url.startsWith("http")
+      ? student.photo.url
+      : `${strapiBaseUrl}${student.photo.url}`;
+  }, [student?.photo?.url, strapiBaseUrl]);
+
+  const idProofUrl = useMemo(() => {
+    if (!student?.aadhaarFile?.url) return null;
+    return student.aadhaarFile.url.startsWith("http")
+      ? student.aadhaarFile.url
+      : `${strapiBaseUrl}${student.aadhaarFile.url}`;
+  }, [student?.aadhaarFile?.url, strapiBaseUrl]);
+
   useEffect(() => {
-    if (params.id) {
-      fetchStudent(params.id as string);
-    }
-  }, [params.id]);
-
-  const fetchStudent = async (documentId: string) => {
-    try {
-      const data = await studentService.getOne(documentId);
-      setStudent(data);
-
-      if (data.photo?.url) {
-        const strapiUrl =
-          process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-          "http://localhost:1337";
-        const fullPhotoUrl = data.photo.url.startsWith("http")
-          ? data.photo.url
-          : `${strapiUrl}${data.photo.url}`;
-        setPhotoUrl(fullPhotoUrl);
-      }
-    } catch (error) {
-      console.error("Error fetching student:", error);
+    if (isError) {
       router.push("/admin/dashboard");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isError, router]);
 
   const handleDeleteStudent = async () => {
     if (!student) return;
@@ -90,6 +101,8 @@ function StudentDetailContent() {
     }
     try {
       await studentService.delete(student.documentId);
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["student", documentId] });
       router.push(backHref);
     } catch (error) {
       console.error("Error deleting student:", error);
@@ -111,6 +124,24 @@ function StudentDetailContent() {
     } catch (error) {
       console.error("Error downloading photo:", error);
       alert("Failed to download photo");
+    }
+  };
+
+  const downloadIdProof = async () => {
+    if (!idProofUrl) {
+      alert("No ID proof available to download");
+      return;
+    }
+    try {
+      const a = document.createElement("a");
+      a.href = idProofUrl;
+      const ext = student?.aadhaarFile?.ext || ".pdf";
+      a.download = `${student?.firstName}_${student?.lastName}_id_proof${ext}`;
+      a.target = "_blank";
+      a.click();
+    } catch (error) {
+      console.error("Error downloading ID proof:", error);
+      alert("Failed to download ID proof");
     }
   };
 
@@ -224,7 +255,7 @@ function StudentDetailContent() {
                 variant="ghost"
                 size="sm"
                 className="text-white hover:bg-white/10"
-                onClick={() => router.push(backHref)}
+                onClick={goBack}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -272,6 +303,18 @@ function StudentDetailContent() {
                   title="Download Photo"
                 >
                   <Download className="h-4 w-4" />
+                </Button>
+              )}
+              {student.aadhaarFile?.url && (
+                <Button
+                  onClick={downloadIdProof}
+                  variant="outline"
+                  size="sm"
+                  className="bg-amber-600/80 hover:bg-amber-600 text-white border-amber-600"
+                  title="Download ID Proof"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  ID Proof
                 </Button>
               )}
               {/* <Button
@@ -379,11 +422,6 @@ function StudentDetailContent() {
                         ? format(new Date(student.dateOfBirth), "PPP")
                         : undefined
                     }
-                  />
-                  <InfoRow
-                    icon={CreditCard}
-                    label="Aadhaar Number"
-                    value={student.aadhaarNumber}
                   />
                 </div>
               </div>
@@ -511,6 +549,70 @@ function StudentDetailContent() {
                   </div>
                 </div>
               )}
+
+            {/* Documents */}
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-blue-500/20">
+              <div className="px-5 py-4 border-b border-blue-500/20 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-400" />
+                <h3 className="font-semibold text-white">Documents</h3>
+              </div>
+              <div className="p-5 space-y-3">
+                {/* Photo */}
+                <div className="flex items-center justify-between py-2 border-b border-blue-500/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                      <User className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        Profile Photo
+                      </p>
+                      <p className="text-xs text-blue-300">
+                        {student.photo?.url ? "Available" : "Not uploaded"}
+                      </p>
+                    </div>
+                  </div>
+                  {student.photo?.url && (
+                    <Button
+                      onClick={downloadPhoto}
+                      variant="outline"
+                      size="sm"
+                      className="bg-cyan-600/80 hover:bg-cyan-600 text-white border-cyan-600"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  )}
+                </div>
+                {/* ID Proof */}
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">ID Proof</p>
+                      <p className="text-xs text-blue-300">
+                        {student.aadhaarFile?.url
+                          ? `${student.aadhaarFile.name || "id_proof"}${student.aadhaarFile.ext || ".pdf"}`
+                          : "Not uploaded"}
+                      </p>
+                    </div>
+                  </div>
+                  {student.aadhaarFile?.url && (
+                    <Button
+                      onClick={downloadIdProof}
+                      variant="outline"
+                      size="sm"
+                      className="bg-amber-600/80 hover:bg-amber-600 text-white border-amber-600"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
