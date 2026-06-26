@@ -287,6 +287,11 @@ export async function getAdminNotificationEmails(): Promise<string[]> {
   try {
     const response = await strapiApi.get<AdminNotificationEmailsResponse>(
       "/admin-notification-emails",
+      {
+        params: {
+          "pagination[pageSize]": 100,
+        },
+      },
     );
 
     if (response.data.data && Array.isArray(response.data.data)) {
