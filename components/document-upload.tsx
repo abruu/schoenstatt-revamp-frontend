@@ -256,7 +256,7 @@ export function UploadBox({
       <p className="text-sm font-medium text-white flex items-center gap-1.5">
         {label}
         {required ? (
-          <span className="text-red-400 text-xs">* Required</span>
+          <span className="text-red-400 text-xs">*</span>
         ) : (
           <span className="text-gray-500 text-xs">Optional</span>
         )}
@@ -697,7 +697,7 @@ export function PhotoUpload({
   return (
     <div className="space-y-2">
       <UploadBox
-        label="Photo"
+        label="Profile Photo"
         required
         fileState={fileState}
         isDragging={isDragging}

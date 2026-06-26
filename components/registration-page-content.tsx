@@ -491,6 +491,7 @@ export function RegistrationPageContent() {
     front: null,
     back: null,
   });
+  const adminEmailsRef = useRef<string[]>([]);
   const { centers, loading: centersLoading } = useCenters();
   const { courseLevels, loading: courseLevelsLoading } = useCourseLevels();
   const [turnstileLoaded, setTurnstileLoaded] = useState(false);
@@ -498,6 +499,20 @@ export function RegistrationPageContent() {
   const [turnstileWidgetId, setTurnstileWidgetId] = useState<string | null>(
     null,
   );
+
+  // Prefetch admin notification emails on page mount to save submit time
+  useEffect(() => {
+    fetch("/api/admin-emails")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.emails && Array.isArray(data.emails)) {
+          adminEmailsRef.current = data.emails;
+        }
+      })
+      .catch(() => {
+        // Silently fail — fallback fetch happens server-side
+      });
+  }, []);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -588,6 +603,20 @@ export function RegistrationPageContent() {
       if (turnstileWidgetId && (window as any).turnstile) {
         (window as any).turnstile.reset(turnstileWidgetId);
       }
+      // Scroll to the relevant section
+      const sectionId =
+        key === "photo"
+          ? "photo-upload-section"
+          : key === "proof"
+            ? "id-proof-upload-section"
+            : null;
+      if (sectionId) {
+        setTimeout(() => {
+          document
+            .getElementById(sectionId)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
     };
 
     try {
@@ -657,6 +686,9 @@ export function RegistrationPageContent() {
         }
       });
       formData.append("aadhaarFile", mergedAadhaar);
+      if (adminEmailsRef.current.length > 0) {
+        formData.append("adminEmails", JSON.stringify(adminEmailsRef.current));
+      }
 
       const response = await fetch("/api/registrations", {
         method: "POST",
@@ -891,6 +923,30 @@ export function RegistrationPageContent() {
                         Object.keys(touched).length > 0
                       ) {
                         const firstErrorField = Object.keys(errors)[0];
+
+                        // For upload fields, scroll to the section container
+                        // since there's no native input with [name=...] to focus
+                        if (firstErrorField === "photo") {
+                          document
+                            .getElementById("photo-upload-section")
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "center",
+                            });
+                          submitAttemptedRef.current = false;
+                          return;
+                        }
+                        if (firstErrorField === "aadhaarFile") {
+                          document
+                            .getElementById("id-proof-upload-section")
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "center",
+                            });
+                          submitAttemptedRef.current = false;
+                          return;
+                        }
+
                         const errorElement = document.querySelector(
                           `[name="${firstErrorField}"]`,
                         ) as HTMLElement;
@@ -941,11 +997,10 @@ export function RegistrationPageContent() {
                             </div>
 
                             {/* Photo Upload */}
-                            <div className="space-y-2 sm:space-y-3">
-                              <label className="text-sm font-medium text-white flex items-center gap-2">
-                                <Upload className="h-4 w-4" />
-                                Photo <span className="text-red-500">*</span>
-                              </label>
+                            <div
+                              id="photo-upload-section"
+                              className="space-y-2 sm:space-y-3"
+                            >
                               <PhotoUpload
                                 onFileChange={(file) =>
                                   setFieldValue("photo", file)
@@ -1327,7 +1382,10 @@ export function RegistrationPageContent() {
                             </div>
 
                             {/* ID Proof Document Upload */}
-                            <div className="space-y-2 sm:space-y-3">
+                            <div
+                              id="id-proof-upload-section"
+                              className="space-y-2 sm:space-y-3"
+                            >
                               <label className="text-sm font-medium text-white flex items-center gap-2">
                                 <FileText className="h-4 w-4" />
                                 ID Proof (Aadhaar/Passport){" "}

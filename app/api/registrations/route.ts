@@ -261,8 +261,21 @@ export async function POST(request: NextRequest) {
     const appBaseUrl = process.env.NEXT_LOGO_PATH;
     const logoUrl = `${appBaseUrl}`;
 
-    // Fetch admin notification emails for CC
-    const adminNotificationEmails = await getAdminNotificationEmails();
+    // Use pre-fetched admin emails from the client, or fetch as fallback
+    const prefetchedEmails = formData.get("adminEmails") as string | null;
+    let adminNotificationEmails: string[];
+    if (prefetchedEmails) {
+      try {
+        adminNotificationEmails = JSON.parse(prefetchedEmails);
+        if (!Array.isArray(adminNotificationEmails)) {
+          adminNotificationEmails = await getAdminNotificationEmails();
+        }
+      } catch {
+        adminNotificationEmails = await getAdminNotificationEmails();
+      }
+    } else {
+      adminNotificationEmails = await getAdminNotificationEmails();
+    }
     console.log("Admin notification emails fetched:", adminNotificationEmails);
 
     // Debug email sending conditions
