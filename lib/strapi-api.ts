@@ -25,10 +25,20 @@ strapiApi.interceptors.request.use(
 // Upload photo to Strapi
 export async function uploadPhotoToStrapi(
   file: File,
+  firstName: string,
 ): Promise<{ id: number; documentId: string; name: string }> {
   try {
     const formData = new FormData();
     formData.append("files", file);
+    formData.append(
+      "data",
+      JSON.stringify({
+        fileInfo: {
+          name: "photo",
+          caption: firstName,
+        },
+      }),
+    );
 
     const response = await strapiApi.post("/upload", formData, {
       headers: {

@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     // Upload photo to Strapi
     let photoUploadResult;
     try {
-      photoUploadResult = await uploadPhotoToStrapi(photo);
+      photoUploadResult = await uploadPhotoToStrapi(photo, firstName);
     } catch (uploadError) {
       console.error("Upload error:", uploadError);
       return NextResponse.json(
@@ -257,9 +257,14 @@ export async function POST(request: NextRequest) {
           aadhaarUploadResult.url
         }`;
 
-    // Build logo URL for email - use deployed app URL or fallback to localhost
-    const appBaseUrl = process.env.NEXT_LOGO_PATH;
-    const logoUrl = `${appBaseUrl}`;
+    // Build base URL from request headers
+    const protocol = request.headers.get("x-forwarded-proto") || "https";
+    const host =
+      request.headers.get("x-forwarded-host") ||
+      request.headers.get("host") ||
+      "localhost:3000";
+    const appBaseUrl = `${protocol}://${host}`;
+    const logoUrl = appBaseUrl;
 
     // Use pre-fetched admin emails from the client, or fetch as fallback
     const prefetchedEmails = formData.get("adminEmails") as string | null;
@@ -478,6 +483,11 @@ export async function POST(request: NextRequest) {
                 <div style="text-align: center; margin: 30px 0; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
                   <a href="${photoUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); transition: all 0.3s ease;">📸 View Student Photo</a>
                   <a href="${aadhaarFileUrl}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4); transition: all 0.3s ease;">🪪 View Aadhaar Document</a>
+                </div>
+
+                <!-- View Student Record Button -->
+                <div style="text-align: center; margin: 20px 0 30px 0;">
+                  <a href="${appBaseUrl?.replace(/\/$/, "")}/admin/students/${registrationData.data.documentId}" style="display: inline-block; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1a1a2e; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 25px -5px rgba(251, 191, 36, 0.4); transition: all 0.3s ease;">👤 Click Here to View Student</a>
                 </div>
 
                 <!-- Registration Meta -->

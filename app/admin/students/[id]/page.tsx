@@ -47,10 +47,9 @@ function StudentDetailContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnPage = searchParams.get("returnPage");
-  const returnPageSize = searchParams.get("returnPageSize");
-  const backHref = returnPage
-    ? `/admin/dashboard?page=${returnPage}${returnPageSize ? `&pageSize=${returnPageSize}` : ""}`
+  const returnQuery = searchParams.get("returnQuery");
+  const backHref = returnQuery
+    ? `/admin/dashboard?${returnQuery}`
     : "/admin/dashboard";
   const queryClient = useQueryClient();
   const documentId = (params.id as string) || null;
@@ -594,7 +593,7 @@ function StudentDetailContent() {
                       <p className="text-sm font-medium text-white">ID Proof</p>
                       <p className="text-xs text-blue-300">
                         {student.aadhaarFile?.url
-                          ? `${student.aadhaarFile.name || "id_proof"}${student.aadhaarFile.ext || ".pdf"}`
+                          ? `${student.aadhaarFile.name || "id_proof"}`
                           : "Not uploaded"}
                       </p>
                     </div>

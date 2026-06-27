@@ -96,7 +96,11 @@ function NewStudentContent() {
     if (!photoFile) return;
 
     try {
-      await studentService.uploadPhoto(studentId, photoFile);
+      await studentService.uploadPhoto(
+        studentId,
+        photoFile,
+        formData.firstName,
+      );
     } catch (error) {
       console.error("Error uploading photo:", error);
       throw new Error("Failed to upload photo");

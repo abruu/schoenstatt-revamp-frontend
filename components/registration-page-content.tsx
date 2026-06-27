@@ -181,7 +181,7 @@ function SubmissionProgress({
                   }`}
                 >
                   {step.label}
-                  {step.status === "done" && " ✓"}
+                  {/* {step.status === "done" && ""} */}
                   {step.status === "active" && "..."}
                 </p>
                 {step.status === "error" && step.error && (
@@ -2000,7 +2000,7 @@ export function RegistrationPageContent() {
                               {isUploading || isSubmitting ? (
                                 <div className="flex items-center justify-center gap-2">
                                   <Loader2 className="h-4 w-4 animate-spin" />
-                                  <span>Processing…</span>
+                                  <span>Processing Please wait…</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-center gap-2">
