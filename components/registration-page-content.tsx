@@ -612,7 +612,7 @@ export function RegistrationPageContent() {
 
   const handleSubmit = async (
     values: FormValues,
-    { setSubmitting, resetForm }: FormikHelpers<FormValues>,
+    { setSubmitting, resetForm, setFieldValue }: FormikHelpers<FormValues>,
   ) => {
     // Prevent duplicate submissions
     if (isSubmittingRef.current || isUploading) return;
@@ -630,9 +630,7 @@ export function RegistrationPageContent() {
       setSubmitMessage(message);
       setSubmitting(false);
       setIsUploading(false);
-      if (turnstileWidgetId && (window as any).turnstile) {
-        (window as any).turnstile.reset(turnstileWidgetId);
-      }
+      setFieldValue("turnstileToken", "");
       // Scroll to the relevant section
       const sectionId =
         key === "photo"
@@ -847,14 +845,22 @@ export function RegistrationPageContent() {
         );
       }
 
-      // Use fire-and-forget for finalize so user doesn't wait for emails
-      // keepalive ensures the request survives even if the user closes the tab
+      // Send finalize request (PDF generation + email sending)
+      // Do NOT use keepalive with large FormData bodies — browsers limit
+      // keepalive bodies to 64 KB, which silently drops the entire request.
       try {
-        await fetch("/api/registrations/finalize", {
+        const finalizeResponse = await fetch("/api/registrations/finalize", {
           method: "POST",
           body: finalizeFormData,
-          keepalive: true,
         });
+        if (!finalizeResponse.ok) {
+          const finalizeError = await finalizeResponse.json().catch(() => ({}));
+          console.error(
+            "[finalize] Server returned error:",
+            finalizeResponse.status,
+            finalizeError,
+          );
+        }
       } catch (err) {
         console.error("Finalize error (non-blocking):", err);
       }
@@ -879,9 +885,6 @@ export function RegistrationPageContent() {
       formDirtyRef.current = false;
       resetForm();
       clearPhotoPreview();
-      if (turnstileWidgetId && (window as any).turnstile) {
-        (window as any).turnstile.reset(turnstileWidgetId);
-      }
     } catch (error) {
       console.error("Submission error:", error);
       // Find the currently active step and mark it as error
@@ -901,13 +904,13 @@ export function RegistrationPageContent() {
       setSubmitMessage(
         "Network error. Please check your connection and try again.",
       );
-      if (turnstileWidgetId && (window as any).turnstile) {
-        (window as any).turnstile.reset(turnstileWidgetId);
-      }
     } finally {
       setSubmitting(false);
       setIsUploading(false);
       isSubmittingRef.current = false;
+      if (turnstileWidgetId && (window as any).turnstile) {
+        (window as any).turnstile.reset(turnstileWidgetId);
+      }
     }
   };
 

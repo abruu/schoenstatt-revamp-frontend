@@ -3,6 +3,9 @@ import { Resend } from "resend";
 import { getAdminNotificationEmails } from "@/lib/strapi-api";
 import { generatePdfForRecipient } from "@/lib/pdf-generator";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function POST(request: NextRequest) {
@@ -123,6 +126,22 @@ export async function POST(request: NextRequest) {
       if (proofFile) {
         const proofBytes = await proofFile.arrayBuffer();
         proofBuffer = Buffer.from(proofBytes);
+      } else if (aadhaarUrl) {
+        console.log(
+          "[finalize] proofFile missing — fetching from aadhaarUrl:",
+          aadhaarUrl,
+        );
+        const proofResponse = await fetch(aadhaarUrl);
+        if (proofResponse.ok) {
+          const proofBytes = await proofResponse.arrayBuffer();
+          proofBuffer = Buffer.from(proofBytes);
+          console.log("[finalize] Proof file fetched from URL successfully");
+        } else {
+          console.error(
+            "[finalize] Failed to fetch proof from URL:",
+            proofResponse.status,
+          );
+        }
       }
       adminPdfBuffer = await generatePdfForRecipient({
         studentDetails,
