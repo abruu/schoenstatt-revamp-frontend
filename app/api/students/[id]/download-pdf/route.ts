@@ -6,6 +6,7 @@ import {
   generatePdfForRecipient,
   formatStudentDataForPDF,
 } from "@/lib/pdf-generator";
+import { getStrapiBaseUrl } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,8 +60,7 @@ async function fetchProofFile(
   fileUrl: string,
 ): Promise<Buffer | null> {
   try {
-    const strapiBase =
-      STRAPI_URL?.replace("/api", "") || "http://localhost:1337";
+    const strapiBase = getStrapiBaseUrl();
     const fullUrl = fileUrl.startsWith("http")
       ? fileUrl
       : `${strapiBase}${fileUrl}`;

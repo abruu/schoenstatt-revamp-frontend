@@ -36,6 +36,7 @@ import {
   RefreshCw,
   Loader2,
   PartyPopper,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useCourseLevels } from "@/hooks/use-course-levels";
 import { useCenters } from "@/hooks/use-centers";
@@ -63,6 +64,12 @@ interface SubmissionStep {
 
 const INITIAL_STEPS: SubmissionStep[] = [
   {
+    key: "validate",
+    label: "Validating your details ",
+    icon: AlertCircle,
+    status: "pending",
+  },
+  {
     key: "photo",
     label: "Uploading profile photo",
     icon: Upload,
@@ -70,25 +77,25 @@ const INITIAL_STEPS: SubmissionStep[] = [
   },
   {
     key: "proof",
-    label: "Uploading identity proof",
+    label: "Uploading identity proof document",
     icon: FileText,
     status: "pending",
   },
   {
-    key: "validate",
-    label: "Validating submitted information",
-    icon: AlertCircle,
-    status: "pending",
-  },
-  {
     key: "register",
-    label: "Creating your registration (this may take a moment)",
+    label: "Creating your registration record",
     icon: FileCheck,
     status: "pending",
   },
   {
+    key: "pdf",
+    label: "Generating your registration PDF document",
+    icon: FileSpreadsheet,
+    status: "pending",
+  },
+  {
     key: "email",
-    label: "Sending confirmation email",
+    label: "Sending confirmation emails",
     icon: Mail,
     status: "pending",
   },
@@ -514,6 +521,28 @@ export function RegistrationPageContent() {
       });
   }, []);
 
+  // Warn user before closing/refreshing tab during an active submission or when form has unsaved data
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isUploading) {
+        e.preventDefault();
+        e.returnValue =
+          "Your registration is still being submitted. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+      if (formDirtyRef.current && !registrationComplete) {
+        e.preventDefault();
+        e.returnValue =
+          "You have unsaved changes in your registration form. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isUploading, registrationComplete]);
+
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
@@ -556,6 +585,7 @@ export function RegistrationPageContent() {
   };
 
   const isSubmittingRef = useRef(false);
+  const formDirtyRef = useRef(false);
 
   // ── submission step helpers ────────────────────────────────────────────────
   const setStepActive = useCallback((key: string) => {
@@ -625,17 +655,52 @@ export function RegistrationPageContent() {
         return;
       }
 
-      // ── Step 1: Photo (already compressed by PhotoUpload, just mark done) ──
+      // ── Step 1: Validate (duplicate check for email & phone) ──────────────
+      setStepActive("validate");
+      const duplicateCheck = await fetch("/api/registrations/check-duplicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: values.email, phone: values.phone }),
+      });
+      const duplicateResult = await duplicateCheck.json();
+      if (duplicateResult.exists) {
+        failStep(
+          "validate",
+          `A registration already exists with this ${duplicateResult.field}. Please contact the institution if you need assistance.`,
+        );
+        return;
+      }
+      setStepDone("validate");
+
+      // ── Step 2: Upload photo to Strapi (includes turnstile verification) ───
       setStepActive("photo");
       if (!values.photo) {
         failStep("photo", "Please upload your profile photo.");
         return;
       }
-      // Small delay for UX feedback
-      await new Promise((r) => setTimeout(r, 300));
+
+      const photoFormData = new FormData();
+      photoFormData.append("photo", values.photo);
+      photoFormData.append("firstName", values.firstName);
+      photoFormData.append("turnstileToken", values.turnstileToken);
+
+      const photoResponse = await fetch("/api/registrations/upload-photo", {
+        method: "POST",
+        body: photoFormData,
+      });
+      const photoResult = await photoResponse.json();
+
+      if (!photoResponse.ok) {
+        failStep(
+          "photo",
+          photoResult.error ||
+            "Failed to upload profile photo. Please try again.",
+        );
+        return;
+      }
       setStepDone("photo");
 
-      // ── Step 2: Merge & upload identity proof ──────────────────────────────
+      // ── Step 3: Merge & upload identity proof to Strapi ────────────────────
       setStepActive("proof");
       const { front: idFront, back: idBack } = idProofRef.current;
       if (!idFront) {
@@ -657,62 +722,150 @@ export function RegistrationPageContent() {
         );
         return;
       }
-      setStepDone("proof");
 
-      // ── Step 3: Validate (duplicate check) ────────────────────────────────
-      setStepActive("validate");
-      const duplicateCheck = await fetch("/api/registrations/check-duplicate", {
+      const proofFormData = new FormData();
+      proofFormData.append("aadhaarFile", mergedAadhaar);
+      proofFormData.append("firstName", values.firstName);
+
+      const proofResponse = await fetch("/api/registrations/upload-proof", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: values.email, phone: values.phone }),
+        body: proofFormData,
       });
-      const duplicateResult = await duplicateCheck.json();
-      if (duplicateResult.exists) {
+      const proofResult = await proofResponse.json();
+
+      if (!proofResponse.ok) {
         failStep(
-          "validate",
-          `A registration already exists with this ${duplicateResult.field}. Please contact the institution if you need assistance.`,
+          "proof",
+          proofResult.error ||
+            "Failed to upload ID proof document. Please try again.",
         );
         return;
       }
-      setStepDone("validate");
+      setStepDone("proof");
 
-      // ── Step 4: Create registration ───────────────────────────────────────
+      // ── Step 4: Create registration (fast — no uploads, just DB write) ─────
       setStepActive("register");
-      const formData = new FormData();
+      const regFormData = new FormData();
       Object.entries(values).forEach(([key, value]) => {
-        if (key === "aadhaarFile") return;
+        if (
+          key === "aadhaarFile" ||
+          key === "photo" ||
+          key === "turnstileToken"
+        )
+          return;
         if (value !== null && value !== undefined) {
-          formData.append(key, value as string | File);
+          regFormData.append(key, value as string | File);
         }
       });
-      formData.append("aadhaarFile", mergedAadhaar);
-      if (adminEmailsRef.current.length > 0) {
-        formData.append("adminEmails", JSON.stringify(adminEmailsRef.current));
-      }
+      regFormData.append("photoId", String(photoResult.photoId));
+      regFormData.append("aadhaarId", String(proofResult.aadhaarId));
 
-      const response = await fetch("/api/registrations", {
+      const regResponse = await fetch("/api/registrations", {
         method: "POST",
-        body: formData,
+        body: regFormData,
       });
-      const result = await response.json();
+      const regResult = await regResponse.json();
 
-      if (!response.ok) {
-        failStep(
-          "register",
-          result.details ||
-            result.error ||
-            "Failed to submit registration. Please try again later",
-        );
+      if (!regResponse.ok) {
+        if (regResponse.status === 409 && regResult.duplicate) {
+          failStep(
+            "validate",
+            regResult.error ||
+              "A registration already exists with this email or phone number. Please contact the institution if you need assistance.",
+          );
+        } else {
+          failStep(
+            "register",
+            regResult.details ||
+              regResult.error ||
+              "Failed to submit registration. Please try again later",
+          );
+        }
         return;
       }
       setStepDone("register");
 
-      // ── Step 5: Sending confirmation email (server-side) ──────────────────
+      // ── Step 5 & 6: Finalize (PDF generation + email sending) ─────────────
+      setStepActive("pdf");
+      const regData = regResult.registrationData || {};
+      const centerData = regData.center || {};
+      const courseLevelData = regData.courseLevel || {};
+      const photoData = regData.photo || null;
+
+      // Build photo URL from registration response (populated with full media data)
+      const finalPhotoUrl = photoData?.url
+        ? photoData.url.startsWith("http")
+          ? photoData.url
+          : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "")}${photoData.url}`
+        : photoResult.photoUrl;
+
+      const finalizeFormData = new FormData();
+      finalizeFormData.append("firstName", values.firstName);
+      finalizeFormData.append("lastName", values.lastName);
+      finalizeFormData.append("gender", values.gender);
+      finalizeFormData.append("dateOfBirth", values.dateOfBirth);
+      finalizeFormData.append("email", values.email);
+      finalizeFormData.append("phone", values.phone);
+      finalizeFormData.append("whatsappNumber", values.whatsappNumber);
+      finalizeFormData.append("address", values.address);
+      finalizeFormData.append("fathersName", values.fathersName);
+      finalizeFormData.append("mothersName", values.mothersName);
+      finalizeFormData.append("parentContact", values.parentContact);
+      finalizeFormData.append("centerName", centerData?.name || values.center);
+      finalizeFormData.append("centerEmail", centerData?.email || "");
+      finalizeFormData.append(
+        "courseLevelLabel",
+        courseLevelData?.LabelFull || values.courseLevel,
+      );
+      finalizeFormData.append(
+        "courseLevelShort",
+        courseLevelData?.LabelShort || values.courseLevel,
+      );
+      finalizeFormData.append("hostelFacility", String(values.hostelFacility));
+      finalizeFormData.append(
+        "highestQualification",
+        values.highestQualification === "Other"
+          ? values.otherQualification
+          : values.highestQualification,
+      );
+      finalizeFormData.append("studiedGerman", String(values.studiedGerman));
+      finalizeFormData.append("levelCompleted", values.levelCompleted);
+      finalizeFormData.append(
+        "purposeLearningGerman",
+        JSON.stringify(values.purposeLearningGerman),
+      );
+      finalizeFormData.append("workExperience", String(values.workExperience));
+      finalizeFormData.append("registrationId", String(regData.id));
+      finalizeFormData.append("photoUrl", finalPhotoUrl);
+      finalizeFormData.append("aadhaarUrl", proofResult.aadhaarUrl);
+      finalizeFormData.append("studentDocId", regData.documentId);
+      finalizeFormData.append("proofFile", mergedAadhaar);
+      if (adminEmailsRef.current.length > 0) {
+        finalizeFormData.append(
+          "adminEmails",
+          JSON.stringify(adminEmailsRef.current),
+        );
+      }
+
+      // Use fire-and-forget for finalize so user doesn't wait for emails
+      // keepalive ensures the request survives even if the user closes the tab
+      try {
+        await fetch("/api/registrations/finalize", {
+          method: "POST",
+          body: finalizeFormData,
+          keepalive: true,
+        });
+      } catch (err) {
+        console.error("Finalize error (non-blocking):", err);
+      }
+
+      // Mark PDF and email steps as done immediately (server processes async)
+      setStepDone("pdf");
       setStepActive("email");
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
       setStepDone("email");
 
-      // ── Step 6: Finalize ──────────────────────────────────────────────────
+      // ── Step 7: Finalize ──────────────────────────────────────────────────
       setStepActive("finalize");
       await new Promise((r) => setTimeout(r, 400));
       setStepDone("finalize");
@@ -723,6 +876,7 @@ export function RegistrationPageContent() {
         "Registration successful! You will be contacted by the institution.",
       );
       setRegistrationComplete(true);
+      formDirtyRef.current = false;
       resetForm();
       clearPhotoPreview();
       if (turnstileWidgetId && (window as any).turnstile) {
@@ -897,8 +1051,13 @@ export function RegistrationPageContent() {
                     touched,
                     isValid,
                     submitForm,
+                    dirty,
                   }) => {
                     const submitAttemptedRef = useRef(false);
+
+                    useEffect(() => {
+                      formDirtyRef.current = dirty && !isSubmitting;
+                    }, [dirty, isSubmitting]);
 
                     useEffect(() => {
                       renderTurnstile(setFieldValue);
@@ -1020,7 +1179,7 @@ export function RegistrationPageContent() {
                           )}
 
                           {/* ==================== SECTION 1: Personal Information ==================== */}
-                          <div className="space-y-6">
+                          <div className="space-y-6 mt-5">
                             <div className="flex items-center gap-3 pb-3 border-b border-white/10">
                               <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shrink-0">
                                 <User className="h-4 w-4 text-black" />
@@ -1983,7 +2142,7 @@ export function RegistrationPageContent() {
                               }}
                             />
                           ) : submitStatus === "error" && submitMessage ? (
-                            <div className="mx-4 sm:mx-0 mb-6 p-4 rounded-xl border bg-red-500/10 border-red-500/30 text-red-400">
+                            <div className="mx-4 sm:mx-0 mb-6  p-4 rounded-xl border bg-red-500/10 border-red-500/30 text-red-400">
                               <div className="flex items-center gap-2">
                                 <XCircle className="h-4 w-4" />
                                 <span>{submitMessage}</span>

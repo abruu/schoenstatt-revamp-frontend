@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
 import { studentService } from "@/lib/services/student-service";
 import { useStudent } from "@/hooks/use-students-query";
+import { getStrapiBaseUrl } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ import {
   Home,
   MessageCircle,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -61,13 +63,10 @@ function StudentDetailContent() {
   const { data: student, isLoading: loading, isError } = useStudent(documentId);
 
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingPhoto, setDownloadingPhoto] = useState(false);
+  const [downloadingIdProof, setDownloadingIdProof] = useState(false);
 
-  const strapiBaseUrl = useMemo(
-    () =>
-      process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-      "http://localhost:1337",
-    [],
-  );
+  const strapiBaseUrl = useMemo(() => getStrapiBaseUrl(), []);
 
   const photoUrl = useMemo(() => {
     if (!student?.photo?.url) return null;
@@ -114,15 +113,27 @@ function StudentDetailContent() {
       alert("No photo available to download");
       return;
     }
+    setDownloadingPhoto(true);
     try {
+      const ext = photoUrl.split(".").pop()?.split("?")[0] || "jpg";
+      const fileName = `${student?.firstName}_${student?.lastName}_${student?.documentId}_photo.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(photoUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download photo");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = photoUrl;
-      a.download = `${student?.firstName}_${student?.lastName}_photo.jpg`;
-      a.target = "_blank";
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading photo:", error);
       alert("Failed to download photo");
+    } finally {
+      setDownloadingPhoto(false);
     }
   };
 
@@ -131,16 +142,27 @@ function StudentDetailContent() {
       alert("No ID proof available to download");
       return;
     }
+    setDownloadingIdProof(true);
     try {
+      const ext = student?.aadhaarFile?.ext || "pdf";
+      const fileName = `${student?.firstName}_${student?.lastName}_${student?.documentId}_id_proof.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(idProofUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download ID proof");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = idProofUrl;
-      const ext = student?.aadhaarFile?.ext || ".pdf";
-      a.download = `${student?.firstName}_${student?.lastName}_id_proof${ext}`;
-      a.target = "_blank";
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading ID proof:", error);
       alert("Failed to download ID proof");
+    } finally {
+      setDownloadingIdProof(false);
     }
   };
 
@@ -296,23 +318,33 @@ function StudentDetailContent() {
               {student.photo && (
                 <Button
                   onClick={downloadPhoto}
+                  disabled={downloadingPhoto}
                   variant="outline"
                   size="sm"
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
                   title="Download Photo"
                 >
-                  <Download className="h-4 w-4" />
+                  {downloadingPhoto ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                 </Button>
               )}
               {student.aadhaarFile?.url && (
                 <Button
                   onClick={downloadIdProof}
+                  disabled={downloadingIdProof}
                   variant="outline"
                   size="sm"
-                  className="bg-amber-600/80 hover:bg-amber-600 text-white border-amber-600"
+                  className="bg-amber-600/80 hover:bg-amber-600 text-white border-amber-600 disabled:opacity-50"
                   title="Download ID Proof"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
+                  {downloadingIdProof ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4 mr-2" />
+                  )}
                   ID Proof
                 </Button>
               )}

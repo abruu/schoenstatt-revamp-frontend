@@ -7,6 +7,7 @@ import { studentService, StrapiStudent } from "@/lib/services/student-service";
 import { useCourseLevels } from "@/hooks/use-course-levels";
 import { useCenters } from "@/hooks/use-centers";
 import { useStudents } from "@/hooks/use-students-query";
+import { getStrapiBaseUrl } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,6 +131,10 @@ function DashboardContent() {
     null,
   );
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
+  const [downloadingPhoto, setDownloadingPhoto] = useState<string | null>(null);
+  const [downloadingIdProof, setDownloadingIdProof] = useState<string | null>(
+    null,
+  );
 
   const debouncedSearchTerm = urlSearch;
   const courseFilter = urlCourseFilter;
@@ -387,41 +392,71 @@ function DashboardContent() {
     }
   };
 
-  const handleDownloadPhoto = (student: StrapiStudent) => {
+  const handleDownloadPhoto = async (student: StrapiStudent) => {
     if (!student.photo?.url) {
       alert("No photo available to download");
       return;
     }
-    const photoUrl = student.photo.url.startsWith("http")
-      ? student.photo.url
-      : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
-          "/api",
-          "",
-        )}${student.photo.url}`;
-    const a = document.createElement("a");
-    a.href = photoUrl;
-    a.download = `${student.firstName}_${student.lastName}_photo.jpg`;
-    a.target = "_blank";
-    a.click();
+    setDownloadingPhoto(student.documentId);
+    try {
+      const photoUrl = student.photo.url.startsWith("http")
+        ? student.photo.url
+        : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
+            "/api",
+            "",
+          )}${student.photo.url}`;
+      const ext = photoUrl.split(".").pop()?.split("?")[0] || "jpg";
+      const fileName = `${student.firstName}_${student.lastName}_${student.documentId}_photo.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(photoUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download photo");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading photo:", error);
+      alert("Failed to download photo");
+    } finally {
+      setDownloadingPhoto(null);
+    }
   };
 
-  const handleDownloadIdProof = (student: StrapiStudent) => {
+  const handleDownloadIdProof = async (student: StrapiStudent) => {
     if (!student.aadhaarFile?.url) {
       alert("No ID proof available to download");
       return;
     }
-    const fileUrl = student.aadhaarFile.url.startsWith("http")
-      ? student.aadhaarFile.url
-      : `${
-          process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-          "http://localhost:1337"
-        }${student.aadhaarFile.url}`;
-    const a = document.createElement("a");
-    a.href = fileUrl;
-    const ext = student.aadhaarFile.ext || ".pdf";
-    a.download = `${student.firstName}_${student.lastName}_id_proof${ext}`;
-    a.target = "_blank";
-    a.click();
+    setDownloadingIdProof(student.documentId);
+    try {
+      const fileUrl = student.aadhaarFile.url.startsWith("http")
+        ? student.aadhaarFile.url
+        : `${getStrapiBaseUrl()}${student.aadhaarFile.url}`;
+      const ext = student.aadhaarFile.ext || "pdf";
+      const fileName = `${student.firstName}_${student.lastName}_${student.documentId}_id_proof.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(fileUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download ID proof");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading ID proof:", error);
+      alert("Failed to download ID proof");
+    } finally {
+      setDownloadingIdProof(null);
+    }
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -1061,24 +1096,38 @@ function DashboardContent() {
                             {student.photo?.url && (
                               <Button
                                 onClick={() => handleDownloadPhoto(student)}
+                                disabled={
+                                  downloadingPhoto === student.documentId
+                                }
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-cyan-400 hover:text-black hover:bg-cyan-400 border-cyan-400/50 hover:border-cyan-400"
+                                className="h-8 w-8 p-0 text-cyan-400 hover:text-black hover:bg-cyan-400 border-cyan-400/50 hover:border-cyan-400 disabled:opacity-50"
                                 title="Download Photo"
                               >
-                                <Camera className="h-3 w-3" />
+                                {downloadingPhoto === student.documentId ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Camera className="h-3 w-3" />
+                                )}
                               </Button>
                             )}
                             {/* Download ID Proof Button */}
                             {student.aadhaarFile?.url && (
                               <Button
                                 onClick={() => handleDownloadIdProof(student)}
+                                disabled={
+                                  downloadingIdProof === student.documentId
+                                }
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-amber-400 hover:text-black hover:bg-amber-400 border-amber-400/50 hover:border-amber-400"
+                                className="h-8 w-8 p-0 text-amber-400 hover:text-black hover:bg-amber-400 border-amber-400/50 hover:border-amber-400 disabled:opacity-50"
                                 title="Download ID Proof"
                               >
-                                <FileText className="h-3 w-3" />
+                                {downloadingIdProof === student.documentId ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <FileText className="h-3 w-3" />
+                                )}
                               </Button>
                             )}
                           </div>
@@ -1185,12 +1234,7 @@ function DashboardContent() {
                             src={
                               selectedStudent.photo.url.startsWith("http")
                                 ? selectedStudent.photo.url
-                                : `${
-                                    process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
-                                      "/api",
-                                      "",
-                                    ) || "http://localhost:1337"
-                                  }${selectedStudent.photo.url}`
+                                : `${getStrapiBaseUrl()}${selectedStudent.photo.url}`
                             }
                             alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
                             fill

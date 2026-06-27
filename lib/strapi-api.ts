@@ -11,7 +11,8 @@ const strapiApi = axios.create({
 // Add request interceptor for authentication
 strapiApi.interceptors.request.use(
   (config) => {
-    const token = process.env.NEXT_PUBLIC_STRAPI_TOKEN;
+    const token =
+      process.env.STRAPI_SERVER_TOKEN || process.env.NEXT_PUBLIC_STRAPI_TOKEN;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -265,8 +266,9 @@ export async function checkStudentExists(
     return { exists: false };
   } catch (error) {
     console.error("Duplicate check error:", error);
-    // If check fails, allow registration to proceed
-    return { exists: false };
+    throw new Error(
+      "Failed to check for existing registrations. Please try again.",
+    );
   }
 }
 

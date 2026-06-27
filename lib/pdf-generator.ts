@@ -1,5 +1,6 @@
 import puppeteer, { Browser } from "puppeteer-core";
 import { PDFDocument, rgb } from "pdf-lib";
+import { getStrapiBaseUrl } from "@/lib/constants";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -376,9 +377,7 @@ export function formatStudentDataForPDF(
   student: any,
   baseUrl: string,
 ): StudentData {
-  const strapiUrl =
-    process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-    "http://localhost:1337";
+  const strapiUrl = getStrapiBaseUrl();
 
   let photoUrl = "";
   if (student.photo?.url) {
