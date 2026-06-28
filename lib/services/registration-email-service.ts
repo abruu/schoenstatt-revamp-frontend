@@ -1,8 +1,5 @@
 import { Resend } from "resend";
-import {
-  generatePdfForRecipient,
-  StudentData,
-} from "@/lib/pdf-generator";
+import { generatePdfForRecipient, StudentData } from "@/lib/pdf-generator";
 
 export type RecipientType = "student" | "admin" | "both";
 
@@ -83,10 +80,7 @@ function buildAdminEmailHtml(params: {
 
               <!-- Header -->
               <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%); padding: 40px 30px; text-align: center; position: relative; overflow: hidden;">
-                <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); animation: pulse 4s ease-in-out infinite;"></div>
-                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; display: inline-block; position: relative; z-index: 1;">
-                  <img src="${logoUrl}" alt="SLA" style="height: 70px; margin-bottom: 15px;" />
-                </div>
+
                 <h1 class="header-title" style="color: #1a1a2e; margin: 20px 0 8px 0; font-size: 28px; font-weight: 800; position: relative; z-index: 1; letter-spacing: -0.5px;">New Student Registration</h1>
                 <p style="color: rgba(26, 26, 46, 0.9); margin: 0; font-size: 15px; position: relative; z-index: 1; font-weight: 500;">Schoenstatt Language Academy</p>
               </div>
@@ -218,8 +212,6 @@ function buildStudentEmailHtml(params: {
 
               <!-- Header with Logo and Success Animation -->
               <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 20px; text-align: center; position: relative;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="success" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23success)"/></svg></div>
-                <img src="${logoUrl}" alt="Schoenstatt Language Academy" style="height: 60px; margin-bottom: 20px; position: relative; z-index: 1;" />
 
                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; position: relative; z-index: 1;">Registration Confirmed!</h1>
                 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; position: relative; z-index: 1;">Thank you for joining Schoenstatt Language Academy</p>
@@ -353,7 +345,10 @@ export async function sendRegistrationEmails(
         });
         result.adminPdfGenerated = true;
       } catch (pdfError) {
-        console.error("[registration-email] Admin PDF generation failed:", pdfError);
+        console.error(
+          "[registration-email] Admin PDF generation failed:",
+          pdfError,
+        );
         result.errors.push("Admin PDF generation failed");
       }
 
@@ -402,7 +397,10 @@ export async function sendRegistrationEmails(
         });
         result.studentPdfGenerated = true;
       } catch (pdfError) {
-        console.error("[registration-email] Student PDF generation failed:", pdfError);
+        console.error(
+          "[registration-email] Student PDF generation failed:",
+          pdfError,
+        );
         result.errors.push("Student PDF generation failed");
       }
 
@@ -423,7 +421,10 @@ export async function sendRegistrationEmails(
       });
       result.studentEmailSent = true;
     } catch (confirmationError) {
-      console.error("[registration-email] Student email error:", confirmationError);
+      console.error(
+        "[registration-email] Student email error:",
+        confirmationError,
+      );
       result.errors.push("Failed to send student email");
     }
   }
