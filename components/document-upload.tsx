@@ -22,7 +22,7 @@ export interface PhotoUploadProps {
 
 const MAX_INPUT = 10 * 1024 * 1024; // 10 MB — max size we accept from the user
 const MAX_SINGLE = 2.5 * 1024 * 1024; // 2.5 MB — target size after compression
-const MAX_COMBINED = 5 * 1024 * 1024; // 5 MB — max combined size after merge
+const MAX_COMBINED = 4 * 1024 * 1024; // 4 MB — max combined size after merge
 const ACCEPTED_MIME = [
   "image/jpeg",
   "image/jpg",
@@ -671,7 +671,7 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
           {combinedExceeds && (
             <p className="text-xs text-red-400 flex items-center gap-1">
               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-              Combined size exceeds 5 MB after compression. Please use smaller
+              Combined size exceeds 4 MB after compression. Please use smaller
               files.
             </p>
           )}
@@ -706,7 +706,7 @@ const PHOTO_ACCEPTED_MIME = [
   "image/webp",
 ];
 const PHOTO_MAX_INPUT = 10 * 1024 * 1024; // 10 MB — max size we accept from the user
-const PHOTO_TARGET_SIZE = 5 * 1024 * 1024; // 5 MB — target size after compression
+const PHOTO_TARGET_SIZE = 2 * 1024 * 1024; // 1 MB — target size after compression (photo is only 130x130px in PDF)
 
 export function PhotoUpload({
   onFileChange,

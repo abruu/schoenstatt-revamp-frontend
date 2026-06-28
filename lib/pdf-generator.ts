@@ -139,7 +139,7 @@ export interface StudentData {
   workExperience?: boolean;
   registrationId: number;
   photoUrl: string;
-  logoUrl: string;
+  logoUrl?: string;
   submittedDate: string;
   submittedTime: string;
 }
@@ -292,7 +292,7 @@ function generatePDFHTML(data: StudentData): string {
     <body>
       <div class="header">
         <div class="header-top">
-          ${process.env.NEXT_LOGO_PATH ? `<img src="${process.env.NEXT_LOGO_PATH}" alt="Logo" class="header-logo" onerror="this.style.display='none'" />` : ""}
+          ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo" class="header-logo" onerror="this.style.display='none'" />` : ""}
           <div class="header-text">
             <h1>STUDENT REGISTRATION FORM</h1>
             <p>Schoenstatt Language Academy</p>
@@ -513,10 +513,54 @@ export async function generateRegistrationPDF(
 
     const page = await browser.newPage();
 
-    const htmlContent = generatePDFHTML(studentData);
+    // Fetch the student photo server-side and embed as a data URL.
+    // This avoids network requests during page.setContent (which would
+    // prevent networkidle0 from settling) and prevents Puppeteer from
+    // embedding an oversized remote image in the PDF.
+    const fetchAsDataUrl = async (
+      url: string,
+      timeoutMs = 10000,
+    ): Promise<string | null> => {
+      if (!url || url.startsWith("data:")) return url;
+      try {
+        const resp = await fetch(url, {
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (resp.ok) {
+          const buf = Buffer.from(await resp.arrayBuffer());
+          const mime = resp.headers.get("content-type") || "image/jpeg";
+          return `data:${mime};base64,${buf.toString("base64")}`;
+        }
+      } catch (err) {
+        console.warn(
+          `[pdf-generator] Fetch failed for ${url}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
+      return null;
+    };
 
+    let photoUrlForPdf = studentData.photoUrl;
+    const fetchedPhoto = await fetchAsDataUrl(studentData.photoUrl);
+    if (fetchedPhoto) photoUrlForPdf = fetchedPhoto;
+
+    // Also fetch the logo as a data URL to avoid any network requests
+    let logoDataUrl: string | null = null;
+    if (process.env.NEXT_LOGO_PATH) {
+      logoDataUrl = await fetchAsDataUrl(process.env.NEXT_LOGO_PATH);
+    }
+
+    const htmlContent = generatePDFHTML({
+      ...studentData,
+      photoUrl: photoUrlForPdf,
+      logoUrl: logoDataUrl || undefined,
+    });
+
+    // Use domcontentloaded since all images are now data URLs —
+    // no network requests to wait for.
     await page.setContent(htmlContent, {
-      waitUntil: "networkidle0",
+      waitUntil: "domcontentloaded",
+      timeout: 30000,
     });
 
     await page.emulateMediaType("screen");

@@ -26,11 +26,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (aadhaarFile.size > 5 * 1024 * 1024) {
+    if (aadhaarFile.size > 4 * 1024 * 1024) {
       return NextResponse.json(
         {
           error:
-            "Document file size too large. Please upload a file smaller than 5MB.",
+            "Document file size too large. Please upload a file smaller than 4MB.",
         },
         { status: 400 },
       );

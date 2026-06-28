@@ -135,7 +135,15 @@ export async function POST(request: NextRequest) {
         if (proofResponse.ok) {
           const proofBytes = await proofResponse.arrayBuffer();
           proofBuffer = Buffer.from(proofBytes);
-          console.log("[finalize] Proof file fetched from URL successfully");
+          const proofMB = proofBuffer.byteLength / (1024 * 1024);
+          console.log(
+            `[finalize] Proof file fetched from URL successfully (${proofMB.toFixed(2)} MB)`,
+          );
+          if (proofMB > 4) {
+            console.warn(
+              `[finalize] Proof file from URL exceeds 4 MB (${proofMB.toFixed(2)} MB) — combined PDF may exceed 10 MB`,
+            );
+          }
         } else {
           console.error(
             "[finalize] Failed to fetch proof from URL:",
