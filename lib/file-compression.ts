@@ -46,6 +46,163 @@ function withCorrectExtension(file: Blob, originalName: string): File {
   return new File([file], name, { type: file.type });
 }
 
+// ─── EXIF auto-orientation ───────────────────────────────────────────────────
+
+/**
+ * Read the EXIF orientation tag (0x0112) from a JPEG file.
+ * Returns -1 if not found or not a JPEG.
+ */
+function getExifOrientation(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const view = new DataView(reader.result as ArrayBuffer);
+      if (view.byteLength < 2 || view.getUint16(0, false) !== 0xffd8) {
+        resolve(-1);
+        return;
+      }
+      let offset = 2;
+      while (offset < view.byteLength) {
+        const marker = view.getUint16(offset, false);
+        offset += 2;
+        if (marker === 0xffe1) {
+          const length = view.getUint16(offset, false);
+          offset += 2;
+          if (view.getUint32(offset, false) !== 0x45786966) {
+            resolve(-1);
+            return;
+          }
+          offset += 6;
+          const tiffOffset = offset;
+          const bigEndian = view.getUint16(tiffOffset, false) === 0x4d4d;
+          if (view.getUint16(tiffOffset + 2, bigEndian) !== 0x002a) {
+            resolve(-1);
+            return;
+          }
+          const ifdOffset =
+            tiffOffset + view.getUint32(tiffOffset + 4, bigEndian);
+          const entries = view.getUint16(ifdOffset, bigEndian);
+          for (let i = 0; i < entries; i++) {
+            const entryOffset = ifdOffset + 2 + i * 12;
+            const tag = view.getUint16(entryOffset, bigEndian);
+            if (tag === 0x0112) {
+              resolve(view.getUint16(entryOffset + 8, bigEndian));
+              return;
+            }
+          }
+          resolve(-1);
+          return;
+        } else if ((marker & 0xff00) !== 0xff00) {
+          break;
+        } else {
+          offset += view.getUint16(offset, false);
+        }
+      }
+      resolve(-1);
+    };
+    reader.onerror = () => resolve(-1);
+    reader.readAsArrayBuffer(file.slice(0, 65536));
+  });
+}
+
+/**
+ * Apply EXIF orientation to an image file by baking the rotation into the pixel
+ * data via canvas. Returns the original file if no orientation is needed.
+ */
+export async function autoOrientImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+
+  const orientation = await getExifOrientation(file);
+  if (orientation <= 1 || orientation > 8) return file;
+
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = document.createElement("img");
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = url;
+    });
+
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    switch (orientation) {
+      case 2:
+        canvas.width = w;
+        canvas.height = h;
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        break;
+      case 3:
+        canvas.width = w;
+        canvas.height = h;
+        ctx.translate(w, h);
+        ctx.rotate(Math.PI);
+        break;
+      case 4:
+        canvas.width = w;
+        canvas.height = h;
+        ctx.translate(0, h);
+        ctx.scale(1, -1);
+        break;
+      case 5:
+        canvas.width = h;
+        canvas.height = w;
+        ctx.translate(h, 0);
+        ctx.scale(-1, 1);
+        ctx.rotate(Math.PI / 2);
+        break;
+      case 6:
+        canvas.width = h;
+        canvas.height = w;
+        ctx.translate(h, 0);
+        ctx.rotate(Math.PI / 2);
+        break;
+      case 7:
+        canvas.width = h;
+        canvas.height = w;
+        ctx.translate(0, w);
+        ctx.scale(-1, 1);
+        ctx.rotate(-Math.PI / 2);
+        break;
+      case 8:
+        canvas.width = h;
+        canvas.height = w;
+        ctx.translate(0, w);
+        ctx.rotate(-Math.PI / 2);
+        break;
+    }
+
+    ctx.drawImage(img, 0, 0);
+
+    const outputType =
+      file.type === "image/png"
+        ? "image/png"
+        : file.type === "image/webp"
+          ? "image/webp"
+          : "image/jpeg";
+
+    return new Promise<File>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Failed to auto-orient image"));
+            return;
+          }
+          resolve(new File([blob], file.name, { type: outputType }));
+        },
+        outputType,
+        outputType === "image/jpeg" ? 0.92 : undefined,
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 // ─── Image compression ───────────────────────────────────────────────────────
 
 export interface CompressImageOptions {
@@ -68,12 +225,18 @@ export async function compressImage(
 ): Promise<File> {
   const targetBytes = options.targetSizeMB * 1024 * 1024;
 
-  if (file.size <= targetBytes) return file;
+  // Always auto-orient first so EXIF rotation is baked into pixels.
+  // This ensures correct orientation in previews, canvas/PDF rendering,
+  // and server-side storage regardless of browser EXIF support.
+  const oriented = await autoOrientImage(file);
+
+  if (oriented.size <= targetBytes)
+    return withCorrectExtension(oriented, file.name);
 
   const outputType = options.fileType ?? "image/jpeg";
 
-  // First pass: standard compression
-  let result = await imageCompression(file, {
+  // First pass: standard compression (use oriented file as input)
+  let result = await imageCompression(oriented, {
     maxSizeMB: options.targetSizeMB,
     maxWidthOrHeight: options.maxWidthOrHeight ?? 2000,
     useWebWorker: true,
@@ -86,7 +249,7 @@ export async function compressImage(
   }
 
   // Second pass: more aggressive — smaller dimensions, lower quality
-  result = await imageCompression(file, {
+  result = await imageCompression(oriented, {
     maxSizeMB: options.targetSizeMB,
     maxWidthOrHeight: 1400,
     useWebWorker: true,

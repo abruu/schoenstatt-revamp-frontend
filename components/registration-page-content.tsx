@@ -38,6 +38,7 @@ import {
   PartyPopper,
   FileSpreadsheet,
   Megaphone,
+  ShieldAlert,
 } from "lucide-react";
 import { useCourseLevels } from "@/hooks/use-course-levels";
 import { useCenters } from "@/hooks/use-centers";
@@ -203,22 +204,33 @@ function SubmissionProgress({
       <div className="bg-black/50 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
         {/* Compact header */}
         {!hasError && (
-          <div className="flex items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-white/10">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-gradient-to-r from-yellow-400/20 to-yellow-600/20 border border-yellow-400/30 rounded-full flex items-center justify-center">
-              <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400 animate-spin" />
+          <>
+            <div className="flex items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-white/10">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-gradient-to-r from-yellow-400/20 to-yellow-600/20 border border-yellow-400/30 rounded-full flex items-center justify-center">
+                <Loader2 className="h-5 w-5 sm:h-6 text-yellow-400 animate-spin" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base sm:text-lg font-bold text-white leading-tight">
+                  Submitting Your Registration
+                </h2>
+                <p
+                  key={messageIndex}
+                  className="text-xs sm:text-sm text-yellow-400/90 font-medium animate-fade-in truncate"
+                >
+                  {messages[messageIndex]}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-lg font-bold text-white leading-tight">
-                Submitting Your Registration
-              </h2>
-              <p
-                key={messageIndex}
-                className="text-xs sm:text-sm text-yellow-400/90 font-medium animate-fade-in truncate"
-              >
-                {messages[messageIndex]}
+            {/* Do-not-close warning */}
+            <div className="flex items-start gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-yellow-400/5 border-b border-white/10">
+              <ShieldAlert className="h-4 w-4 text-yellow-400/80 flex-shrink-0 mt-0.5" />
+              <p className="text-xs sm:text-sm text-yellow-400/80 leading-relaxed">
+                Please do not close or refresh this page. We are securely
+                processing your application, uploading your documents, and
+                generating your confirmation. This may take a few moments.
               </p>
             </div>
-          </div>
+          </>
         )}
 
         {/* Error header */}
@@ -1178,14 +1190,26 @@ export function RegistrationPageContent() {
 
               <h1 className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold px-2">
                 <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  Register Now
+                  {showSubmissionOverlay
+                    ? "Submitting Your Application..."
+                    : "Register Now"}
                 </span>
               </h1>
 
               <p className="text-sm sm:text-lg lg:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed px-2">
-                Complete your registration for our German language courses.
-                Please fill in all required information accurately to process
-                your enrollment.
+                {showSubmissionOverlay ? (
+                  <span className="text-yellow-400/90">
+                    Please do not close or refresh this page. We are securely
+                    processing your application, uploading your documents, and
+                    generating your confirmation. This may take a few moments.
+                  </span>
+                ) : (
+                  <>
+                    Complete your registration for our German language courses.
+                    Please fill in all required information accurately to
+                    process your enrollment.
+                  </>
+                )}
               </p>
             </div>
 
@@ -1322,7 +1346,7 @@ export function RegistrationPageContent() {
 
                     return (
                       <Form className="space-y-6 sm:space-y-10">
-                        {showSubmissionOverlay ? (
+                        {showSubmissionOverlay && (
                           /* In-page submission progress section */
                           <SubmissionProgress
                             steps={submissionSteps}
@@ -1332,602 +1356,485 @@ export function RegistrationPageContent() {
                             onRetry={() => {
                               setShowSubmissionOverlay(false);
                               resetSteps();
-                              setSubmitStatus("idle");
-                              setSubmitMessage("");
                             }}
                           />
-                        ) : (
-                          <>
-                            {/* Disable all inputs while submitting */}
-                            <fieldset
-                              disabled={isSubmitting || isUploading}
-                              className="contents"
-                            >
-                              {/* Error Message Display */}
-                              {submitStatus === "error" && submitMessage && (
-                                <div className="p-4 rounded-xl border bg-red-500/10 border-red-500/30 text-red-400">
-                                  <div className="flex items-center gap-2">
-                                    <XCircle className="h-4 w-4 flex-shrink-0" />
-                                    <span className="text-sm">
-                                      {submitMessage}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* ==================== SECTION 1: Personal Information ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-5">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Personal Information
-                                  </h2>
-                                </div>
-
-                                {/* Photo Upload */}
-                                <div
-                                  id="photo-upload-section"
-                                  className="space-y-2 sm:space-y-3"
-                                >
-                                  <PhotoUpload
-                                    onFileChange={(file) =>
-                                      setFieldValue("photo", file)
-                                    }
-                                    disabled={isSubmitting}
-                                  />
-                                  <ErrorMessage
-                                    name="photo"
-                                    component="div"
-                                    className="text-red-400 text-xs mt-1"
-                                  />
-                                </div>
-
-                                {/* First Name & Last Name */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="firstName"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      First Name{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="firstName"
-                                      name="firstName"
-                                      type="text"
-                                      placeholder="Enter your first name"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="firstName"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="lastName"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Last Name{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="lastName"
-                                      name="lastName"
-                                      type="text"
-                                      placeholder="Enter your last name"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="lastName"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Gender & Date of Birth */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="gender"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Gender{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      as="select"
-                                      id="gender"
-                                      name="gender"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    >
-                                      <option
-                                        value=""
-                                        className="bg-black text-gray-400"
-                                      >
-                                        Select gender
-                                      </option>
-                                      <option
-                                        value="Male"
-                                        className="bg-black text-white"
-                                      >
-                                        Male
-                                      </option>
-                                      <option
-                                        value="Female"
-                                        className="bg-black text-white"
-                                      >
-                                        Female
-                                      </option>
-                                      <option
-                                        value="Other"
-                                        className="bg-black text-white"
-                                      >
-                                        Other
-                                      </option>
-                                    </Field>
-                                    <ErrorMessage
-                                      name="gender"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="dateOfBirth"
-                                      className="text-sm font-medium text-white flex items-center gap-2"
-                                    >
-                                      <Calendar className="h-4 w-4" />
-                                      Date of Birth{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="dateOfBirth"
-                                      name="dateOfBirth"
-                                      type="text"
-                                      placeholder="DD/MM/YYYY"
-                                      maxLength={10}
-                                      onChange={(
-                                        e: React.ChangeEvent<HTMLInputElement>,
-                                      ) => {
-                                        const inputValue = e.target.value;
-                                        const currentValue =
-                                          values.dateOfBirth || "";
-                                        if (
-                                          inputValue.length <
-                                          currentValue.length
-                                        ) {
-                                          if (inputValue.endsWith("/")) {
-                                            setFieldValue(
-                                              "dateOfBirth",
-                                              inputValue.slice(0, -1),
-                                            );
-                                            return;
-                                          }
-                                          setFieldValue(
-                                            "dateOfBirth",
-                                            inputValue,
-                                          );
-                                          return;
-                                        }
-                                        let value = inputValue.replace(
-                                          /\D/g,
-                                          "",
-                                        );
-                                        if (value.length >= 2)
-                                          value =
-                                            value.substring(0, 2) +
-                                            "/" +
-                                            value.substring(2);
-                                        if (value.length >= 5)
-                                          value =
-                                            value.substring(0, 5) +
-                                            "/" +
-                                            value.substring(5, 9);
-                                        setFieldValue("dateOfBirth", value);
-                                      }}
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="dateOfBirth"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Email & Phone */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="email"
-                                      className="text-sm font-medium text-white flex items-center gap-2"
-                                    >
-                                      <Mail className="h-4 w-4" />
-                                      Email Address{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="email"
-                                      name="email"
-                                      type="email"
-                                      placeholder="Enter your email"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="email"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="phone"
-                                      className="text-sm font-medium text-white flex items-center gap-2"
-                                    >
-                                      <Phone className="h-4 w-4" />
-                                      Mobile Number{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="phone"
-                                      name="phone"
-                                      type="tel"
-                                      placeholder="Enter your mobile number"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="phone"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* WhatsApp Number with Checkbox */}
-                                <div className="space-y-3">
-                                  <div className="flex items-center gap-3">
-                                    <Field
-                                      type="checkbox"
-                                      id="isWhatsappSameAsPhone"
-                                      name="isWhatsappSameAsPhone"
-                                      onChange={(
-                                        e: React.ChangeEvent<HTMLInputElement>,
-                                      ) => {
-                                        setFieldValue(
-                                          "isWhatsappSameAsPhone",
-                                          e.target.checked,
-                                        );
-                                        if (e.target.checked) {
-                                          setFieldValue(
-                                            "whatsappNumber",
-                                            values.phone,
-                                          );
-                                        }
-                                      }}
-                                      className="w-5 h-5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20 flex-shrink-0 touch-manipulation"
-                                    />
-                                    <label
-                                      htmlFor="isWhatsappSameAsPhone"
-                                      className="text-sm sm:text-base text-white/80 touch-manipulation"
-                                    >
-                                      Same as mobile number?
-                                    </label>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="whatsappNumber"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      WhatsApp Number
-                                    </label>
-                                    <Field
-                                      id="whatsappNumber"
-                                      name="whatsappNumber"
-                                      type="tel"
-                                      placeholder="Enter your WhatsApp number"
-                                      disabled={values.isWhatsappSameAsPhone}
-                                      className={`w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base ${values.isWhatsappSameAsPhone ? "opacity-50 cursor-not-allowed" : ""}`}
-                                    />
-                                    <ErrorMessage
-                                      name="whatsappNumber"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Address */}
-                                <div className="space-y-2">
-                                  <label
-                                    htmlFor="address"
-                                    className="text-sm font-medium text-white flex items-center gap-2"
-                                  >
-                                    <MapPin className="h-4 w-4" />
-                                    Full Address{" "}
-                                    <span className="text-red-500">*</span>
-                                  </label>
-                                  <Field
-                                    as="textarea"
-                                    id="address"
-                                    name="address"
-                                    placeholder="Enter your complete address"
-                                    rows={3}
-                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base resize-none"
-                                  />
-                                  <ErrorMessage
-                                    name="address"
-                                    component="div"
-                                    className="text-red-400 text-xs mt-1"
-                                  />
+                        )}
+                        <div
+                          className={
+                            showSubmissionOverlay ? "hidden" : "contents"
+                          }
+                        >
+                          {/* Disable all inputs while submitting */}
+                          <fieldset
+                            disabled={isSubmitting || isUploading}
+                            className="contents"
+                          >
+                            {/* Error Message Display */}
+                            {submitStatus === "error" && submitMessage && (
+                              <div className="p-4 rounded-xl border bg-red-500/10 border-red-500/30 text-red-400">
+                                <div className="flex items-center gap-2">
+                                  <XCircle className="h-4 w-4 flex-shrink-0" />
+                                  <span className="text-sm">
+                                    {submitMessage}
+                                  </span>
                                 </div>
                               </div>
+                            )}
 
-                              {/* ==================== SECTION 2: Parent Details ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Parent Details
-                                  </h2>
+                            {/* ==================== SECTION 1: Personal Information ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-5">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black" />
                                 </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Personal Information
+                                </h2>
+                              </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="fathersName"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Father's Name{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="fathersName"
-                                      name="fathersName"
-                                      type="text"
-                                      placeholder="Enter father's full name"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="fathersName"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="mothersName"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Mother's Name{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="mothersName"
-                                      name="mothersName"
-                                      type="text"
-                                      placeholder="Enter mother's full name"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="mothersName"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                </div>
+                              {/* Photo Upload */}
+                              <div
+                                id="photo-upload-section"
+                                className="space-y-2 sm:space-y-3"
+                              >
+                                <PhotoUpload
+                                  onFileChange={(file) =>
+                                    setFieldValue("photo", file)
+                                  }
+                                  disabled={isSubmitting}
+                                />
+                                <ErrorMessage
+                                  name="photo"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
 
+                              {/* First Name & Last Name */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                                 <div className="space-y-2">
                                   <label
-                                    htmlFor="parentContact"
-                                    className="text-sm font-medium text-white flex items-center gap-2"
+                                    htmlFor="firstName"
+                                    className="text-sm font-medium text-white"
                                   >
-                                    <Phone className="h-4 w-4" />
-                                    Parent Mobile Number{" "}
+                                    First Name{" "}
                                     <span className="text-red-500">*</span>
                                   </label>
                                   <Field
-                                    id="parentContact"
-                                    name="parentContact"
-                                    type="tel"
-                                    placeholder="Enter parent's phone number"
+                                    id="firstName"
+                                    name="firstName"
+                                    type="text"
+                                    placeholder="Enter your first name"
                                     className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
                                   />
                                   <ErrorMessage
-                                    name="parentContact"
+                                    name="firstName"
                                     component="div"
                                     className="text-red-400 text-xs mt-1"
                                   />
                                 </div>
-                              </div>
-
-                              {/* ==================== SECTION 3: Identification ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-400 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Identification
-                                  </h2>
-                                </div>
-
-                                {/* ID Proof Document Upload */}
-                                <div
-                                  id="id-proof-upload-section"
-                                  className="space-y-2 sm:space-y-3"
-                                >
-                                  <label className="text-sm font-medium text-white flex items-center gap-2">
-                                    <FileText className="h-4 w-4" />
-                                    ID Proof (Aadhaar/Passport){" "}
-                                    <span className="text-red-500">*</span>
-                                  </label>
-                                  <p className="text-xs text-gray-400 -mt-1">
-                                    (Aadhaar/Passport — front required, back
-                                    optional)
-                                  </p>
-                                  <DocumentUpload
-                                    onFilesChange={(front, back) => {
-                                      idProofRef.current = { front, back };
-                                      // Mark field valid once front is staged
-                                      setFieldValue(
-                                        "aadhaarFile",
-                                        front ?? null,
-                                      );
-                                    }}
-                                  />
-
-                                  <ErrorMessage
-                                    name="aadhaarFile"
-                                    component="div"
-                                    className="text-red-400 text-xs mt-1"
-                                  />
-                                </div>
-                              </div>
-
-                              {/* ==================== SECTION 4: Course Information ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-400 to-green-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Building className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Course Information
-                                  </h2>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="center"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Training Center{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field name="center">
-                                      {({ field }: any) => (
-                                        <select
-                                          {...field}
-                                          className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                        >
-                                          <option
-                                            value=""
-                                            disabled
-                                            className="bg-black text-gray-400"
-                                          >
-                                            Select your training center
-                                          </option>
-                                          {centersLoading ? (
-                                            <option
-                                              value=""
-                                              disabled
-                                              className="bg-black"
-                                            >
-                                              Loading centers...
-                                            </option>
-                                          ) : (
-                                            centers.map((center) => (
-                                              <option
-                                                key={center.id}
-                                                value={center.id}
-                                                className="bg-black text-white"
-                                              >
-                                                {center.name}
-                                              </option>
-                                            ))
-                                          )}
-                                        </select>
-                                      )}
-                                    </Field>
-                                    <ErrorMessage
-                                      name="center"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="courseLevel"
-                                      className="text-sm font-medium text-white flex items-center gap-2"
-                                    >
-                                      <BookOpen className="h-4 w-4" />
-                                      Course Level{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      as="select"
-                                      id="courseLevel"
-                                      name="courseLevel"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    >
-                                      <option
-                                        value=""
-                                        disabled
-                                        className="bg-black text-gray-400"
-                                      >
-                                        Select your level
-                                      </option>
-                                      {courseLevelsLoading ? (
-                                        <option
-                                          disabled
-                                          className="bg-black text-gray-400"
-                                        >
-                                          Loading levels...
-                                        </option>
-                                      ) : (
-                                        courseLevels.map((level) => (
-                                          <option
-                                            key={level.id}
-                                            value={level.id}
-                                            className="bg-black text-white"
-                                          >
-                                            {level.name}
-                                          </option>
-                                        ))
-                                      )}
-                                    </Field>
-                                    <ErrorMessage
-                                      name="courseLevel"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                </div>
-
                                 <div className="space-y-2">
                                   <label
-                                    htmlFor="hostelFacility"
-                                    className="text-sm font-medium text-white flex items-center gap-2"
+                                    htmlFor="lastName"
+                                    className="text-sm font-medium text-white"
                                   >
-                                    <Home className="h-4 w-4" />
-                                    Hostel Facility Needed{" "}
+                                    Last Name{" "}
                                     <span className="text-red-500">*</span>
                                   </label>
-                                  <Field name="hostelFacility">
-                                    {({ field, form }: any) => (
+                                  <Field
+                                    id="lastName"
+                                    name="lastName"
+                                    type="text"
+                                    placeholder="Enter your last name"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="lastName"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Gender & Date of Birth */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="gender"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    Gender{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    as="select"
+                                    id="gender"
+                                    name="gender"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  >
+                                    <option
+                                      value=""
+                                      className="bg-black text-gray-400"
+                                    >
+                                      Select gender
+                                    </option>
+                                    <option
+                                      value="Male"
+                                      className="bg-black text-white"
+                                    >
+                                      Male
+                                    </option>
+                                    <option
+                                      value="Female"
+                                      className="bg-black text-white"
+                                    >
+                                      Female
+                                    </option>
+                                    <option
+                                      value="Other"
+                                      className="bg-black text-white"
+                                    >
+                                      Other
+                                    </option>
+                                  </Field>
+                                  <ErrorMessage
+                                    name="gender"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="dateOfBirth"
+                                    className="text-sm font-medium text-white flex items-center gap-2"
+                                  >
+                                    <Calendar className="h-4 w-4" />
+                                    Date of Birth{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    id="dateOfBirth"
+                                    name="dateOfBirth"
+                                    type="text"
+                                    placeholder="DD/MM/YYYY"
+                                    maxLength={10}
+                                    onChange={(
+                                      e: React.ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                      const inputValue = e.target.value;
+                                      const currentValue =
+                                        values.dateOfBirth || "";
+                                      if (
+                                        inputValue.length < currentValue.length
+                                      ) {
+                                        if (inputValue.endsWith("/")) {
+                                          setFieldValue(
+                                            "dateOfBirth",
+                                            inputValue.slice(0, -1),
+                                          );
+                                          return;
+                                        }
+                                        setFieldValue(
+                                          "dateOfBirth",
+                                          inputValue,
+                                        );
+                                        return;
+                                      }
+                                      let value = inputValue.replace(/\D/g, "");
+                                      if (value.length >= 2)
+                                        value =
+                                          value.substring(0, 2) +
+                                          "/" +
+                                          value.substring(2);
+                                      if (value.length >= 5)
+                                        value =
+                                          value.substring(0, 5) +
+                                          "/" +
+                                          value.substring(5, 9);
+                                      setFieldValue("dateOfBirth", value);
+                                    }}
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="dateOfBirth"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Email & Phone */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="email"
+                                    className="text-sm font-medium text-white flex items-center gap-2"
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                    Email Address{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    placeholder="Enter your email"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="email"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="phone"
+                                    className="text-sm font-medium text-white flex items-center gap-2"
+                                  >
+                                    <Phone className="h-4 w-4" />
+                                    Mobile Number{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    placeholder="Enter your mobile number"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="phone"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* WhatsApp Number with Checkbox */}
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <Field
+                                    type="checkbox"
+                                    id="isWhatsappSameAsPhone"
+                                    name="isWhatsappSameAsPhone"
+                                    onChange={(
+                                      e: React.ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                      setFieldValue(
+                                        "isWhatsappSameAsPhone",
+                                        e.target.checked,
+                                      );
+                                      if (e.target.checked) {
+                                        setFieldValue(
+                                          "whatsappNumber",
+                                          values.phone,
+                                        );
+                                      }
+                                    }}
+                                    className="w-5 h-5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20 flex-shrink-0 touch-manipulation"
+                                  />
+                                  <label
+                                    htmlFor="isWhatsappSameAsPhone"
+                                    className="text-sm sm:text-base text-white/80 touch-manipulation"
+                                  >
+                                    Same as mobile number?
+                                  </label>
+                                </div>
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="whatsappNumber"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    WhatsApp Number
+                                  </label>
+                                  <Field
+                                    id="whatsappNumber"
+                                    name="whatsappNumber"
+                                    type="tel"
+                                    placeholder="Enter your WhatsApp number"
+                                    disabled={values.isWhatsappSameAsPhone}
+                                    className={`w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base ${values.isWhatsappSameAsPhone ? "opacity-50 cursor-not-allowed" : ""}`}
+                                  />
+                                  <ErrorMessage
+                                    name="whatsappNumber"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Address */}
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="address"
+                                  className="text-sm font-medium text-white flex items-center gap-2"
+                                >
+                                  <MapPin className="h-4 w-4" />
+                                  Full Address{" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <Field
+                                  as="textarea"
+                                  id="address"
+                                  name="address"
+                                  placeholder="Enter your complete address"
+                                  rows={3}
+                                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base resize-none"
+                                />
+                                <ErrorMessage
+                                  name="address"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+
+                            {/* ==================== SECTION 2: Parent Details ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Parent Details
+                                </h2>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="fathersName"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    Father's Name{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    id="fathersName"
+                                    name="fathersName"
+                                    type="text"
+                                    placeholder="Enter father's full name"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="fathersName"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="mothersName"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    Mother's Name{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    id="mothersName"
+                                    name="mothersName"
+                                    type="text"
+                                    placeholder="Enter mother's full name"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="mothersName"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="parentContact"
+                                  className="text-sm font-medium text-white flex items-center gap-2"
+                                >
+                                  <Phone className="h-4 w-4" />
+                                  Parent Mobile Number{" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <Field
+                                  id="parentContact"
+                                  name="parentContact"
+                                  type="tel"
+                                  placeholder="Enter parent's phone number"
+                                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                />
+                                <ErrorMessage
+                                  name="parentContact"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+
+                            {/* ==================== SECTION 3: Identification ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-400 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Identification
+                                </h2>
+                              </div>
+
+                              {/* ID Proof Document Upload */}
+                              <div
+                                id="id-proof-upload-section"
+                                className="space-y-2 sm:space-y-3"
+                              >
+                                <label className="text-sm font-medium text-white flex items-center gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  ID Proof (Aadhaar/Passport){" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 -mt-1">
+                                  (Aadhaar/Passport — front required, back
+                                  optional)
+                                </p>
+                                <DocumentUpload
+                                  onFilesChange={(front, back) => {
+                                    idProofRef.current = { front, back };
+                                    // Mark field valid once front is staged
+                                    setFieldValue("aadhaarFile", front ?? null);
+                                  }}
+                                />
+
+                                <ErrorMessage
+                                  name="aadhaarFile"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+
+                            {/* ==================== SECTION 4: Course Information ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-400 to-green-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <Building className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Course Information
+                                </h2>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="center"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    Training Center{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field name="center">
+                                    {({ field }: any) => (
                                       <select
                                         {...field}
-                                        onChange={(e) =>
-                                          form.setFieldValue(
-                                            "hostelFacility",
-                                            e.target.value === "true",
-                                          )
-                                        }
-                                        value={
-                                          field.value === true
-                                            ? "true"
-                                            : field.value === false
-                                              ? "false"
-                                              : ""
-                                        }
                                         className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
                                       >
                                         <option
@@ -1935,65 +1842,49 @@ export function RegistrationPageContent() {
                                           disabled
                                           className="bg-black text-gray-400"
                                         >
-                                          Select option
+                                          Select your training center
                                         </option>
-                                        <option
-                                          value="true"
-                                          className="bg-black text-white"
-                                        >
-                                          Yes
-                                        </option>
-                                        <option
-                                          value="false"
-                                          className="bg-black text-white"
-                                        >
-                                          No
-                                        </option>
+                                        {centersLoading ? (
+                                          <option
+                                            value=""
+                                            disabled
+                                            className="bg-black"
+                                          >
+                                            Loading centers...
+                                          </option>
+                                        ) : (
+                                          centers.map((center) => (
+                                            <option
+                                              key={center.id}
+                                              value={center.id}
+                                              className="bg-black text-white"
+                                            >
+                                              {center.name}
+                                            </option>
+                                          ))
+                                        )}
                                       </select>
                                     )}
                                   </Field>
                                   <ErrorMessage
-                                    name="hostelFacility"
+                                    name="center"
                                     component="div"
                                     className="text-red-400 text-xs mt-1"
                                   />
                                 </div>
-                              </div>
-
-                              {/* ==================== SECTION 5: Educational Qualification ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Educational Qualification
-                                  </h2>
-                                </div>
-
                                 <div className="space-y-2">
                                   <label
-                                    htmlFor="highestQualification"
-                                    className="text-sm font-medium text-white"
+                                    htmlFor="courseLevel"
+                                    className="text-sm font-medium text-white flex items-center gap-2"
                                   >
-                                    Highest Qualification{" "}
+                                    <BookOpen className="h-4 w-4" />
+                                    Course Level{" "}
                                     <span className="text-red-500">*</span>
                                   </label>
                                   <Field
                                     as="select"
-                                    id="highestQualification"
-                                    name="highestQualification"
-                                    onChange={(
-                                      e: React.ChangeEvent<HTMLSelectElement>,
-                                    ) => {
-                                      setFieldValue(
-                                        "highestQualification",
-                                        e.target.value,
-                                      );
-                                      if (e.target.value !== "Other") {
-                                        setFieldValue("otherQualification", "");
-                                      }
-                                    }}
+                                    id="courseLevel"
+                                    name="courseLevel"
                                     className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
                                   >
                                     <option
@@ -2001,434 +1892,561 @@ export function RegistrationPageContent() {
                                       disabled
                                       className="bg-black text-gray-400"
                                     >
-                                      Select your qualification
+                                      Select your level
                                     </option>
-                                    {qualificationOptions.map((option) => (
+                                    {courseLevelsLoading ? (
                                       <option
-                                        key={option}
-                                        value={option}
-                                        className="bg-black text-white"
+                                        disabled
+                                        className="bg-black text-gray-400"
                                       >
-                                        {option}
+                                        Loading levels...
                                       </option>
-                                    ))}
-                                  </Field>
-                                  <ErrorMessage
-                                    name="highestQualification"
-                                    component="div"
-                                    className="text-red-400 text-xs mt-1"
-                                  />
-                                </div>
-
-                                {values.highestQualification === "Other" && (
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="otherQualification"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Please specify qualification{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="otherQualification"
-                                      name="otherQualification"
-                                      type="text"
-                                      placeholder="e.g., ITI Electrical"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="otherQualification"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* ==================== SECTION 6: German Language Background ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-red-400 to-red-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    German Language Background
-                                  </h2>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <label
-                                    htmlFor="studiedGerman"
-                                    className="text-sm font-medium text-white"
-                                  >
-                                    Have you studied German before?{" "}
-                                    <span className="text-red-500">*</span>
-                                  </label>
-                                  <Field name="studiedGerman">
-                                    {({ field, form }: any) => (
-                                      <select
-                                        {...field}
-                                        onChange={(e) => {
-                                          const boolValue =
-                                            e.target.value === "true";
-                                          form.setFieldValue(
-                                            "studiedGerman",
-                                            boolValue,
-                                          );
-                                          if (!boolValue) {
-                                            form.setFieldValue(
-                                              "levelCompleted",
-                                              "",
-                                            );
-                                          }
-                                        }}
-                                        value={
-                                          field.value === true
-                                            ? "true"
-                                            : field.value === false
-                                              ? "false"
-                                              : ""
-                                        }
-                                        className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                      >
+                                    ) : (
+                                      courseLevels.map((level) => (
                                         <option
-                                          value=""
-                                          disabled
-                                          className="bg-black text-gray-400"
-                                        >
-                                          Select option
-                                        </option>
-                                        <option
-                                          value="true"
+                                          key={level.id}
+                                          value={level.id}
                                           className="bg-black text-white"
                                         >
-                                          Yes
+                                          {level.name}
                                         </option>
-                                        <option
-                                          value="false"
-                                          className="bg-black text-white"
-                                        >
-                                          No
-                                        </option>
-                                      </select>
+                                      ))
                                     )}
                                   </Field>
                                   <ErrorMessage
-                                    name="studiedGerman"
-                                    component="div"
-                                    className="text-red-400 text-xs mt-1"
-                                  />
-                                </div>
-
-                                {values.studiedGerman === true && (
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="levelCompleted"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Level Completed{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-                                    <Field
-                                      id="levelCompleted"
-                                      name="levelCompleted"
-                                      type="text"
-                                      placeholder="e.g., A1, A2, B1"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="levelCompleted"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* ==================== SECTION 7: Purpose of Learning German ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-teal-400 to-teal-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Purpose of Learning German
-                                  </h2>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <label className="text-sm font-medium text-white">
-                                    Select your purpose(s){" "}
-                                    <span className="text-red-500">*</span>
-                                  </label>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {learningPurposeOptions.map((purpose) => (
-                                      <label
-                                        key={purpose}
-                                        className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 transition-colors cursor-pointer touch-manipulation"
-                                      >
-                                        <Field
-                                          type="checkbox"
-                                          name="purposeLearningGerman"
-                                          value={purpose}
-                                          className="w-4 h-4 sm:w-5 sm:h-5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20 flex-shrink-0"
-                                        />
-                                        <span className="text-sm text-white/90">
-                                          {purpose}
-                                        </span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                  <ErrorMessage
-                                    name="purposeLearningGerman"
+                                    name="courseLevel"
                                     component="div"
                                     className="text-red-400 text-xs mt-1"
                                   />
                                 </div>
                               </div>
 
-                              {/* ==================== SECTION 8: Work Experience ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Work Experience
-                                  </h2>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <label
-                                    htmlFor="workExperience"
-                                    className="text-sm font-medium text-white"
-                                  >
-                                    Do you have work experience?{" "}
-                                    <span className="text-red-500">*</span>
-                                  </label>
-                                  <Field name="workExperience">
-                                    {({ field, form }: any) => (
-                                      <select
-                                        {...field}
-                                        onChange={(e) =>
-                                          form.setFieldValue(
-                                            "workExperience",
-                                            e.target.value === "true",
-                                          )
-                                        }
-                                        value={
-                                          field.value === true
-                                            ? "true"
-                                            : field.value === false
-                                              ? "false"
-                                              : ""
-                                        }
-                                        className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                      >
-                                        <option
-                                          value=""
-                                          disabled
-                                          className="bg-black text-gray-400"
-                                        >
-                                          Select option
-                                        </option>
-                                        <option
-                                          value="true"
-                                          className="bg-black text-white"
-                                        >
-                                          Yes
-                                        </option>
-                                        <option
-                                          value="false"
-                                          className="bg-black text-white"
-                                        >
-                                          No
-                                        </option>
-                                      </select>
-                                    )}
-                                  </Field>
-                                  <ErrorMessage
-                                    name="workExperience"
-                                    component="div"
-                                    className="text-red-400 text-xs mt-1"
-                                  />
-                                </div>
-                              </div>
-
-                              {/* ==================== SECTION 8.5: How Did You Hear About Us ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Megaphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    How Did You Hear About Us?
-                                  </h2>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <label
-                                    htmlFor="howDidYouHearAboutUs"
-                                    className="text-sm font-medium text-white"
-                                  >
-                                    Referral Source
-                                  </label>
-                                  <Field name="howDidYouHearAboutUs">
-                                    {({ field, form }: any) => (
-                                      <select
-                                        {...field}
-                                        onChange={(e) => {
-                                          form.setFieldValue(
-                                            "howDidYouHearAboutUs",
-                                            e.target.value,
-                                          );
-                                          if (e.target.value !== "Other") {
-                                            form.setFieldValue(
-                                              "howDidYouHearAboutUsOther",
-                                              "",
-                                            );
-                                          }
-                                        }}
-                                        value={field.value || ""}
-                                        className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                      >
-                                        <option
-                                          value=""
-                                          disabled
-                                          className="bg-black text-gray-400"
-                                        >
-                                          Select option
-                                        </option>
-                                        {howDidYouHearAboutUsOptions.map(
-                                          (option) => (
-                                            <option
-                                              key={option}
-                                              value={option}
-                                              className="bg-black text-white"
-                                            >
-                                              {option}
-                                            </option>
-                                          ),
-                                        )}
-                                      </select>
-                                    )}
-                                  </Field>
-                                  <ErrorMessage
-                                    name="howDidYouHearAboutUs"
-                                    component="div"
-                                    className="text-red-400 text-xs mt-1"
-                                  />
-                                </div>
-
-                                {values.howDidYouHearAboutUs === "Other" && (
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor="howDidYouHearAboutUsOther"
-                                      className="text-sm font-medium text-white"
-                                    >
-                                      Please specify
-                                    </label>
-                                    <Field
-                                      type="text"
-                                      name="howDidYouHearAboutUsOther"
-                                      placeholder="Please specify how you heard about us"
-                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
-                                    />
-                                    <ErrorMessage
-                                      name="howDidYouHearAboutUsOther"
-                                      component="div"
-                                      className="text-red-400 text-xs mt-1"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* ==================== SECTION 9: Declaration ==================== */}
-                              <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
-                                <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
-                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-pink-400 to-pink-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <FileCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
-                                    Declaration
-                                  </h2>
-                                </div>
-
-                                <label className="flex items-start gap-3 p-3 sm:p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:border-white/20 transition-colors touch-manipulation">
-                                  <Field
-                                    type="checkbox"
-                                    name="declaration"
-                                    className="w-5 h-5 sm:w-6 sm:h-6 mt-0.5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20 flex-shrink-0"
-                                  />
-                                  <span className="text-sm text-white/90">
-                                    I hereby declare that the information
-                                    provided is true and correct to the best of
-                                    my knowledge.{" "}
-                                    <span className="text-red-500">*</span>
-                                  </span>
-                                </label>
-                                <ErrorMessage
-                                  name="declaration"
-                                  component="div"
-                                  className="text-red-400 text-xs"
-                                />
-                              </div>
-
-                              {/* ==================== SECTION 10: Security Verification ==================== */}
-                              <div className="space-y-2 mt-5 sm:space-y-3">
-                                <label className="text-sm font-medium text-white flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4" />
-                                  Security Verification{" "}
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="hostelFacility"
+                                  className="text-sm font-medium text-white flex items-center gap-2"
+                                >
+                                  <Home className="h-4 w-4" />
+                                  Hostel Facility Needed{" "}
                                   <span className="text-red-500">*</span>
                                 </label>
-                                <div className="flex justify-center">
-                                  {turnstileLoaded ? (
-                                    <div
-                                      ref={turnstileRef}
-                                      id="turnstile-container"
-                                    />
-                                  ) : (
-                                    <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center bg-white/5">
-                                      <div className="flex flex-col items-center space-y-3">
-                                        <div className="w-8 h-8 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin"></div>
-                                        <p className="text-white/70 font-medium">
-                                          Loading security verification...
-                                        </p>
-                                      </div>
-                                    </div>
+                                <Field name="hostelFacility">
+                                  {({ field, form }: any) => (
+                                    <select
+                                      {...field}
+                                      onChange={(e) =>
+                                        form.setFieldValue(
+                                          "hostelFacility",
+                                          e.target.value === "true",
+                                        )
+                                      }
+                                      value={
+                                        field.value === true
+                                          ? "true"
+                                          : field.value === false
+                                            ? "false"
+                                            : ""
+                                      }
+                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                    >
+                                      <option
+                                        value=""
+                                        disabled
+                                        className="bg-black text-gray-400"
+                                      >
+                                        Select option
+                                      </option>
+                                      <option
+                                        value="true"
+                                        className="bg-black text-white"
+                                      >
+                                        Yes
+                                      </option>
+                                      <option
+                                        value="false"
+                                        className="bg-black text-white"
+                                      >
+                                        No
+                                      </option>
+                                    </select>
                                   )}
-                                </div>
+                                </Field>
                                 <ErrorMessage
-                                  name="turnstileToken"
+                                  name="hostelFacility"
                                   component="div"
-                                  className="text-red-400 text-xs mt-1 text-center"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+
+                            {/* ==================== SECTION 5: Educational Qualification ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Educational Qualification
+                                </h2>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="highestQualification"
+                                  className="text-sm font-medium text-white"
+                                >
+                                  Highest Qualification{" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <Field
+                                  as="select"
+                                  id="highestQualification"
+                                  name="highestQualification"
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLSelectElement>,
+                                  ) => {
+                                    setFieldValue(
+                                      "highestQualification",
+                                      e.target.value,
+                                    );
+                                    if (e.target.value !== "Other") {
+                                      setFieldValue("otherQualification", "");
+                                    }
+                                  }}
+                                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                >
+                                  <option
+                                    value=""
+                                    disabled
+                                    className="bg-black text-gray-400"
+                                  >
+                                    Select your qualification
+                                  </option>
+                                  {qualificationOptions.map((option) => (
+                                    <option
+                                      key={option}
+                                      value={option}
+                                      className="bg-black text-white"
+                                    >
+                                      {option}
+                                    </option>
+                                  ))}
+                                </Field>
+                                <ErrorMessage
+                                  name="highestQualification"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
                                 />
                               </div>
 
-                              {/* Submit Button */}
-                              <div className="pt-2 sm:pt-4">
-                                <Button
-                                  type="submit"
-                                  disabled={isSubmitting || isUploading}
-                                  onClick={handleFormSubmit}
-                                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-semibold py-3.5 sm:py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation active:scale-[0.98]"
-                                >
-                                  {isUploading || isSubmitting ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                      <span>Processing — Please wait…</span>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center justify-center gap-2">
-                                      <Send className="h-4 w-4" />
-                                      <span>Submit Registration</span>
-                                    </div>
-                                  )}
-                                </Button>
+                              {values.highestQualification === "Other" && (
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="otherQualification"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    Please specify qualification{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    id="otherQualification"
+                                    name="otherQualification"
+                                    type="text"
+                                    placeholder="e.g., ITI Electrical"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="otherQualification"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* ==================== SECTION 6: German Language Background ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-red-400 to-red-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  German Language Background
+                                </h2>
                               </div>
-                            </fieldset>
-                          </>
-                        )}
+
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="studiedGerman"
+                                  className="text-sm font-medium text-white"
+                                >
+                                  Have you studied German before?{" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <Field name="studiedGerman">
+                                  {({ field, form }: any) => (
+                                    <select
+                                      {...field}
+                                      onChange={(e) => {
+                                        const boolValue =
+                                          e.target.value === "true";
+                                        form.setFieldValue(
+                                          "studiedGerman",
+                                          boolValue,
+                                        );
+                                        if (!boolValue) {
+                                          form.setFieldValue(
+                                            "levelCompleted",
+                                            "",
+                                          );
+                                        }
+                                      }}
+                                      value={
+                                        field.value === true
+                                          ? "true"
+                                          : field.value === false
+                                            ? "false"
+                                            : ""
+                                      }
+                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                    >
+                                      <option
+                                        value=""
+                                        disabled
+                                        className="bg-black text-gray-400"
+                                      >
+                                        Select option
+                                      </option>
+                                      <option
+                                        value="true"
+                                        className="bg-black text-white"
+                                      >
+                                        Yes
+                                      </option>
+                                      <option
+                                        value="false"
+                                        className="bg-black text-white"
+                                      >
+                                        No
+                                      </option>
+                                    </select>
+                                  )}
+                                </Field>
+                                <ErrorMessage
+                                  name="studiedGerman"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+
+                              {values.studiedGerman === true && (
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="levelCompleted"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    Level Completed{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <Field
+                                    id="levelCompleted"
+                                    name="levelCompleted"
+                                    type="text"
+                                    placeholder="e.g., A1, A2, B1"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="levelCompleted"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* ==================== SECTION 7: Purpose of Learning German ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-teal-400 to-teal-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Purpose of Learning German
+                                </h2>
+                              </div>
+
+                              <div className="space-y-3">
+                                <label className="text-sm font-medium text-white">
+                                  Select your purpose(s){" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  {learningPurposeOptions.map((purpose) => (
+                                    <label
+                                      key={purpose}
+                                      className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 transition-colors cursor-pointer touch-manipulation"
+                                    >
+                                      <Field
+                                        type="checkbox"
+                                        name="purposeLearningGerman"
+                                        value={purpose}
+                                        className="w-4 h-4 sm:w-5 sm:h-5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20 flex-shrink-0"
+                                      />
+                                      <span className="text-sm text-white/90">
+                                        {purpose}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                                <ErrorMessage
+                                  name="purposeLearningGerman"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+
+                            {/* ==================== SECTION 8: Work Experience ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Work Experience
+                                </h2>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="workExperience"
+                                  className="text-sm font-medium text-white"
+                                >
+                                  Do you have work experience?{" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <Field name="workExperience">
+                                  {({ field, form }: any) => (
+                                    <select
+                                      {...field}
+                                      onChange={(e) =>
+                                        form.setFieldValue(
+                                          "workExperience",
+                                          e.target.value === "true",
+                                        )
+                                      }
+                                      value={
+                                        field.value === true
+                                          ? "true"
+                                          : field.value === false
+                                            ? "false"
+                                            : ""
+                                      }
+                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                    >
+                                      <option
+                                        value=""
+                                        disabled
+                                        className="bg-black text-gray-400"
+                                      >
+                                        Select option
+                                      </option>
+                                      <option
+                                        value="true"
+                                        className="bg-black text-white"
+                                      >
+                                        Yes
+                                      </option>
+                                      <option
+                                        value="false"
+                                        className="bg-black text-white"
+                                      >
+                                        No
+                                      </option>
+                                    </select>
+                                  )}
+                                </Field>
+                                <ErrorMessage
+                                  name="workExperience"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+
+                            {/* ==================== SECTION 8.5: How Did You Hear About Us ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <Megaphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  How Did You Hear About Us?
+                                </h2>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="howDidYouHearAboutUs"
+                                  className="text-sm font-medium text-white"
+                                >
+                                  Referral Source
+                                </label>
+                                <Field name="howDidYouHearAboutUs">
+                                  {({ field, form }: any) => (
+                                    <select
+                                      {...field}
+                                      onChange={(e) => {
+                                        form.setFieldValue(
+                                          "howDidYouHearAboutUs",
+                                          e.target.value,
+                                        );
+                                        if (e.target.value !== "Other") {
+                                          form.setFieldValue(
+                                            "howDidYouHearAboutUsOther",
+                                            "",
+                                          );
+                                        }
+                                      }}
+                                      value={field.value || ""}
+                                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                    >
+                                      <option
+                                        value=""
+                                        disabled
+                                        className="bg-black text-gray-400"
+                                      >
+                                        Select option
+                                      </option>
+                                      {howDidYouHearAboutUsOptions.map(
+                                        (option) => (
+                                          <option
+                                            key={option}
+                                            value={option}
+                                            className="bg-black text-white"
+                                          >
+                                            {option}
+                                          </option>
+                                        ),
+                                      )}
+                                    </select>
+                                  )}
+                                </Field>
+                                <ErrorMessage
+                                  name="howDidYouHearAboutUs"
+                                  component="div"
+                                  className="text-red-400 text-xs mt-1"
+                                />
+                              </div>
+
+                              {values.howDidYouHearAboutUs === "Other" && (
+                                <div className="space-y-2">
+                                  <label
+                                    htmlFor="howDidYouHearAboutUsOther"
+                                    className="text-sm font-medium text-white"
+                                  >
+                                    Please specify
+                                  </label>
+                                  <Field
+                                    type="text"
+                                    name="howDidYouHearAboutUsOther"
+                                    placeholder="Please specify how you heard about us"
+                                    className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white placeholder-gray-400 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-300 text-sm sm:text-base"
+                                  />
+                                  <ErrorMessage
+                                    name="howDidYouHearAboutUsOther"
+                                    component="div"
+                                    className="text-red-400 text-xs mt-1"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* ==================== SECTION 9: Declaration ==================== */}
+                            <div className="space-y-4 sm:space-y-6 mt-8 sm:mt-10">
+                              <div className="flex items-center gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-white/10">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-pink-400 to-pink-600 rounded-lg flex items-center justify-center shrink-0">
+                                  <FileCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight">
+                                  Declaration
+                                </h2>
+                              </div>
+
+                              <label className="flex items-start gap-3 p-3 sm:p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:border-white/20 transition-colors touch-manipulation">
+                                <Field
+                                  type="checkbox"
+                                  name="declaration"
+                                  className="w-5 h-5 sm:w-6 sm:h-6 mt-0.5 rounded border-white/20 bg-white/5 text-yellow-400 focus:ring-yellow-400/20 flex-shrink-0"
+                                />
+                                <span className="text-sm text-white/90">
+                                  I hereby declare that the information provided
+                                  is true and correct to the best of my
+                                  knowledge.{" "}
+                                  <span className="text-red-500">*</span>
+                                </span>
+                              </label>
+                              <ErrorMessage
+                                name="declaration"
+                                component="div"
+                                className="text-red-400 text-xs"
+                              />
+                            </div>
+
+                            {/* ==================== SECTION 10: Security Verification ==================== */}
+                            <div className="space-y-2 mt-5 sm:space-y-3">
+                              <label className="text-sm font-medium text-white flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                Security Verification{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <div className="flex justify-center">
+                                {turnstileLoaded ? (
+                                  <div
+                                    ref={turnstileRef}
+                                    id="turnstile-container"
+                                  />
+                                ) : (
+                                  <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center bg-white/5">
+                                    <div className="flex flex-col items-center space-y-3">
+                                      <div className="w-8 h-8 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin"></div>
+                                      <p className="text-white/70 font-medium">
+                                        Loading security verification...
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <ErrorMessage
+                                name="turnstileToken"
+                                component="div"
+                                className="text-red-400 text-xs mt-1 text-center"
+                              />
+                            </div>
+
+                            {/* Submit Button */}
+                            <div className="pt-2 sm:pt-4">
+                              <Button
+                                type="submit"
+                                disabled={isSubmitting || isUploading}
+                                onClick={handleFormSubmit}
+                                className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-semibold py-3.5 sm:py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation active:scale-[0.98]"
+                              >
+                                {isUploading || isSubmitting ? (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Processing — Please wait…</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Send className="h-4 w-4" />
+                                    <span>Submit Registration</span>
+                                  </div>
+                                )}
+                              </Button>
+                            </div>
+                          </fieldset>
+                        </div>
                       </Form>
                     );
                   }}
