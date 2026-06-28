@@ -23,6 +23,8 @@ export interface StrapiStudent {
   levelCompleted?: string;
   purposeLearningGerman?: string[];
   workExperience?: boolean;
+  howDidYouHearAboutUs?: string;
+  howDidYouHearAboutUsOther?: string;
   statuses: "pending" | "accepted" | "rejected" | "enquired";
   photo?: {
     id: number;
@@ -41,11 +43,13 @@ export interface StrapiStudent {
     documentId: string;
     name: string;
     header: string;
+    email?: string;
   };
   courseLevel?: {
     id: number;
     documentId: string;
     LabelFull: string;
+    LabelShort?: string;
   };
   createdAt: string;
   updatedAt: string;

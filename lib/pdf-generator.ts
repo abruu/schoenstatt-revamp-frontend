@@ -160,45 +160,73 @@ function generatePDFHTML(data: StudentData): string {
 
         body {
           font-family: Arial, sans-serif;
-          padding: 20px;
-          font-size: 10px;
-          line-height: 1.3;
+          padding: 16px;
+          font-size: 14px;
+          line-height: 1.4;
         }
 
         .header {
-          text-align: center;
-          margin-bottom: 12px;
-          padding-bottom: 8px;
+          margin-bottom: 10px;
+          padding-bottom: 6px;
           border-bottom: 2px solid #333;
         }
 
-        .header h1 {
-          font-size: 16px;
-          margin-bottom: 2px;
+        .header-top {
+          display: flex;
+          align-items: center;
+          gap: 10px;
         }
 
-        .header p {
-          font-size: 11px;
-          color: #666;
+        .header-logo {
+          flex-shrink: 0;
+          height: 60px;
+          object-fit: contain;
+          display: block;
+        }
+
+        .header-text {
+          flex: 1;
+          text-align: center;
+        }
+
+        .header-text h1 {
+          font-size: 21px;
+          margin-bottom: 2px;
+          letter-spacing: 0.5px;
+        }
+
+        .header-text p {
+          font-size: 15px;
+          color: #555;
+        }
+
+        .header-meta {
+          margin-top: 5px;
+          text-align: center;
+          font-size: 10px;
+          color: #444;
+          margin-left:10px;
         }
 
         .content {
           display: flex;
-          gap: 12px;
+          gap: 14px;
         }
 
         .left-column {
-          width: 100px;
+          width: 140px;
           flex-shrink: 0;
+           margin-top:6px;
         }
 
         .right-column {
           flex: 1;
+          margin-top:6px;
         }
 
         .student-photo {
-          width: 90px;
-          height: 90px;
+          width: 130px;
+          height: 130px;
           border: 1px solid #333;
           object-fit: cover;
           display: block;
@@ -206,65 +234,78 @@ function generatePDFHTML(data: StudentData): string {
         }
 
         .section {
-          margin-bottom: 8px;
+          margin-bottom: 12px;
         }
 
         .section-title {
-          font-size: 11px;
+          font-size: 15.5px;
           font-weight: bold;
-          margin-bottom: 4px;
-          padding-bottom: 2px;
-          border-bottom: 1px solid #999;
+          margin-bottom: 6px;
+          padding-bottom: 3px;
+          border-bottom: 1.5px solid #888;
           color: #1a1a2e;
+          letter-spacing: 0.3px;
         }
 
         .info-row {
           display: flex;
-          padding: 2px 0;
+          padding: 3.5px 0;
         }
 
         .info-label {
-          width: 120px;
+          width: 165px;
           font-weight: bold;
-          color: #333;
-          font-size: 9px;
+          color: #444;
+          font-size: 13px;
         }
 
         .info-value {
           flex: 1;
-          color: #000;
-          font-size: 9px;
+          color: #111;
+          font-size: 14.5px;
+          font-weight: 500;
         }
 
         .footer {
-          margin-top: 10px;
-          padding-top: 8px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 6px 16px;
           border-top: 1px solid #999;
           text-align: center;
-          font-size: 8px;
+          font-size: 11px;
           color: #666;
+          background: #fff;
         }
 
         .declaration {
-          margin-top: 10px;
-          padding: 8px;
+          margin-top: 14px;
+          padding: 10px 12px;
           border: 1px solid #ccc;
           background: #f9f9f9;
-          font-size: 8px;
+          font-size: 12px;
+          line-height: 1.4;
         }
       </style>
     </head>
     <body>
       <div class="header">
-        <h1>STUDENT REGISTRATION FORM</h1>
-        <p>Schoenstatt Language Academy</p>
-        <p style="font-size: 9px; margin-top: 2px;">Registration ID: ${data.registrationId} | Date: ${data.submittedDate}</p>
+        <div class="header-top">
+          ${process.env.NEXT_LOGO_PATH ? `<img src="${process.env.NEXT_LOGO_PATH}" alt="Logo" class="header-logo" onerror="this.style.display='none'" />` : ""}
+          <div class="header-text">
+            <h1>STUDENT REGISTRATION FORM</h1>
+            <p>Schoenstatt Language Academy</p>
+          </div>
+        </div>
+        <div class="header-meta">Registration ID: ${data.registrationId} &nbsp;|&nbsp; Date: ${data.submittedDate}</div>
       </div>
+
 
       <div class="content">
         <div class="left-column">
           <img src="${data.photoUrl}" alt="Student Photo" class="student-photo" />
-          <p style="font-size: 8px; text-align: center; color: #666;">Student Photo</p>
+          <p style="font-size: 11px; text-align: center; color: #666;">Student Photo</p>
         </div>
 
         <div class="right-column">
@@ -295,62 +336,62 @@ function generatePDFHTML(data: StudentData): string {
             </div>
           </div>
 
-          <!-- Parent Details -->
-          <div class="section">
-            <div class="section-title">Parent Details</div>
-            <div class="info-row">
-              <div class="info-label">Father's Name:</div>
-              <div class="info-value">${data.fathersName}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Mother's Name:</div>
-              <div class="info-value">${data.mothersName}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Parent Contact:</div>
-              <div class="info-value">${data.parentContact}</div>
-            </div>
-          </div>
-
-          <!-- Course Information -->
-          <div class="section">
-            <div class="section-title">Course Information</div>
-            <div class="info-row">
-              <div class="info-label">Training Center:</div>
-              <div class="info-value"><strong>${data.centerName}</strong></div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Course Level:</div>
-              <div class="info-value"><strong>${data.courseLevel}</strong></div>
-            </div>
-            ${data.hostelFacility !== undefined ? `<div class="info-row"><div class="info-label">Hostel Required:</div><div class="info-value">${data.hostelFacility ? "Yes" : "No"}</div></div>` : ""}
-          </div>
-
-          <!-- Educational Qualification -->
-          <div class="section">
-            <div class="section-title">Educational Qualification</div>
-            ${data.highestQualification ? `<div class="info-row"><div class="info-label">Qualification:</div><div class="info-value">${data.highestQualification}</div></div>` : ""}
-          </div>
-
-          <!-- German Language Background -->
-          <div class="section">
-            <div class="section-title">German Language Background</div>
-            ${data.studiedGerman !== undefined ? `<div class="info-row"><div class="info-label">Studied German:</div><div class="info-value">${data.studiedGerman ? "Yes" : "No"}${data.studiedGerman && data.levelCompleted ? ` (${data.levelCompleted})` : ""}</div></div>` : ""}
-            ${
-              data.purposeLearningGerman &&
-              data.purposeLearningGerman.length > 0
-                ? `<div class="info-row"><div class="info-label">Learning Purpose:</div><div class="info-value">${
-                    data.purposeLearningGerman
-                      ?.flatMap((v) => v.split(","))
-                      .map((v) => v.trim())
-                      .filter(Boolean)
-                      .join(", ") || ""
-                  }</div></div>`
-                : ""
-            }
-            ${data.workExperience !== undefined ? `<div class="info-row"><div class="info-label">Work Experience:</div><div class="info-value">${data.workExperience ? "Yes" : "No"}</div></div>` : ""}
-          </div>
         </div>
+      </div>
+
+      <!-- Parent Details -->
+      <div class="section">
+        <div class="section-title">Parent Details</div>
+        <div class="info-row">
+          <div class="info-label">Father's Name:</div>
+          <div class="info-value">${data.fathersName}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Mother's Name:</div>
+          <div class="info-value">${data.mothersName}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Parent Contact:</div>
+          <div class="info-value">${data.parentContact}</div>
+        </div>
+      </div>
+
+      <!-- Course Information -->
+      <div class="section">
+        <div class="section-title">Course Information</div>
+        <div class="info-row">
+          <div class="info-label">Training Center:</div>
+          <div class="info-value"><strong>${data.centerName}</strong></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Course Level:</div>
+          <div class="info-value"><strong>${data.courseLevel}</strong></div>
+        </div>
+        ${data.hostelFacility !== undefined ? `<div class="info-row"><div class="info-label">Hostel Required:</div><div class="info-value">${data.hostelFacility ? "Yes" : "No"}</div></div>` : ""}
+      </div>
+
+      <!-- Educational Qualification -->
+      <div class="section">
+        <div class="section-title">Educational Qualification</div>
+        ${data.highestQualification ? `<div class="info-row"><div class="info-label">Qualification:</div><div class="info-value">${data.highestQualification}</div></div>` : ""}
+      </div>
+
+      <!-- German Language Background -->
+      <div class="section">
+        <div class="section-title">German Language Background</div>
+        ${data.studiedGerman !== undefined ? `<div class="info-row"><div class="info-label">Studied German:</div><div class="info-value">${data.studiedGerman ? "Yes" : "No"}${data.studiedGerman && data.levelCompleted ? ` (${data.levelCompleted})` : ""}</div></div>` : ""}
+        ${
+          data.purposeLearningGerman && data.purposeLearningGerman.length > 0
+            ? `<div class="info-row"><div class="info-label">Learning Purpose:</div><div class="info-value">${
+                data.purposeLearningGerman
+                  ?.flatMap((v) => v.split(","))
+                  .map((v) => v.trim())
+                  .filter(Boolean)
+                  .join(", ") || ""
+              }</div></div>`
+            : ""
+        }
+        ${data.workExperience !== undefined ? `<div class="info-row"><div class="info-label">Work Experience:</div><div class="info-value">${data.workExperience ? "Yes" : "No"}</div></div>` : ""}
       </div>
 
       <!-- Declaration -->

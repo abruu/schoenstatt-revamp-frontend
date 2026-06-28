@@ -44,6 +44,10 @@ export async function POST(request: NextRequest) {
     const purposeLearningGerman =
       learningPurposeRaw.length > 0 ? learningPurposeRaw : [];
     const workExperience = formData.get("workExperience") === "true";
+    const howDidYouHearAboutUs = formData.get("howDidYouHearAboutUs") as string;
+    const howDidYouHearAboutUsOther = formData.get(
+      "howDidYouHearAboutUsOther",
+    ) as string;
 
     // Determine final qualification value (use otherQualification if "Other" was selected)
     const finalQualification =
@@ -134,6 +138,8 @@ export async function POST(request: NextRequest) {
         levelCompleted,
         purposeLearningGerman,
         workExperience,
+        howDidYouHearAboutUs: howDidYouHearAboutUs || undefined,
+        howDidYouHearAboutUsOther: howDidYouHearAboutUsOther || undefined,
       });
     } catch (registrationError) {
       console.error("Registration error:", registrationError);

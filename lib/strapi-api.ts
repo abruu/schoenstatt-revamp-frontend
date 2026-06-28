@@ -128,6 +128,8 @@ export interface StudentRegistrationData {
   levelCompleted?: string;
   purposeLearningGerman?: string[];
   workExperience?: boolean;
+  howDidYouHearAboutUs?: string;
+  howDidYouHearAboutUsOther?: string;
 }
 
 export interface StudentRegistrationResponse {
@@ -198,6 +200,8 @@ export async function registerStudentInStrapi(
           levelCompleted: data.levelCompleted,
           purposeLearningGerman: data.purposeLearningGerman,
           workExperience: data.workExperience,
+          howDidYouHearAboutUs: data.howDidYouHearAboutUs,
+          howDidYouHearAboutUsOther: data.howDidYouHearAboutUsOther,
         },
       },
     );

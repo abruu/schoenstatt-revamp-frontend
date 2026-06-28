@@ -135,6 +135,17 @@ function DashboardContent() {
   const [downloadingIdProof, setDownloadingIdProof] = useState<string | null>(
     null,
   );
+  const [sendEmailModalOpen, setSendEmailModalOpen] = useState(false);
+  const [sendEmailStudent, setSendEmailStudent] =
+    useState<StrapiStudent | null>(null);
+  const [sendEmailRecipient, setSendEmailRecipient] = useState<
+    "student" | "admin" | "both"
+  >("both");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailNotification, setEmailNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const debouncedSearchTerm = urlSearch;
   const courseFilter = urlCourseFilter;
@@ -456,6 +467,72 @@ function DashboardContent() {
       alert("Failed to download ID proof");
     } finally {
       setDownloadingIdProof(null);
+    }
+  };
+
+  const openSendEmailModal = (student: StrapiStudent) => {
+    setSendEmailStudent(student);
+    setSendEmailRecipient("both");
+    setEmailNotification(null);
+    setSendEmailModalOpen(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!sendEmailStudent) return;
+    setSendingEmail(true);
+    setEmailNotification(null);
+    try {
+      const token = localStorage.getItem("strapi_jwt");
+      if (!token) {
+        setEmailNotification({
+          type: "error",
+          message: "Please log in again to send emails.",
+        });
+        return;
+      }
+      const response = await fetch(
+        `/api/students/${sendEmailStudent.documentId}/send-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ recipientType: sendEmailRecipient }),
+        },
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to send email");
+      }
+      const data = await response.json();
+      const details = data.details || {};
+      const failedParts: string[] = [];
+      if (sendEmailRecipient !== "student" && !details.adminEmailSent) {
+        failedParts.push("admin email");
+      }
+      if (sendEmailRecipient !== "admin" && !details.studentEmailSent) {
+        failedParts.push("student email");
+      }
+      if (failedParts.length > 0) {
+        setEmailNotification({
+          type: "error",
+          message: `Email partially failed: ${failedParts.join(", ")}. Please try again.`,
+        });
+      } else {
+        setEmailNotification({
+          type: "success",
+          message: `Email${sendEmailRecipient === "both" ? "s" : ""} sent successfully!`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Send email error:", error);
+      setEmailNotification({
+        type: "error",
+        message: error.message || "Failed to send email. Please try again.",
+      });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -882,9 +959,6 @@ function DashboardContent() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">
                       Course Level
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">
-                      Status
-                    </th>
                     {isSuperAdmin && (
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">
                         Institution
@@ -902,7 +976,7 @@ function DashboardContent() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={isSuperAdmin ? 9 : 8}
+                        colSpan={isSuperAdmin ? 8 : 7}
                         className="px-6 py-8 text-center"
                       >
                         <div className="flex items-center justify-center">
@@ -916,7 +990,7 @@ function DashboardContent() {
                   ) : students.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isSuperAdmin ? 9 : 8}
+                        colSpan={isSuperAdmin ? 8 : 7}
                         className="px-6 py-8 text-center text-blue-300"
                       >
                         No students found
@@ -929,8 +1003,27 @@ function DashboardContent() {
                         className="hover:bg-blue-800/30 transition-colors duration-200"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-white">
-                            {student.firstName} {student.lastName}
+                          <div className="flex items-center gap-3">
+                            {student.photo?.url ? (
+                              <Image
+                                src={
+                                  student.photo.url.startsWith("http")
+                                    ? student.photo.url
+                                    : `${getStrapiBaseUrl()}${student.photo.url}`
+                                }
+                                alt={`${student.firstName} ${student.lastName}`}
+                                width={36}
+                                height={36}
+                                className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-blue-500/30"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0 border border-blue-500/30">
+                                <User className="h-4 w-4 text-blue-400" />
+                              </div>
+                            )}
+                            <div className="text-sm font-medium text-white">
+                              {student.firstName} {student.lastName}
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -946,14 +1039,6 @@ function DashboardContent() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-400/20 text-yellow-300 border border-yellow-400/30">
                             {student.courseLevel?.LabelFull || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusBadgeColor(student.statuses)}`}
-                          >
-                            {student.statuses?.charAt(0).toUpperCase() +
-                              student.statuses?.slice(1)}
                           </span>
                         </td>
                         {isSuperAdmin && (
@@ -1130,6 +1215,16 @@ function DashboardContent() {
                                 )}
                               </Button>
                             )}
+                            {/* Send Email Button */}
+                            <Button
+                              onClick={() => openSendEmailModal(student)}
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-purple-400 hover:text-black hover:bg-purple-400 border-purple-400/50 hover:border-purple-400"
+                              title="Send Registration Email"
+                            >
+                              <Mail className="h-3 w-3" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -1597,6 +1692,215 @@ function DashboardContent() {
                   <Download className="h-4 w-4 mr-2" />
                 )}
                 Download {exportFormat === "csv" ? "CSV" : "Excel"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Email Modal */}
+      <Dialog
+        open={sendEmailModalOpen}
+        onOpenChange={(open) => {
+          if (!sendingEmail) {
+            setSendEmailModalOpen(open);
+            if (!open) {
+              setSendEmailStudent(null);
+              setEmailNotification(null);
+            }
+          }
+        }}
+      >
+        <DialogContent className="max-w-md p-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 border border-blue-500/20 text-white overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-blue-500/20">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Mail className="h-5 w-5 text-purple-400" />
+              Send Registration Email
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4 space-y-4">
+            {sendEmailStudent && (
+              <div className="bg-slate-800/50 rounded-lg border border-blue-500/20 p-3">
+                <div className="flex items-center gap-3">
+                  {sendEmailStudent.photo?.url ? (
+                    <Image
+                      src={
+                        sendEmailStudent.photo.url.startsWith("http")
+                          ? sendEmailStudent.photo.url
+                          : `${getStrapiBaseUrl()}${sendEmailStudent.photo.url}`
+                      }
+                      alt={`${sendEmailStudent.firstName} ${sendEmailStudent.lastName}`}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-blue-500/30"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0 border border-blue-500/30">
+                      <User className="h-4 w-4 text-blue-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {sendEmailStudent.firstName} {sendEmailStudent.lastName}
+                    </p>
+                    <p className="text-xs text-blue-300">
+                      {sendEmailStudent.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <p className="text-sm text-blue-300 mb-3">
+                Select recipient(s) for the registration email with PDF:
+              </p>
+              <RadioGroup
+                value={sendEmailRecipient}
+                onValueChange={(val) =>
+                  setSendEmailRecipient(val as "student" | "admin" | "both")
+                }
+                className="space-y-3"
+              >
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "student"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() =>
+                    !sendingEmail && setSendEmailRecipient("student")
+                  }
+                >
+                  <RadioGroupItem
+                    value="student"
+                    id="email-student"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-student"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Student
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send registration email with PDF only to the student.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "admin"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() =>
+                    !sendingEmail && setSendEmailRecipient("admin")
+                  }
+                >
+                  <RadioGroupItem
+                    value="admin"
+                    id="email-admin"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-admin"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Admin
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send to Branch Admin and all configured notification
+                      recipients.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "both"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() => !sendingEmail && setSendEmailRecipient("both")}
+                >
+                  <RadioGroupItem
+                    value="both"
+                    id="email-both"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-both"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Both
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send to Student, Branch Admin, and all notification
+                      recipients.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {emailNotification && (
+              <div
+                className={`rounded-lg p-3 text-sm ${
+                  emailNotification.type === "success"
+                    ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                    : "bg-red-500/20 text-red-300 border border-red-500/30"
+                }`}
+              >
+                {emailNotification.message}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSendEmailModalOpen(false);
+                  setSendEmailStudent(null);
+                  setEmailNotification(null);
+                }}
+                disabled={sendingEmail}
+                className="border-blue-500/30 text-blue-300 hover:text-white hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                {sendingEmail ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
+                {sendingEmail ? "Sending..." : "Send Email"}
               </Button>
             </div>
           </div>

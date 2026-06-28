@@ -2,15 +2,12 @@
 
 import React, { useRef, useState, useCallback } from "react";
 import { PDFDocument } from "pdf-lib";
+import { Upload, X, FileText, AlertCircle, RotateCcw } from "lucide-react";
 import {
-  Upload,
-  X,
-  FileText,
-  AlertCircle,
-  RotateCcw,
-  Image as ImageIcon,
-} from "lucide-react";
-import imageCompression from "browser-image-compression";
+  compressFile,
+  compressImage,
+  CompressionError,
+} from "@/lib/file-compression";
 
 /** Called whenever the staged files change. null means cleared. */
 export interface DocumentUploadProps {
@@ -23,8 +20,9 @@ export interface PhotoUploadProps {
   disabled?: boolean;
 }
 
-const MAX_SINGLE = 2.5 * 1024 * 1024; // 2.5 MB
-const MAX_COMBINED = 5 * 1024 * 1024; // 5 MB
+const MAX_INPUT = 10 * 1024 * 1024; // 10 MB — max size we accept from the user
+const MAX_SINGLE = 2.5 * 1024 * 1024; // 2.5 MB — target size after compression
+const MAX_COMBINED = 5 * 1024 * 1024; // 5 MB — max combined size after merge
 const ACCEPTED_MIME = [
   "image/jpeg",
   "image/jpg",
@@ -206,8 +204,8 @@ function validateFile(file: File): string | null {
   if (!ACCEPTED_MIME.includes(file.type)) {
     return `"${file.name}" has an unsupported format. Please upload JPG, JPEG, PNG, or PDF only.`;
   }
-  if (file.size > MAX_SINGLE) {
-    return `"${file.name}" is ${formatBytes(file.size)}, which exceeds the 2.5 MB limit per file.`;
+  if (file.size > MAX_INPUT) {
+    return `"${file.name}" is ${formatBytes(file.size)}. Maximum upload size is 10 MB. Please upload a smaller file.`;
   }
   return null;
 }
@@ -298,17 +296,17 @@ export function UploadBox({
               type="button"
               onClick={onRemove}
               disabled={disabled}
-              className="flex-shrink-0 w-7 h-7 bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-400 rounded-full flex items-center justify-center transition-all hover:scale-110 disabled:opacity-40"
+              className="flex-shrink-0 w-8 h-8 sm:w-7 sm:h-7 bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-400 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-40 touch-manipulation"
               title="Remove file"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
             </button>
           </div>
           <button
             type="button"
             onClick={onReplace}
             disabled={disabled}
-            className="w-full py-1.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-all flex items-center justify-center gap-1.5 text-xs disabled:opacity-40"
+            className="w-full py-2 sm:py-1.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-all flex items-center justify-center gap-1.5 text-xs disabled:opacity-40 touch-manipulation active:scale-[0.98]"
           >
             <RotateCcw className="h-3 w-3" />
             Replace file
@@ -320,7 +318,7 @@ export function UploadBox({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onClick={onClick}
-          className={`relative border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-300 ${
+          className={`relative border-2 border-dashed rounded-xl p-4 sm:p-5 text-center cursor-pointer transition-all duration-300 touch-manipulation ${
             isDragging
               ? "border-purple-400 bg-purple-400/10 scale-[1.01]"
               : "border-white/20 hover:border-purple-400/50 hover:bg-purple-400/5"
@@ -367,7 +365,40 @@ export async function mergeDocumentsToFile(
   back: File | null,
   fullName?: string,
 ): Promise<File> {
-  const mergedBytes = await mergeDocuments(front, back);
+  let mergedBytes = await mergeDocuments(front, back);
+
+  // If the merged PDF exceeds the combined limit, attempt to compress it
+  if (mergedBytes.byteLength > MAX_COMBINED) {
+    const mergedFile = new File(
+      [
+        mergedBytes.buffer.slice(
+          mergedBytes.byteOffset,
+          mergedBytes.byteOffset + mergedBytes.byteLength,
+        ) as ArrayBuffer,
+      ],
+      "merged.pdf",
+      { type: "application/pdf" },
+    );
+    try {
+      const { compressPdf, CompressionError } =
+        await import("@/lib/file-compression");
+      const compressed = await compressPdf(
+        mergedFile,
+        MAX_COMBINED / (1024 * 1024),
+      );
+      const compressedBytes = await compressed.arrayBuffer();
+      mergedBytes = new Uint8Array(compressedBytes);
+    } catch (e) {
+      if (e instanceof CompressionError) {
+        throw new Error(
+          "Combined document is too large after compression. Please use lower resolution images or fewer pages.",
+        );
+      }
+      throw new Error(
+        "Failed to compress combined document. Please use smaller files.",
+      );
+    }
+  }
 
   if (mergedBytes.byteLength > MAX_COMBINED) {
     throw new Error(
@@ -406,6 +437,8 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
   const [frontError, setFrontError] = useState<MergeError>(null);
   const [backError, setBackError] = useState<MergeError>(null);
   const [mergeError, setMergeError] = useState<MergeError>(null);
+  const [frontProcessing, setFrontProcessing] = useState(false);
+  const [backProcessing, setBackProcessing] = useState(false);
 
   // ── combined raw size progress ─────────────────────────────────────────────
   const combinedRawBytes = (front?.file.size ?? 0) + (back?.file.size ?? 0);
@@ -445,9 +478,22 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
         );
         return;
       }
-      const state = await buildFileState(file);
-      setFront(state);
-      onFilesChange(file, back?.file ?? null);
+      setFrontProcessing(true);
+      try {
+        const compressed = await compressFile(file, MAX_SINGLE / (1024 * 1024));
+        const state = await buildFileState(compressed);
+        setFront(state);
+        onFilesChange(compressed, back?.file ?? null);
+      } catch (e: any) {
+        const msg =
+          e instanceof CompressionError
+            ? e.message
+            : "Failed to process file. Please try a different file.";
+        setFrontError(msg);
+        onFilesChange(null, back?.file ?? null);
+      } finally {
+        setFrontProcessing(false);
+      }
     },
     [back, buildFileState, onFilesChange],
   );
@@ -472,9 +518,22 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
         );
         return;
       }
-      const state = await buildFileState(file);
-      setBack(state);
-      onFilesChange(front?.file ?? null, file);
+      setBackProcessing(true);
+      try {
+        const compressed = await compressFile(file, MAX_SINGLE / (1024 * 1024));
+        const state = await buildFileState(compressed);
+        setBack(state);
+        onFilesChange(front?.file ?? null, compressed);
+      } catch (e: any) {
+        const msg =
+          e instanceof CompressionError
+            ? e.message
+            : "Failed to process file. Please try a different file.";
+        setBackError(msg);
+        onFilesChange(front?.file ?? null, null);
+      } finally {
+        setBackProcessing(false);
+      }
     },
     [front, buildFileState, onFilesChange],
   );
@@ -517,7 +576,7 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
   return (
     <div className="space-y-4">
       {/* Upload boxes — side by side */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <UploadBox
           label="Front Side"
           required
@@ -525,6 +584,7 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
           isDragging={frontDragging}
           error={frontError}
           inputRef={frontInputRef}
+          hint="JPG, JPEG, PNG, PDF · max 10 MB (auto-compressed)"
           onDragOver={(e) => {
             e.preventDefault();
             setFrontDragging(true);
@@ -534,7 +594,8 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
           onClick={() => frontInputRef.current?.click()}
           onRemove={removeFront}
           onReplace={() => frontInputRef.current?.click()}
-          disabled={false}
+          disabled={frontProcessing || backProcessing}
+          uploading={frontProcessing}
         />
         <UploadBox
           label="Back Side"
@@ -543,6 +604,7 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
           isDragging={backDragging}
           error={backError}
           inputRef={backInputRef}
+          hint="JPG, JPEG, PNG, PDF · max 10 MB (auto-compressed)"
           onDragOver={(e) => {
             e.preventDefault();
             setBackDragging(true);
@@ -552,7 +614,8 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
           onClick={() => backInputRef.current?.click()}
           onRemove={removeBack}
           onReplace={() => backInputRef.current?.click()}
-          disabled={false}
+          disabled={frontProcessing || backProcessing}
+          uploading={backProcessing}
         />
       </div>
 
@@ -608,7 +671,8 @@ export function DocumentUpload({ onFilesChange }: DocumentUploadProps) {
           {combinedExceeds && (
             <p className="text-xs text-red-400 flex items-center gap-1">
               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-              Raw combined size exceeds 5 MB. Please use smaller files.
+              Combined size exceeds 5 MB after compression. Please use smaller
+              files.
             </p>
           )}
         </div>
@@ -641,7 +705,8 @@ const PHOTO_ACCEPTED_MIME = [
   "image/png",
   "image/webp",
 ];
-const PHOTO_MAX_SIZE = 5 * 1024 * 1024;
+const PHOTO_MAX_INPUT = 10 * 1024 * 1024; // 10 MB — max size we accept from the user
+const PHOTO_TARGET_SIZE = 5 * 1024 * 1024; // 5 MB — target size after compression
 
 export function PhotoUpload({
   onFileChange,
@@ -661,24 +726,28 @@ export function PhotoUpload({
         onFileChange(null);
         return;
       }
-      if (file.size > PHOTO_MAX_SIZE) {
-        setError(`File is ${formatBytes(file.size)}. Maximum size is 5 MB.`);
+      if (file.size > PHOTO_MAX_INPUT) {
+        setError(
+          `File is ${formatBytes(file.size)}. Maximum upload size is 10 MB.`,
+        );
         onFileChange(null);
         return;
       }
       setProcessing(true);
       try {
-        const compressed = await imageCompression(file, {
-          maxSizeMB: 0.999,
+        const compressed = await compressImage(file, {
+          targetSizeMB: PHOTO_TARGET_SIZE / (1024 * 1024),
           maxWidthOrHeight: 1920,
-          useWebWorker: true,
-          fileType: file.type,
         });
         const preview = await fileToDataUrl(compressed);
         setFileState({ file: compressed, preview });
         onFileChange(compressed);
-      } catch {
-        setError("Failed to process image. Please try a different file.");
+      } catch (e: any) {
+        const msg =
+          e instanceof CompressionError
+            ? e.message
+            : "Failed to process image. Please try a different file.";
+        setError(msg);
         onFileChange(null);
       } finally {
         setProcessing(false);
@@ -704,7 +773,7 @@ export function PhotoUpload({
         error={error}
         inputRef={inputRef}
         accept="image/jpeg,image/jpg,image/png,image/webp"
-        hint="JPG, PNG, WebP · max 5 MB"
+        hint="JPG, PNG, WebP · max 10 MB (auto-compressed)"
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragging(true);
