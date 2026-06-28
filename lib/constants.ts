@@ -1,3 +1,7 @@
+export function getStrapiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") || "";
+}
+
 export const SITE_CONFIG = {
   name: "Schoenstatt Language Academy",
   shortName: "SCHOENSTATT",

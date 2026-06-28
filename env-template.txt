@@ -41,6 +41,8 @@ RESEND_FROM="Admissions <admissions@info.abru.fun>"
 # - Role-based access control (admin vs super_admin)
 
 # Strapi Configuration (for API Store)
+# Use localhost for development, deployed URL for production
+# Production example: https://your-strapi-domain.com/api
 NEXT_PUBLIC_STRAPI_URL=http://localhost:1337/api
 NEXT_PUBLIC_STRAPI_TOKEN=your_strapi_api_token
 

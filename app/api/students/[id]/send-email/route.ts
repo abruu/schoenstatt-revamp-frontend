@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import * as qs from "qs";
+import { formatStudentDataForPDF } from "@/lib/pdf-generator";
+import { getAdminNotificationEmails } from "@/lib/strapi-api";
 import {
-  generateStudentPDF,
-  generatePdfForRecipient,
-  formatStudentDataForPDF,
-} from "@/lib/pdf-generator";
+  sendRegistrationEmails,
+  RecipientType,
+} from "@/lib/services/registration-email-service";
 import { getStrapiBaseUrl } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -71,23 +73,34 @@ async function fetchProofFile(
     });
     return Buffer.from(response.data);
   } catch (error) {
-    console.error("Failed to fetch proof file:", error);
+    console.error("[send-email] Failed to fetch proof file:", error);
     return null;
   }
 }
 
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9-_]/g, "_").substring(0, 50);
-}
-
-export async function GET(
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: documentId } = await params;
 
-    // Extract authorization token
+    const body = await request.json().catch(() => ({}));
+    const recipientType = body.recipientType as RecipientType;
+
+    if (
+      !recipientType ||
+      !["student", "admin", "both"].includes(recipientType)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid or missing recipientType. Must be 'student', 'admin', or 'both'.",
+        },
+        { status: 400 },
+      );
+    }
+
     const authHeader = request.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
@@ -98,7 +111,6 @@ export async function GET(
 
     const token = authHeader.split(" ")[1];
 
-    // Validate user authentication
     const userProfile = await validateAuth(token);
     if (!userProfile) {
       return NextResponse.json(
@@ -107,7 +119,6 @@ export async function GET(
       );
     }
 
-    // Fetch student data
     let student;
     try {
       student = await fetchStudent(token, documentId);
@@ -122,10 +133,12 @@ export async function GET(
     }
 
     if (!student) {
-      return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Student not found" },
+        { status: 404 },
+      );
     }
 
-    // Check center access for non-super admins
     if (!userProfile.isSuperAdmin && userProfile.assignedCenter) {
       if (
         student.center?.documentId !== userProfile.assignedCenter.documentId
@@ -137,46 +150,72 @@ export async function GET(
       }
     }
 
-    // Get base URL for assets
-    const baseUrl = request.nextUrl.origin;
+    const protocol = request.headers.get("x-forwarded-proto") || "https";
+    const host =
+      request.headers.get("x-forwarded-host") ||
+      request.headers.get("host") ||
+      "localhost:3000";
+    const appBaseUrl = `${protocol}://${host}`;
 
-    // Fetch ID proof file if available
+    const strapiBase = getStrapiBaseUrl();
+
+    let photoUrl = "";
+    if (student.photo?.url) {
+      photoUrl = student.photo.url.startsWith("http")
+        ? student.photo.url
+        : `${strapiBase}${student.photo.url}`;
+    }
+
+    let aadhaarUrl = "";
+    if (student.aadhaarFile?.url) {
+      aadhaarUrl = student.aadhaarFile.url.startsWith("http")
+        ? student.aadhaarFile.url
+        : `${strapiBase}${student.aadhaarFile.url}`;
+    }
+
     let proofFile: Buffer | null = null;
     if (student.aadhaarFile?.url) {
       proofFile = await fetchProofFile(token, student.aadhaarFile.url);
     }
 
-    // Generate PDF — merge with ID proof if available, otherwise student details only
-    let pdfBuffer: Buffer;
-    if (proofFile) {
-      const studentData = formatStudentDataForPDF(student, baseUrl);
-      pdfBuffer = await generatePdfForRecipient({
-        studentDetails: studentData,
-        proofFile,
-        recipientType: "admin",
-      });
-    } else {
-      pdfBuffer = await generateStudentPDF(student, baseUrl);
-    }
+    const studentDetails = formatStudentDataForPDF(student, appBaseUrl);
 
-    // Create filename
-    const firstName = sanitizeFilename(student.firstName || "Student");
-    const lastName = sanitizeFilename(student.lastName || "");
-    const filename = `${firstName}-${lastName}-${student.id}_Details.pdf`;
+    const courseLevelShort =
+      student.courseLevel?.LabelShort ||
+      student.courseLevel?.LabelFull ||
+      "";
 
-    // Return PDF response
-    return new NextResponse(new Uint8Array(pdfBuffer), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-      },
+    const centerEmail = student.center?.email || "";
+
+    const adminNotificationEmails = await getAdminNotificationEmails();
+
+    const result = await sendRegistrationEmails({
+      studentDetails,
+      courseLevelShort,
+      centerEmail,
+      photoUrl,
+      aadhaarUrl,
+      studentDocId: documentId,
+      adminNotificationEmails,
+      recipientType,
+      appBaseUrl,
+      proofFile: proofFile || undefined,
+      howDidYouHearAboutUs: student.howDidYouHearAboutUs,
+      howDidYouHearAboutUsOther: student.howDidYouHearAboutUsOther,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Email sending complete",
+      details: result,
     });
   } catch (error: any) {
-    console.error("PDF generation error:", error);
+    console.error("[send-email] Error:", error);
 
-    if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+    if (
+      error.code === "ECONNABORTED" ||
+      error.message?.includes("timeout")
+    ) {
       return NextResponse.json(
         { error: "Request timed out. Please try again." },
         { status: 504 },
@@ -184,7 +223,7 @@ export async function GET(
     }
 
     return NextResponse.json(
-      { error: error.message || "Failed to generate PDF" },
+      { error: error.message || "Failed to send email" },
       { status: 500 },
     );
   }

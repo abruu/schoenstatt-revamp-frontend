@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss"
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: ["class"],
@@ -83,6 +83,10 @@ const config: Config = {
           "0%": { transform: "translateX(20px)", opacity: "0" },
           "100%": { transform: "translateX(0)", opacity: "1" },
         },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -91,10 +95,11 @@ const config: Config = {
         "fade-up": "fade-up 0.6s ease-out",
         "fade-left": "fade-left 0.6s ease-out",
         "fade-right": "fade-right 0.6s ease-out",
+        "fade-in": "fade-in 0.5s ease-out",
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
 
-export default config
+export default config;

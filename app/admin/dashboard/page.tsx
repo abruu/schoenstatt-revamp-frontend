@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useStrapiAuth } from "@/contexts/strapi-auth-context";
 import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
 import { studentService, StrapiStudent } from "@/lib/services/student-service";
 import { useCourseLevels } from "@/hooks/use-course-levels";
 import { useCenters } from "@/hooks/use-centers";
+import { useStudents } from "@/hooks/use-students-query";
+import { getStrapiBaseUrl } from "@/lib/constants";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +29,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
+import {
   Search,
   Eye,
   Edit,
@@ -40,6 +50,7 @@ import {
   Users,
   GraduationCap,
   RefreshCw,
+  RotateCcw,
   Mail,
   Shield,
   Check,
@@ -56,6 +67,7 @@ import {
   Briefcase,
   Home,
   Camera,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -66,8 +78,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 
 export default function AdminDashboard() {
   return (
@@ -94,20 +108,64 @@ function DashboardContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
-  const isInitialMount = useRef(true);
-  const [students, setStudents] = useState<StrapiStudent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [courseFilter, setCourseFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [institutionFilter, setInstitutionFilter] = useState("all");
-  const [totalCount, setTotalCount] = useState(0);
+  const pageSizeParam = searchParams.get("pageSize");
+  const studentsPerPage =
+    pageSizeParam === "all" ? 999999 : parseInt(pageSizeParam || "10", 10);
+  const queryClient = useQueryClient();
+  const urlSearch = searchParams.get("search") || "";
+  const urlCourseFilter = searchParams.get("courseLevel") || "all";
+  const urlDateFilter = searchParams.get("registrationDate") || "";
+  const urlInstitutionFilter = searchParams.get("center") || "all";
+
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
+  const [dateFilter, setDateFilter] = useState(urlDateFilter);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<StrapiStudent | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"csv" | "xlsx">("csv");
+  const [exportChoice, setExportChoice] = useState<"all" | "filtered">(
+    "filtered",
+  );
+  const [selectedStudent, setSelectedStudent] = useState<StrapiStudent | null>(
+    null,
+  );
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
-  const studentsPerPage = 10;
+  const [downloadingPhoto, setDownloadingPhoto] = useState<string | null>(null);
+  const [downloadingIdProof, setDownloadingIdProof] = useState<string | null>(
+    null,
+  );
+  const [sendEmailModalOpen, setSendEmailModalOpen] = useState(false);
+  const [sendEmailStudent, setSendEmailStudent] =
+    useState<StrapiStudent | null>(null);
+  const [sendEmailRecipient, setSendEmailRecipient] = useState<
+    "student" | "admin" | "both"
+  >("both");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailNotification, setEmailNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const debouncedSearchTerm = urlSearch;
+  const courseFilter = urlCourseFilter;
+  const institutionFilter = urlInstitutionFilter;
+
+  const {
+    data: studentsData,
+    isLoading: loading,
+    isFetching,
+  } = useStudents({
+    page: currentPage,
+    pageSize: studentsPerPage,
+    search: debouncedSearchTerm,
+    courseLevel: courseFilter,
+    registrationDate: dateFilter,
+    center: institutionFilter,
+  });
+
+  const students = studentsData?.data ?? [];
+  const totalCount = studentsData?.meta?.pagination?.total ?? 0;
 
   const updatePage = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -120,57 +178,90 @@ function DashboardContent() {
     router.push(`${pathname}${query ? `?${query}` : ""}`);
   };
 
-  // Debounce search term with 1 second delay
+  const updateUrlParam = (key: string, value: string) => {
+    const params = new URLSearchParams(window.location.search);
+    if (value && value !== "all" && value !== "") {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.delete("page");
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`);
+  };
+
+  const buildReturnQuery = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchTerm) {
+      params.set("search", searchTerm);
+    } else {
+      params.delete("search");
+    }
+    if (dateFilter) {
+      params.set("registrationDate", dateFilter);
+    } else {
+      params.delete("registrationDate");
+    }
+    return params.toString();
+  };
+
+  const saveScrollPosition = () => {
+    sessionStorage.setItem("dashboardScrollY", String(window.scrollY));
+  };
+
+  // Restore scroll position on mount
+  useEffect(() => {
+    const savedScrollY = sessionStorage.getItem("dashboardScrollY");
+    if (savedScrollY) {
+      window.scrollTo(0, parseInt(savedScrollY, 10));
+      sessionStorage.removeItem("dashboardScrollY");
+    }
+  }, []);
+
+  // Debounce search term - update URL after 1 second delay
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
+      if (searchTerm === urlSearch) return;
+      const params = new URLSearchParams(window.location.search);
+      if (searchTerm) {
+        params.set("search", searchTerm);
+      } else {
+        params.delete("search");
+      }
+      params.delete("page");
+      const query = params.toString();
+      router.replace(`${pathname}${query ? `?${query}` : ""}`);
     }, 1000);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
-  // Reset to page 1 when search term changes
+  // Sync dateFilter to URL
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+    if (dateFilter === urlDateFilter) return;
     const params = new URLSearchParams(window.location.search);
+    if (dateFilter) {
+      params.set("registrationDate", dateFilter);
+    } else {
+      params.delete("registrationDate");
+    }
     params.delete("page");
     const query = params.toString();
     router.replace(`${pathname}${query ? `?${query}` : ""}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm]);
+  }, [dateFilter]);
 
-  useEffect(() => {
-    fetchStudents();
-  }, [
-    currentPage,
-    debouncedSearchTerm,
-    courseFilter,
-    statusFilter,
-    institutionFilter,
-  ]);
-
-  const fetchStudents = async () => {
-    setLoading(true);
-    try {
-      const response = await studentService.getAll({
-        page: currentPage,
-        pageSize: studentsPerPage,
-        search: debouncedSearchTerm || undefined,
-        courseLevel: courseFilter !== "all" ? courseFilter : undefined,
-        statuses: statusFilter !== "all" ? statusFilter : undefined,
-        center: institutionFilter !== "all" ? institutionFilter : undefined,
-      });
-
-      setStudents(response.data || []);
-      setTotalCount(response.meta.pagination.total || 0);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    } finally {
-      setLoading(false);
+  const handlePageSizeChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "10") {
+      params.delete("pageSize");
+    } else {
+      params.set("pageSize", value);
     }
+    params.delete("page");
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`);
   };
 
   const handleDeleteStudent = async (documentId: string) => {
@@ -184,7 +275,7 @@ function DashboardContent() {
 
     try {
       await studentService.delete(documentId);
-      fetchStudents();
+      queryClient.invalidateQueries({ queryKey: ["students"] });
     } catch (error) {
       console.error("Error deleting student:", error);
       alert("Failed to delete student");
@@ -199,14 +290,8 @@ function DashboardContent() {
     try {
       await studentService.updateStatus(documentId, newStatus);
 
-      // Update the local state immediately
-      setStudents((prev) =>
-        prev.map((student) =>
-          student.documentId === documentId
-            ? { ...student, statuses: newStatus }
-            : student,
-        ),
-      );
+      // Invalidate cache so the table refetches with updated status
+      queryClient.invalidateQueries({ queryKey: ["students"] });
     } catch (error) {
       console.error("Error updating student status:", error);
       alert("Failed to update student status");
@@ -215,8 +300,9 @@ function DashboardContent() {
     }
   };
 
-  const handleExport = async (format: "csv" | "xlsx") => {
+  const handleExport = async (format: "csv" | "xlsx", exportAll: boolean) => {
     setExporting(format);
+    setExportModalOpen(false);
     try {
       // Get auth token
       const token = localStorage.getItem("strapi_jwt");
@@ -228,9 +314,13 @@ function DashboardContent() {
       // Build query params for filters
       const params = new URLSearchParams();
       params.set("format", format);
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      if (courseFilter !== "all") params.set("courseLevel", courseFilter);
-      if (institutionFilter !== "all") params.set("center", institutionFilter);
+      if (!exportAll) {
+        if (dateFilter) params.set("registrationDate", dateFilter);
+        if (courseFilter !== "all") params.set("courseLevel", courseFilter);
+        if (institutionFilter !== "all")
+          params.set("center", institutionFilter);
+        if (debouncedSearchTerm) params.set("search", debouncedSearchTerm);
+      }
 
       const response = await fetch(
         `/api/students/export?${params.toString()}`,
@@ -275,6 +365,11 @@ function DashboardContent() {
     }
   };
 
+  const openExportModal = (format: "csv" | "xlsx") => {
+    setExportFormat(format);
+    setExportModalOpen(true);
+  };
+
   const handleDownloadPdf = async (student: StrapiStudent) => {
     setDownloadingPdf(student.documentId);
     try {
@@ -308,22 +403,137 @@ function DashboardContent() {
     }
   };
 
-  const handleDownloadPhoto = (student: StrapiStudent) => {
+  const handleDownloadPhoto = async (student: StrapiStudent) => {
     if (!student.photo?.url) {
       alert("No photo available to download");
       return;
     }
-    const photoUrl = student.photo.url.startsWith("http")
-      ? student.photo.url
-      : `${
-          process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-          "http://localhost:1337"
-        }${student.photo.url}`;
-    const a = document.createElement("a");
-    a.href = photoUrl;
-    a.download = `${student.firstName}_${student.lastName}_photo.jpg`;
-    a.target = "_blank";
-    a.click();
+    setDownloadingPhoto(student.documentId);
+    try {
+      const photoUrl = student.photo.url.startsWith("http")
+        ? student.photo.url
+        : `${process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
+            "/api",
+            "",
+          )}${student.photo.url}`;
+      const ext = photoUrl.split(".").pop()?.split("?")[0] || "jpg";
+      const fileName = `${student.firstName}_${student.lastName}_${student.documentId}_photo.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(photoUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download photo");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading photo:", error);
+      alert("Failed to download photo");
+    } finally {
+      setDownloadingPhoto(null);
+    }
+  };
+
+  const handleDownloadIdProof = async (student: StrapiStudent) => {
+    if (!student.aadhaarFile?.url) {
+      alert("No ID proof available to download");
+      return;
+    }
+    setDownloadingIdProof(student.documentId);
+    try {
+      const fileUrl = student.aadhaarFile.url.startsWith("http")
+        ? student.aadhaarFile.url
+        : `${getStrapiBaseUrl()}${student.aadhaarFile.url}`;
+      const ext = student.aadhaarFile.ext || "pdf";
+      const fileName = `${student.firstName}_${student.lastName}_${student.documentId}_id_proof.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(fileUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download ID proof");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading ID proof:", error);
+      alert("Failed to download ID proof");
+    } finally {
+      setDownloadingIdProof(null);
+    }
+  };
+
+  const openSendEmailModal = (student: StrapiStudent) => {
+    setSendEmailStudent(student);
+    setSendEmailRecipient("both");
+    setEmailNotification(null);
+    setSendEmailModalOpen(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!sendEmailStudent) return;
+    setSendingEmail(true);
+    setEmailNotification(null);
+    try {
+      const token = localStorage.getItem("strapi_jwt");
+      if (!token) {
+        setEmailNotification({
+          type: "error",
+          message: "Please log in again to send emails.",
+        });
+        return;
+      }
+      const response = await fetch(
+        `/api/students/${sendEmailStudent.documentId}/send-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ recipientType: sendEmailRecipient }),
+        },
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to send email");
+      }
+      const data = await response.json();
+      const details = data.details || {};
+      const failedParts: string[] = [];
+      if (sendEmailRecipient !== "student" && !details.adminEmailSent) {
+        failedParts.push("admin email");
+      }
+      if (sendEmailRecipient !== "admin" && !details.studentEmailSent) {
+        failedParts.push("student email");
+      }
+      if (failedParts.length > 0) {
+        setEmailNotification({
+          type: "error",
+          message: `Email partially failed: ${failedParts.join(", ")}. Please try again.`,
+        });
+      } else {
+        setEmailNotification({
+          type: "success",
+          message: `Email${sendEmailRecipient === "both" ? "s" : ""} sent successfully!`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Send email error:", error);
+      setEmailNotification({
+        type: "error",
+        message: error.message || "Failed to send email. Please try again.",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -395,7 +605,7 @@ function DashboardContent() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-slate-800/90 via-blue-800/90 to-slate-700/90 border border-blue-600/30 shadow-xl shadow-blue-900/50 backdrop-blur-sm">
@@ -463,94 +673,235 @@ function DashboardContent() {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="flex-1 max-w-md">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search by name, email, or Aadhaar..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-slate-700/50 border-blue-600/30 text-white placeholder-blue-300 focus:border-yellow-400 focus:ring-yellow-400/20"
-                  />
+                <div className="relative flex flex-col gap-1">
+                  <label className="text-xs font-medium text-blue-300">
+                    Search
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search by name, email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-8 bg-slate-700/50 border-blue-600/30 text-white placeholder-blue-300 focus:border-yellow-400 focus:ring-yellow-400/20"
+                    />
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm("")}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-white"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex gap-4">
-                {/* Status Filter */}
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px] bg-slate-700/50 border-blue-600/30 text-white">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="accepted">Accepted</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="enquired">Enquired</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Registration Date Filter */}
+                <div className="relative flex flex-col gap-1">
+                  <label className="text-xs font-medium text-blue-300">
+                    Registration Date
+                  </label>
+                  <Popover
+                    open={datePickerOpen}
+                    onOpenChange={setDatePickerOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-4 w-4 pointer-events-none" />
+                        <Input
+                          readOnly
+                          placeholder="DD/MM/YYYY - DD/MM/YYYY"
+                          value={dateFilter}
+                          className="pl-10 w-[260px] bg-slate-700/50 border-blue-600/30 text-white placeholder-blue-300 focus:border-yellow-400 focus:ring-yellow-400/20 cursor-pointer"
+                        />
+                        {dateFilter && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDateFilter("");
+                            }}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-white z-10"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto p-0 bg-slate-800 border-blue-600/30"
+                      align="start"
+                    >
+                      <CalendarPicker
+                        mode="range"
+                        numberOfMonths={2}
+                        selected={(() => {
+                          try {
+                            const rangeMatch = dateFilter.match(
+                              /^(\d{2}\/\d{2}\/\d{4})\s*-\s*(\d{2}\/\d{2}\/\d{4})$/,
+                            );
+                            if (rangeMatch) {
+                              const from = parse(
+                                rangeMatch[1],
+                                "dd/MM/yyyy",
+                                new Date(),
+                              );
+                              const to = parse(
+                                rangeMatch[2],
+                                "dd/MM/yyyy",
+                                new Date(),
+                              );
+                              if (
+                                !isNaN(from.getTime()) &&
+                                !isNaN(to.getTime())
+                              ) {
+                                return { from, to } as DateRange;
+                              }
+                            }
+                            const singleMatch = dateFilter.match(
+                              /^(\d{2}\/\d{2}\/\d{4})$/,
+                            );
+                            if (singleMatch) {
+                              const parsed = parse(
+                                singleMatch[1],
+                                "dd/MM/yyyy",
+                                new Date(),
+                              );
+                              if (!isNaN(parsed.getTime())) {
+                                return { from: parsed } as DateRange;
+                              }
+                            }
+                            return undefined;
+                          } catch {
+                            return undefined;
+                          }
+                        })()}
+                        onSelect={(range) => {
+                          if (!range) {
+                            setDateFilter("");
+                            return;
+                          }
+                          if (range.from && range.to) {
+                            setDateFilter(
+                              `${format(range.from, "dd/MM/yyyy")} - ${format(range.to, "dd/MM/yyyy")}`,
+                            );
+                            setDatePickerOpen(false);
+                          } else if (range.from) {
+                            setDateFilter(format(range.from, "dd/MM/yyyy"));
+                          }
+                        }}
+                        className="bg-slate-800"
+                        classNames={{
+                          day: "relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none",
+                          today: "bg-blue-500/20 text-blue-300 rounded-md",
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
                 {/* Institution Filter - Only for Super Admin */}
                 {isSuperAdmin && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-blue-300">
+                      Institution
+                    </label>
+                    <Select
+                      value={institutionFilter}
+                      onValueChange={(v) => updateUrlParam("center", v)}
+                    >
+                      <SelectTrigger className="w-[180px] bg-slate-700/50 border-blue-600/30 text-white">
+                        <SelectValue placeholder="Filter by institution" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Institutions</SelectItem>
+                        {centers.map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-blue-300">
+                    Course
+                  </label>
                   <Select
-                    value={institutionFilter}
-                    onValueChange={setInstitutionFilter}
+                    value={courseFilter}
+                    onValueChange={(v) => updateUrlParam("courseLevel", v)}
                   >
                     <SelectTrigger className="w-[180px] bg-slate-700/50 border-blue-600/30 text-white">
-                      <SelectValue placeholder="Filter by institution" />
+                      <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Institutions</SelectItem>
-                      {centers.map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
-                          {center.name}
+                      <SelectItem value="all">All Courses</SelectItem>
+                      {courseLevels.map((level) => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                )}
+                </div>
 
-                <Select value={courseFilter} onValueChange={setCourseFilter}>
-                  <SelectTrigger className="w-[180px] bg-slate-700/50 border-blue-600/30 text-white">
-                    <SelectValue placeholder="Filter by course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Courses</SelectItem>
-                    {courseLevels.map((level) => (
-                      <SelectItem key={level.id} value={level.id}>
-                        {level.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Download Buttons */}
-                <div className="flex gap-2">
+                {/* Export Buttons */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-blue-300">
+                    Export
+                  </label>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => openExportModal("csv")}
+                      disabled={exporting !== null}
+                      variant="outline"
+                      size="sm"
+                      className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400 disabled:opacity-50"
+                    >
+                      {exporting === "csv" ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
+                      {exporting === "csv" ? "Exporting..." : "CSV"}
+                    </Button>
+                    <Button
+                      onClick={() => openExportModal("xlsx")}
+                      disabled={exporting !== null}
+                      variant="outline"
+                      size="sm"
+                      className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400 disabled:opacity-50"
+                    >
+                      {exporting === "xlsx" ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      )}
+                      {exporting === "xlsx" ? "Exporting..." : "Excel"}
+                    </Button>
+                  </div>
+                </div>
+                {/* Reset Filters Button */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-blue-300">
+                    Reset
+                  </label>
                   <Button
-                    onClick={() => handleExport("csv")}
-                    disabled={exporting !== null}
+                    onClick={() => {
+                      setSearchTerm("");
+                      setDateFilter("");
+                      router.replace(pathname);
+                    }}
                     variant="outline"
                     size="sm"
-                    className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400 disabled:opacity-50"
+                    className="text-red-400 hover:text-black hover:bg-red-400 border-red-400/50 hover:border-red-400"
                   >
-                    {exporting === "csv" ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Download className="h-4 w-4 mr-2" />
-                    )}
-                    {exporting === "csv" ? "Exporting..." : "CSV"}
-                  </Button>
-                  <Button
-                    onClick={() => handleExport("xlsx")}
-                    disabled={exporting !== null}
-                    variant="outline"
-                    size="sm"
-                    className="text-green-400 hover:text-black hover:bg-green-400 border-green-400/50 hover:border-green-400 disabled:opacity-50"
-                  >
-                    {exporting === "xlsx" ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <FileSpreadsheet className="h-4 w-4 mr-2" />
-                    )}
-                    {exporting === "xlsx" ? "Exporting..." : "Excel"}
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset
                   </Button>
                 </div>
               </div>
@@ -567,21 +918,32 @@ function DashboardContent() {
                 Students ({totalCount})
               </div>
               <Button
-                onClick={fetchStudents}
-                disabled={loading}
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ["students"] })
+                }
+                disabled={loading || isFetching}
                 variant="outline"
                 size="sm"
                 className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400"
               >
                 <RefreshCw
-                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                  className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
                 />
                 Refresh
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
+              {/* Fetching overlay (shows on top of cached data during page change / refresh) */}
+              {isFetching && !loading && (
+                <div className="absolute inset-0 z-10 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm pt-12">
+                  <div className="flex items-center gap-2 bg-slate-800/90 px-4 py-2 rounded-lg border border-blue-500/30 shadow-xl">
+                    <Loader2 className="h-5 w-5 animate-spin text-yellow-400" />
+                    <span className="text-sm text-blue-200">Loading…</span>
+                  </div>
+                </div>
+              )}
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-slate-700/80 to-blue-800/80 border-b border-blue-600/30">
                   <tr>
@@ -596,9 +958,6 @@ function DashboardContent() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">
                       Course Level
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">
-                      Status
                     </th>
                     {isSuperAdmin && (
                       <th className="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">
@@ -617,7 +976,7 @@ function DashboardContent() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={isSuperAdmin ? 9 : 8}
+                        colSpan={isSuperAdmin ? 8 : 7}
                         className="px-6 py-8 text-center"
                       >
                         <div className="flex items-center justify-center">
@@ -631,7 +990,7 @@ function DashboardContent() {
                   ) : students.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isSuperAdmin ? 9 : 8}
+                        colSpan={isSuperAdmin ? 8 : 7}
                         className="px-6 py-8 text-center text-blue-300"
                       >
                         No students found
@@ -644,8 +1003,27 @@ function DashboardContent() {
                         className="hover:bg-blue-800/30 transition-colors duration-200"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-white">
-                            {student.firstName} {student.lastName}
+                          <div className="flex items-center gap-3">
+                            {student.photo?.url ? (
+                              <Image
+                                src={
+                                  student.photo.url.startsWith("http")
+                                    ? student.photo.url
+                                    : `${getStrapiBaseUrl()}${student.photo.url}`
+                                }
+                                alt={`${student.firstName} ${student.lastName}`}
+                                width={36}
+                                height={36}
+                                className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-blue-500/30"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0 border border-blue-500/30">
+                                <User className="h-4 w-4 text-blue-400" />
+                              </div>
+                            )}
+                            <div className="text-sm font-medium text-white">
+                              {student.firstName} {student.lastName}
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -661,14 +1039,6 @@ function DashboardContent() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-400/20 text-yellow-300 border border-yellow-400/30">
                             {student.courseLevel?.LabelFull || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusBadgeColor(student.statuses)}`}
-                          >
-                            {student.statuses?.charAt(0).toUpperCase() +
-                              student.statuses?.slice(1)}
                           </span>
                         </td>
                         {isSuperAdmin && (
@@ -769,7 +1139,8 @@ function DashboardContent() {
 
                             {/* View Button */}
                             <Link
-                              href={`/admin/students/${student.documentId}${currentPage > 1 ? `?returnPage=${currentPage}` : ""}`}
+                              href={`/admin/students/${student.documentId}${buildReturnQuery() ? `?returnQuery=${encodeURIComponent(buildReturnQuery())}` : ""}`}
+                              onClick={saveScrollPosition}
                             >
                               <Button
                                 variant="outline"
@@ -798,7 +1169,7 @@ function DashboardContent() {
                               variant="outline"
                               size="sm"
                               className="h-8 w-8 p-0 text-sky-400 hover:text-black hover:bg-sky-400 border-sky-400/50 hover:border-sky-400 disabled:opacity-50"
-                              title="Download PDF"
+                              title="Download student details"
                             >
                               {downloadingPdf === student.documentId ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -810,14 +1181,50 @@ function DashboardContent() {
                             {student.photo?.url && (
                               <Button
                                 onClick={() => handleDownloadPhoto(student)}
+                                disabled={
+                                  downloadingPhoto === student.documentId
+                                }
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-cyan-400 hover:text-black hover:bg-cyan-400 border-cyan-400/50 hover:border-cyan-400"
+                                className="h-8 w-8 p-0 text-cyan-400 hover:text-black hover:bg-cyan-400 border-cyan-400/50 hover:border-cyan-400 disabled:opacity-50"
                                 title="Download Photo"
                               >
-                                <Camera className="h-3 w-3" />
+                                {downloadingPhoto === student.documentId ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Camera className="h-3 w-3" />
+                                )}
                               </Button>
                             )}
+                            {/* Download ID Proof Button */}
+                            {student.aadhaarFile?.url && (
+                              <Button
+                                onClick={() => handleDownloadIdProof(student)}
+                                disabled={
+                                  downloadingIdProof === student.documentId
+                                }
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-amber-400 hover:text-black hover:bg-amber-400 border-amber-400/50 hover:border-amber-400 disabled:opacity-50"
+                                title="Download ID Proof"
+                              >
+                                {downloadingIdProof === student.documentId ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <FileText className="h-3 w-3" />
+                                )}
+                              </Button>
+                            )}
+                            {/* Send Email Button */}
+                            <Button
+                              onClick={() => openSendEmailModal(student)}
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-purple-400 hover:text-black hover:bg-purple-400 border-purple-400/50 hover:border-purple-400"
+                              title="Send Registration Email"
+                            >
+                              <Mail className="h-3 w-3" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -830,42 +1237,63 @@ function DashboardContent() {
         </Card>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-blue-300">
-              Showing {(currentPage - 1) * studentsPerPage + 1} to{" "}
-              {Math.min(currentPage * studentsPerPage, totalCount)} of{" "}
-              {totalCount} students
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => updatePage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              <span className="text-sm text-blue-300">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  updatePage(Math.min(totalPages, currentPage + 1))
+        {totalCount > 0 ? (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-blue-300">
+                Showing {(currentPage - 1) * studentsPerPage + 1} to{" "}
+                {Math.min(currentPage * studentsPerPage, totalCount)} of{" "}
+                {totalCount} students
+              </div>
+              {/* Page size selector */}
+              <Select
+                value={
+                  studentsPerPage >= 999999 ? "all" : String(studentsPerPage)
                 }
-                disabled={currentPage === totalPages}
-                className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
+                onValueChange={handlePageSizeChange}
               >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
+                <SelectTrigger className="w-[90px] h-8 bg-slate-700/50 border-blue-600/30 text-white text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updatePage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <span className="text-sm text-blue-300">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    updatePage(Math.min(totalPages, currentPage + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="text-yellow-400 hover:text-black hover:bg-yellow-400 border-yellow-400/50 hover:border-yellow-400 disabled:opacity-50 disabled:hover:text-yellow-400 disabled:hover:bg-transparent"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Student Detail Modal */}
@@ -901,12 +1329,7 @@ function DashboardContent() {
                             src={
                               selectedStudent.photo.url.startsWith("http")
                                 ? selectedStudent.photo.url
-                                : `${
-                                    process.env.NEXT_PUBLIC_STRAPI_URL?.replace(
-                                      "/api",
-                                      "",
-                                    ) || "http://localhost:1337"
-                                  }${selectedStudent.photo.url}`
+                                : `${getStrapiBaseUrl()}${selectedStudent.photo.url}`
                             }
                             alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
                             fill
@@ -989,10 +1412,6 @@ function DashboardContent() {
                                   "PPP",
                                 )
                               : undefined,
-                          },
-                          {
-                            label: "Aadhaar Number",
-                            value: selectedStudent.aadhaarNumber,
                           },
                         ].map(({ label, value }) => (
                           <div
@@ -1112,7 +1531,9 @@ function DashboardContent() {
                           },
                           {
                             label: "Work Experience",
-                            value: selectedStudent.workExperience ? "Yes" : "No",
+                            value: selectedStudent.workExperience
+                              ? "Yes"
+                              : "No",
                           },
                           {
                             label: "Studied German",
@@ -1172,6 +1593,317 @@ function DashboardContent() {
               </div>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Modal */}
+      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+        <DialogContent className="max-w-md p-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 border border-blue-500/20 text-white overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-blue-500/20">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Download className="h-5 w-5 text-green-400" />
+              Export as {exportFormat === "csv" ? "CSV" : "Excel"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4 space-y-4">
+            <RadioGroup
+              value={exportChoice}
+              onValueChange={(val) =>
+                setExportChoice(val as "all" | "filtered")
+              }
+              className="space-y-3"
+            >
+              <div
+                className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                  exportChoice === "all"
+                    ? "border-green-400/50 bg-green-400/10"
+                    : "border-blue-500/20 hover:bg-slate-800/50"
+                }`}
+                onClick={() => setExportChoice("all")}
+              >
+                <RadioGroupItem value="all" id="export-all" className="mt-1" />
+                <div className="flex-1">
+                  <Label
+                    htmlFor="export-all"
+                    className="text-white font-medium cursor-pointer"
+                  >
+                    Download All Students
+                    <span className="text-blue-300 text-sm ml-1">
+                      (Total: {totalCount} Students)
+                    </span>
+                  </Label>
+                  <p className="text-xs text-blue-300/70 mt-1">
+                    Export all student records, regardless of any filters.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                  exportChoice === "filtered"
+                    ? "border-green-400/50 bg-green-400/10"
+                    : "border-blue-500/20 hover:bg-slate-800/50"
+                }`}
+                onClick={() => setExportChoice("filtered")}
+              >
+                <RadioGroupItem
+                  value="filtered"
+                  id="export-filtered"
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <Label
+                    htmlFor="export-filtered"
+                    className="text-white font-medium cursor-pointer"
+                  >
+                    Download Current Filtered Results
+                    <span className="text-blue-300 text-sm ml-1">
+                      ({totalCount} Students)
+                    </span>
+                  </Label>
+                  <p className="text-xs text-blue-300/70 mt-1">
+                    Export only the students matching the currently applied
+                    filters.
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setExportModalOpen(false)}
+                className="border-blue-500/30 text-blue-300 hover:text-white hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={() =>
+                  handleExport(exportFormat, exportChoice === "all")
+                }
+                disabled={exporting !== null}
+                className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                Download {exportFormat === "csv" ? "CSV" : "Excel"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Email Modal */}
+      <Dialog
+        open={sendEmailModalOpen}
+        onOpenChange={(open) => {
+          if (!sendingEmail) {
+            setSendEmailModalOpen(open);
+            if (!open) {
+              setSendEmailStudent(null);
+              setEmailNotification(null);
+            }
+          }
+        }}
+      >
+        <DialogContent className="max-w-md p-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 border border-blue-500/20 text-white overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-blue-500/20">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Mail className="h-5 w-5 text-purple-400" />
+              Send Registration Email
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4 space-y-4">
+            {sendEmailStudent && (
+              <div className="bg-slate-800/50 rounded-lg border border-blue-500/20 p-3">
+                <div className="flex items-center gap-3">
+                  {sendEmailStudent.photo?.url ? (
+                    <Image
+                      src={
+                        sendEmailStudent.photo.url.startsWith("http")
+                          ? sendEmailStudent.photo.url
+                          : `${getStrapiBaseUrl()}${sendEmailStudent.photo.url}`
+                      }
+                      alt={`${sendEmailStudent.firstName} ${sendEmailStudent.lastName}`}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-blue-500/30"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0 border border-blue-500/30">
+                      <User className="h-4 w-4 text-blue-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {sendEmailStudent.firstName} {sendEmailStudent.lastName}
+                    </p>
+                    <p className="text-xs text-blue-300">
+                      {sendEmailStudent.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <p className="text-sm text-blue-300 mb-3">
+                Select recipient(s) for the registration email with PDF:
+              </p>
+              <RadioGroup
+                value={sendEmailRecipient}
+                onValueChange={(val) =>
+                  setSendEmailRecipient(val as "student" | "admin" | "both")
+                }
+                className="space-y-3"
+              >
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "student"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() =>
+                    !sendingEmail && setSendEmailRecipient("student")
+                  }
+                >
+                  <RadioGroupItem
+                    value="student"
+                    id="email-student"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-student"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Student
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send registration email with PDF only to the student.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "admin"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() =>
+                    !sendingEmail && setSendEmailRecipient("admin")
+                  }
+                >
+                  <RadioGroupItem
+                    value="admin"
+                    id="email-admin"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-admin"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Admin
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send to Branch Admin and all configured notification
+                      recipients.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "both"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() => !sendingEmail && setSendEmailRecipient("both")}
+                >
+                  <RadioGroupItem
+                    value="both"
+                    id="email-both"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-both"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Both
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send to Student, Branch Admin, and all notification
+                      recipients.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {emailNotification && (
+              <div
+                className={`rounded-lg p-3 text-sm ${
+                  emailNotification.type === "success"
+                    ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                    : "bg-red-500/20 text-red-300 border border-red-500/30"
+                }`}
+              >
+                {emailNotification.message}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSendEmailModalOpen(false);
+                  setSendEmailStudent(null);
+                  setEmailNotification(null);
+                }}
+                disabled={sendingEmail}
+                className="border-blue-500/30 text-blue-300 hover:text-white hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                {sendingEmail ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
+                {sendingEmail ? "Sending..." : "Send Email"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

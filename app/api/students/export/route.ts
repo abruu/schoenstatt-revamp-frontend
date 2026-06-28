@@ -20,7 +20,6 @@ interface StrapiStudent {
   mothersName?: string;
   parentName: string;
   parentContact: string;
-  aadhaarNumber: string;
   hostelFacility?: boolean;
   highestQualification?: string;
   otherQualification?: string;
@@ -32,6 +31,13 @@ interface StrapiStudent {
   photo?: {
     id: number;
     url: string;
+  };
+  aadhaarFile?: {
+    id: number;
+    url: string;
+    name?: string;
+    ext?: string;
+    mime?: string;
   };
   center?: {
     id: number;
@@ -72,7 +78,12 @@ async function validateAuth(token: string): Promise<UserProfile | null> {
 async function fetchAllStudents(
   token: string,
   userProfile: UserProfile,
-  filters?: { status?: string; courseLevel?: string; center?: string },
+  filters?: {
+    registrationDate?: string;
+    courseLevel?: string;
+    center?: string;
+    search?: string;
+  },
 ): Promise<StrapiStudent[]> {
   const allStudents: StrapiStudent[] = [];
   let page = 1;
@@ -88,6 +99,7 @@ async function fetchAllStudents(
         center: true,
         courseLevel: true,
         photo: true,
+        aadhaarFile: true,
       },
       sort: ["createdAt:desc"],
       filters: {},
@@ -101,8 +113,45 @@ async function fetchAllStudents(
     }
 
     // Apply optional filters
-    if (filters?.status && filters.status !== "all") {
-      queryParams.filters.statuses = { $eq: filters.status };
+    if (filters?.search) {
+      queryParams.filters.$or = [
+        { firstName: { $containsi: filters.search } },
+        { lastName: { $containsi: filters.search } },
+        { email: { $containsi: filters.search } },
+        { phone: { $containsi: filters.search } },
+      ];
+    }
+    if (filters?.registrationDate) {
+      const rangeMatch = filters.registrationDate.match(
+        /^(\d{2})\/(\d{2})\/(\d{4})\s*-\s*(\d{2})\/(\d{2})\/(\d{4})$/,
+      );
+      if (rangeMatch) {
+        const [, sDay, sMonth, sYear, eDay, eMonth, eYear] = rangeMatch;
+        const isoStart = `${sYear}-${sMonth}-${sDay}`;
+        const isoEnd = `${eYear}-${eMonth}-${eDay}`;
+        const nextDay = new Date(`${isoEnd}T00:00:00Z`);
+        nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+        const isoNextDay = nextDay.toISOString().split("T")[0];
+        queryParams.filters.createdAt = {
+          $gte: isoStart,
+          $lt: isoNextDay,
+        };
+      } else {
+        const dateMatch = filters.registrationDate.match(
+          /^(\d{2})\/(\d{2})\/(\d{4})$/,
+        );
+        if (dateMatch) {
+          const [, day, month, year] = dateMatch;
+          const isoDate = `${year}-${month}-${day}`;
+          const nextDay = new Date(`${isoDate}T00:00:00Z`);
+          nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+          const isoNextDay = nextDay.toISOString().split("T")[0];
+          queryParams.filters.createdAt = {
+            $gte: isoDate,
+            $lt: isoNextDay,
+          };
+        }
+      }
     }
     if (filters?.courseLevel && filters.courseLevel !== "all") {
       queryParams.filters.courseLevel = {
@@ -199,7 +248,16 @@ function getPhotoUrl(photo?: { id: number; url: string }): string {
   if (!photo?.url) return "";
   const url = photo.url;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `${STRAPI_URL}${url}`;
+  const baseUrl = (STRAPI_URL || "").replace(/\/api$/, "");
+  return `${baseUrl}${url}`;
+}
+
+function getProofUrl(aadhaarFile?: { id: number; url: string }): string {
+  if (!aadhaarFile?.url) return "";
+  const url = aadhaarFile.url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const baseUrl = (STRAPI_URL || "").replace(/\/api$/, "");
+  return `${baseUrl}${url}`;
 }
 
 function transformStudentForExport(
@@ -207,6 +265,7 @@ function transformStudentForExport(
 ): Record<string, any> {
   return {
     "Photo URL": getPhotoUrl(student.photo),
+    "Proof Document URL": getProofUrl(student.aadhaarFile),
     "First Name": student.firstName || "",
     "Last Name": student.lastName || "",
     Gender: student.gender || "",
@@ -218,7 +277,6 @@ function transformStudentForExport(
     "Father's Name": student.fathersName || "",
     "Mother's Name": student.mothersName || "",
     "Parent Contact": student.parentContact || "",
-    "Aadhaar Number": student.aadhaarNumber || "",
     "Hostel Facility": student.hostelFacility ? "Yes" : "No",
     "Highest Qualification": student.highestQualification || "",
     "Other Qualification": student.otherQualification || "",
@@ -307,9 +365,10 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") || "csv";
-    const status = searchParams.get("status") || undefined;
+    const registrationDate = searchParams.get("registrationDate") || undefined;
     const courseLevel = searchParams.get("courseLevel") || undefined;
     const center = searchParams.get("center") || undefined;
+    const search = searchParams.get("search") || undefined;
 
     // Validate format
     if (!["csv", "xlsx"].includes(format)) {
@@ -321,17 +380,26 @@ export async function GET(request: NextRequest) {
 
     // Fetch all students with batched pagination
     const students = await fetchAllStudents(token, userProfile, {
-      status,
+      registrationDate,
       courseLevel,
       center,
+      search,
     });
 
     // Generate filename
     const dateStr = new Date().toISOString().split("T")[0];
-    const centerName = userProfile.isSuperAdmin
-      ? "all"
-      : userProfile.assignedCenter?.name || "unknown";
-    const filename = `students_export_${centerName}_${dateStr}`;
+    const hasFilters = !!(
+      registrationDate ||
+      courseLevel ||
+      (center && center !== "all") ||
+      search
+    );
+    const scope = hasFilters
+      ? "filtered"
+      : userProfile.isSuperAdmin
+        ? "all"
+        : userProfile.assignedCenter?.name || "unknown";
+    const filename = `students_export_${scope}_${dateStr}`;
 
     if (format === "csv") {
       const csvContent = generateCSV(students);

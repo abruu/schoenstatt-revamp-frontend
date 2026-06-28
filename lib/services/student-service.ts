@@ -16,7 +16,6 @@ export interface StrapiStudent {
   mothersName?: string;
   parentName: string;
   parentContact: string;
-  aadhaarNumber: string;
   hostelFacility?: boolean;
   highestQualification?: string;
   otherQualification?: string;
@@ -24,22 +23,33 @@ export interface StrapiStudent {
   levelCompleted?: string;
   purposeLearningGerman?: string[];
   workExperience?: boolean;
+  howDidYouHearAboutUs?: string;
+  howDidYouHearAboutUsOther?: string;
   statuses: "pending" | "accepted" | "rejected" | "enquired";
   photo?: {
     id: number;
     url: string;
     formats?: any;
   };
+  aadhaarFile?: {
+    id: number;
+    url: string;
+    name?: string;
+    ext?: string;
+    mime?: string;
+  };
   center?: {
     id: number;
     documentId: string;
     name: string;
     header: string;
+    email?: string;
   };
   courseLevel?: {
     id: number;
     documentId: string;
     LabelFull: string;
+    LabelShort?: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -62,7 +72,7 @@ export interface StudentParams {
   pageSize?: number;
   search?: string;
   courseLevel?: string;
-  statuses?: string;
+  registrationDate?: string; // DD/MM/YYYY
   center?: string;
   populate?: string[];
 }
@@ -78,6 +88,7 @@ export const studentService = {
         center: true,
         courseLevel: true,
         photo: true,
+        aadhaarFile: true,
       },
       sort: ["createdAt:desc"],
       filters: {},
@@ -89,7 +100,7 @@ export const studentService = {
         { firstName: { $containsi: params.search } },
         { lastName: { $containsi: params.search } },
         { email: { $containsi: params.search } },
-        { aadhaarNumber: { $containsi: params.search } },
+        { phone: { $containsi: params.search } },
       ];
     }
 
@@ -100,9 +111,38 @@ export const studentService = {
       };
     }
 
-    // Add status filter
-    if (params?.statuses && params.statuses !== "all") {
-      queryParams.filters.statuses = { $eq: params.statuses };
+    // Add registration date filter (DD/MM/YYYY or DD/MM/YYYY - DD/MM/YYYY → Strapi date range)
+    if (params?.registrationDate) {
+      const rangeMatch = params.registrationDate.match(
+        /^(\d{2})\/(\d{2})\/(\d{4})\s*-\s*(\d{2})\/(\d{2})\/(\d{4})$/,
+      );
+      if (rangeMatch) {
+        const [, sDay, sMonth, sYear, eDay, eMonth, eYear] = rangeMatch;
+        const isoStart = `${sYear}-${sMonth}-${sDay}`;
+        const isoEnd = `${eYear}-${eMonth}-${eDay}`;
+        const nextDay = new Date(`${isoEnd}T00:00:00Z`);
+        nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+        const isoNextDay = nextDay.toISOString().split("T")[0];
+        queryParams.filters.createdAt = {
+          $gte: isoStart,
+          $lt: isoNextDay,
+        };
+      } else {
+        const dateMatch = params.registrationDate.match(
+          /^(\d{2})\/(\d{2})\/(\d{4})$/,
+        );
+        if (dateMatch) {
+          const [, day, month, year] = dateMatch;
+          const isoDate = `${year}-${month}-${day}`;
+          const nextDay = new Date(`${isoDate}T00:00:00Z`);
+          nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+          const isoNextDay = nextDay.toISOString().split("T")[0];
+          queryParams.filters.createdAt = {
+            $gte: isoDate,
+            $lt: isoNextDay,
+          };
+        }
+      }
     }
 
     // Add center filter (for super admin)
@@ -117,18 +157,13 @@ export const studentService = {
 
   async getOne(documentId: string): Promise<StrapiStudent> {
     const queryParams = {
-      populate: {
-        center: true,
-        courseLevel: true,
-        photo: true,
-      },
+      populate: ["center", "courseLevel", "photo", "aadhaarFile"],
+      filters: { documentId: { $eq: documentId } },
     };
 
     const queryString = qs.stringify(queryParams, { encodeValuesOnly: true });
-    const response = await strapiClient.get(
-      `/students/${documentId}?${queryString}`,
-    );
-    return response.data.data;
+    const response = await strapiClient.get(`/students?${queryString}`);
+    return response.data.data[0];
   },
 
   async create(data: Partial<StrapiStudent>): Promise<StrapiStudent> {
@@ -160,12 +195,25 @@ export const studentService = {
     await strapiClient.delete(`/students/${documentId}`);
   },
 
-  async uploadPhoto(documentId: string, file: File): Promise<StrapiStudent> {
+  async uploadPhoto(
+    documentId: string,
+    file: File,
+    firstName: string,
+  ): Promise<StrapiStudent> {
     const formData = new FormData();
     formData.append("files", file);
     formData.append("ref", "api::student.student");
     formData.append("refId", documentId);
     formData.append("field", "photo");
+    formData.append(
+      "data",
+      JSON.stringify({
+        fileInfo: {
+          name: "photo",
+          caption: firstName,
+        },
+      }),
+    );
 
     await strapiClient.post("/upload", formData, {
       headers: {

@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { StrapiProtectedRoute } from "@/components/strapi-protected-route";
-import { studentService, StrapiStudent } from "@/lib/services/student-service";
+import { studentService } from "@/lib/services/student-service";
+import { useStudent } from "@/hooks/use-students-query";
+import { getStrapiBaseUrl } from "@/lib/constants";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,11 +27,22 @@ import {
   Briefcase,
   Home,
   MessageCircle,
+  FileText,
+  Loader2,
+  Megaphone,
 } from "lucide-react";
 import { Suspense } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 export default function StudentDetailPage() {
   return (
@@ -44,40 +58,53 @@ function StudentDetailContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnPage = searchParams.get("returnPage");
-  const backHref = returnPage ? `/admin/dashboard?page=${returnPage}` : "/admin/dashboard";
-  const [student, setStudent] = useState<StrapiStudent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const returnQuery = searchParams.get("returnQuery");
+  const backHref = returnQuery
+    ? `/admin/dashboard?${returnQuery}`
+    : "/admin/dashboard";
+  const queryClient = useQueryClient();
+  const documentId = (params.id as string) || null;
+
+  const goBack = () => {
+    router.push(backHref);
+  };
+
+  const { data: student, isLoading: loading, isError } = useStudent(documentId);
+
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingPhoto, setDownloadingPhoto] = useState(false);
+  const [downloadingIdProof, setDownloadingIdProof] = useState(false);
+  const [sendEmailModalOpen, setSendEmailModalOpen] = useState(false);
+  const [sendEmailRecipient, setSendEmailRecipient] = useState<
+    "student" | "admin" | "both"
+  >("both");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailNotification, setEmailNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const strapiBaseUrl = useMemo(() => getStrapiBaseUrl(), []);
+
+  const photoUrl = useMemo(() => {
+    if (!student?.photo?.url) return null;
+    return student.photo.url.startsWith("http")
+      ? student.photo.url
+      : `${strapiBaseUrl}${student.photo.url}`;
+  }, [student?.photo?.url, strapiBaseUrl]);
+
+  const idProofUrl = useMemo(() => {
+    if (!student?.aadhaarFile?.url) return null;
+    return student.aadhaarFile.url.startsWith("http")
+      ? student.aadhaarFile.url
+      : `${strapiBaseUrl}${student.aadhaarFile.url}`;
+  }, [student?.aadhaarFile?.url, strapiBaseUrl]);
 
   useEffect(() => {
-    if (params.id) {
-      fetchStudent(params.id as string);
-    }
-  }, [params.id]);
-
-  const fetchStudent = async (documentId: string) => {
-    try {
-      const data = await studentService.getOne(documentId);
-      setStudent(data);
-
-      if (data.photo?.url) {
-        const strapiUrl =
-          process.env.NEXT_PUBLIC_STRAPI_URL?.replace("/api", "") ||
-          "http://localhost:1337";
-        const fullPhotoUrl = data.photo.url.startsWith("http")
-          ? data.photo.url
-          : `${strapiUrl}${data.photo.url}`;
-        setPhotoUrl(fullPhotoUrl);
-      }
-    } catch (error) {
-      console.error("Error fetching student:", error);
+    if (isError) {
       router.push("/admin/dashboard");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isError, router]);
 
   const handleDeleteStudent = async () => {
     if (!student) return;
@@ -90,6 +117,8 @@ function StudentDetailContent() {
     }
     try {
       await studentService.delete(student.documentId);
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["student", documentId] });
       router.push(backHref);
     } catch (error) {
       console.error("Error deleting student:", error);
@@ -102,15 +131,56 @@ function StudentDetailContent() {
       alert("No photo available to download");
       return;
     }
+    setDownloadingPhoto(true);
     try {
+      const ext = photoUrl.split(".").pop()?.split("?")[0] || "jpg";
+      const fileName = `${student?.firstName}_${student?.lastName}_${student?.documentId}_photo.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(photoUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download photo");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = photoUrl;
-      a.download = `${student?.firstName}_${student?.lastName}_photo.jpg`;
-      a.target = "_blank";
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading photo:", error);
       alert("Failed to download photo");
+    } finally {
+      setDownloadingPhoto(false);
+    }
+  };
+
+  const downloadIdProof = async () => {
+    if (!idProofUrl) {
+      alert("No ID proof available to download");
+      return;
+    }
+    setDownloadingIdProof(true);
+    try {
+      const ext = student?.aadhaarFile?.ext || "pdf";
+      const fileName = `${student?.firstName}_${student?.lastName}_${student?.documentId}_id_proof.${ext}`;
+      const proxyUrl = `/api/students/download-file?url=${encodeURIComponent(idProofUrl)}&name=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to download ID proof");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading ID proof:", error);
+      alert("Failed to download ID proof");
+    } finally {
+      setDownloadingIdProof(false);
     }
   };
 
@@ -153,6 +223,65 @@ function StudentDetailContent() {
       alert(error.message || "Failed to download PDF. Please try again.");
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!student) return;
+    setSendingEmail(true);
+    setEmailNotification(null);
+    try {
+      const token = localStorage.getItem("strapi_jwt");
+      if (!token) {
+        setEmailNotification({
+          type: "error",
+          message: "Please log in again to send emails.",
+        });
+        return;
+      }
+      const response = await fetch(
+        `/api/students/${student.documentId}/send-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ recipientType: sendEmailRecipient }),
+        },
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to send email");
+      }
+      const data = await response.json();
+      const details = data.details || {};
+      const failedParts: string[] = [];
+      if (sendEmailRecipient !== "student" && !details.adminEmailSent) {
+        failedParts.push("admin email");
+      }
+      if (sendEmailRecipient !== "admin" && !details.studentEmailSent) {
+        failedParts.push("student email");
+      }
+      if (failedParts.length > 0) {
+        setEmailNotification({
+          type: "error",
+          message: `Email partially failed: ${failedParts.join(", ")}. Please try again.`,
+        });
+      } else {
+        setEmailNotification({
+          type: "success",
+          message: `Email${sendEmailRecipient === "both" ? "s" : ""} sent successfully!`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Send email error:", error);
+      setEmailNotification({
+        type: "error",
+        message: error.message || "Failed to send email. Please try again.",
+      });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -224,7 +353,7 @@ function StudentDetailContent() {
                 variant="ghost"
                 size="sm"
                 className="text-white hover:bg-white/10"
-                onClick={() => router.push(backHref)}
+                onClick={goBack}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -266,14 +395,50 @@ function StudentDetailContent() {
               {student.photo && (
                 <Button
                   onClick={downloadPhoto}
+                  disabled={downloadingPhoto}
                   variant="outline"
                   size="sm"
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
                   title="Download Photo"
                 >
-                  <Download className="h-4 w-4" />
+                  {downloadingPhoto ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                 </Button>
               )}
+              {student.aadhaarFile?.url && (
+                <Button
+                  onClick={downloadIdProof}
+                  disabled={downloadingIdProof}
+                  variant="outline"
+                  size="sm"
+                  className="bg-amber-600/80 hover:bg-amber-600 text-white border-amber-600 disabled:opacity-50"
+                  title="Download ID Proof"
+                >
+                  {downloadingIdProof ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4 mr-2" />
+                  )}
+                  ID Proof
+                </Button>
+              )}
+              <Button
+                onClick={() => {
+                  setSendEmailRecipient("both");
+                  setEmailNotification(null);
+                  setSendEmailModalOpen(true);
+                }}
+                variant="outline"
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                title="Send Registration Email"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Send Email
+              </Button>
               {/* <Button
                 variant="outline"
                 size="sm"
@@ -379,11 +544,6 @@ function StudentDetailContent() {
                         ? format(new Date(student.dateOfBirth), "PPP")
                         : undefined
                     }
-                  />
-                  <InfoRow
-                    icon={CreditCard}
-                    label="Aadhaar Number"
-                    value={student.aadhaarNumber}
                   />
                 </div>
               </div>
@@ -511,9 +671,301 @@ function StudentDetailContent() {
                   </div>
                 </div>
               )}
+
+            {/* How Did You Hear About Us */}
+            {student.howDidYouHearAboutUs && (
+              <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-blue-500/20">
+                <div className="px-5 py-4 border-b border-blue-500/20 flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-blue-400" />
+                  <h3 className="font-semibold text-white">
+                    How Did You Hear About Us
+                  </h3>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
+                    <InfoRow
+                      label="Source"
+                      value={student.howDidYouHearAboutUs}
+                    />
+                    {student.howDidYouHearAboutUs === "Other" &&
+                      student.howDidYouHearAboutUsOther && (
+                        <InfoRow
+                          label="Please Specify"
+                          value={student.howDidYouHearAboutUsOther}
+                        />
+                      )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Documents */}
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-blue-500/20">
+              <div className="px-5 py-4 border-b border-blue-500/20 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-400" />
+                <h3 className="font-semibold text-white">Documents</h3>
+              </div>
+              <div className="p-5 space-y-3">
+                {/* Photo */}
+                <div className="flex items-center justify-between py-2 border-b border-blue-500/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                      <User className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        Profile Photo
+                      </p>
+                      <p className="text-xs text-blue-300">
+                        {student.photo?.url ? "Available" : "Not uploaded"}
+                      </p>
+                    </div>
+                  </div>
+                  {student.photo?.url && (
+                    <Button
+                      onClick={downloadPhoto}
+                      variant="outline"
+                      size="sm"
+                      className="bg-cyan-600/80 hover:bg-cyan-600 text-white border-cyan-600"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  )}
+                </div>
+                {/* ID Proof */}
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">ID Proof</p>
+                      <p className="text-xs text-blue-300">
+                        {student.aadhaarFile?.url
+                          ? `${student.aadhaarFile.name || "id_proof"}`
+                          : "Not uploaded"}
+                      </p>
+                    </div>
+                  </div>
+                  {student.aadhaarFile?.url && (
+                    <Button
+                      onClick={downloadIdProof}
+                      variant="outline"
+                      size="sm"
+                      className="bg-amber-600/80 hover:bg-amber-600 text-white border-amber-600"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Send Email Modal */}
+      <Dialog
+        open={sendEmailModalOpen}
+        onOpenChange={(open) => {
+          if (!sendingEmail) {
+            setSendEmailModalOpen(open);
+            if (!open) {
+              setEmailNotification(null);
+            }
+          }
+        }}
+      >
+        <DialogContent className="max-w-md p-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 border border-blue-500/20 text-white overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-blue-500/20">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Mail className="h-5 w-5 text-purple-400" />
+              Send Registration Email
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4 space-y-4">
+            {student && (
+              <div className="bg-slate-800/50 rounded-lg border border-blue-500/20 p-3">
+                <div className="flex items-center gap-3">
+                  {photoUrl ? (
+                    <Image
+                      src={photoUrl}
+                      alt={`${student.firstName} ${student.lastName}`}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-blue-500/30"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0 border border-blue-500/30">
+                      <User className="h-4 w-4 text-blue-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {student.firstName} {student.lastName}
+                    </p>
+                    <p className="text-xs text-blue-300">{student.email}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <p className="text-sm text-blue-300 mb-3">
+                Select recipient(s) for the registration email with PDF:
+              </p>
+              <RadioGroup
+                value={sendEmailRecipient}
+                onValueChange={(val) =>
+                  setSendEmailRecipient(val as "student" | "admin" | "both")
+                }
+                className="space-y-3"
+              >
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "student"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() =>
+                    !sendingEmail && setSendEmailRecipient("student")
+                  }
+                >
+                  <RadioGroupItem
+                    value="student"
+                    id="email-student"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-student"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Student
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send registration email with PDF only to the student.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "admin"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() =>
+                    !sendingEmail && setSendEmailRecipient("admin")
+                  }
+                >
+                  <RadioGroupItem
+                    value="admin"
+                    id="email-admin"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-admin"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Admin
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send to Branch Admin and all configured notification
+                      recipients.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    sendingEmail
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer"
+                  } ${
+                    sendEmailRecipient === "both"
+                      ? "border-purple-400/50 bg-purple-400/10"
+                      : "border-blue-500/20 hover:bg-slate-800/50"
+                  }`}
+                  onClick={() => !sendingEmail && setSendEmailRecipient("both")}
+                >
+                  <RadioGroupItem
+                    value="both"
+                    id="email-both"
+                    className="mt-1"
+                    disabled={sendingEmail}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="email-both"
+                      className="text-white font-medium cursor-pointer"
+                    >
+                      Both
+                    </Label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Send to Student, Branch Admin, and all notification
+                      recipients.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {emailNotification && (
+              <div
+                className={`rounded-lg p-3 text-sm ${
+                  emailNotification.type === "success"
+                    ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                    : "bg-red-500/20 text-red-300 border border-red-500/30"
+                }`}
+              >
+                {emailNotification.message}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSendEmailModalOpen(false);
+                  setEmailNotification(null);
+                }}
+                disabled={sendingEmail}
+                className="border-blue-500/30 text-blue-300 hover:text-white hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                {sendingEmail ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
+                {sendingEmail ? "Sending..." : "Send Email"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
