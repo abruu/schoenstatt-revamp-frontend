@@ -29,12 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarPicker } from "@/components/ui/calendar";
-import { DateRange } from "react-day-picker";
+  DatePicker,
+  parseDateFilterString,
+  formatDateFilterString,
+  type DatePickerRangeValue,
+} from "@/components/ui/date-picker";
 import {
   Search,
   Eye,
@@ -81,7 +80,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 
 export default function AdminDashboard() {
   return (
@@ -119,7 +118,6 @@ function DashboardContent() {
 
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [dateFilter, setDateFilter] = useState(urlDateFilter);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -164,8 +162,14 @@ function DashboardContent() {
     center: institutionFilter,
   });
 
+  const { data: allStudentsData } = useStudents({
+    page: 1,
+    pageSize: 1,
+  });
+
   const students = studentsData?.data ?? [];
   const totalCount = studentsData?.meta?.pagination?.total ?? 0;
+  const totalAllStudents = allStudentsData?.meta?.pagination?.total ?? 0;
 
   const updatePage = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -680,7 +684,7 @@ function DashboardContent() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-4 w-4" />
                     <Input
-                      placeholder="Search by name, email..."
+                      placeholder="Search by name, email, phone no..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 pr-8 bg-slate-700/50 border-blue-600/30 text-white placeholder-blue-300 focus:border-yellow-400 focus:ring-yellow-400/20"
@@ -699,107 +703,23 @@ function DashboardContent() {
               </div>
               <div className="flex gap-4">
                 {/* Registration Date Filter */}
-                <div className="relative flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium text-blue-300">
                     Registration Date
                   </label>
-                  <Popover
-                    open={datePickerOpen}
-                    onOpenChange={setDatePickerOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-4 w-4 pointer-events-none" />
-                        <Input
-                          readOnly
-                          placeholder="DD/MM/YYYY - DD/MM/YYYY"
-                          value={dateFilter}
-                          className="pl-10 w-[260px] bg-slate-700/50 border-blue-600/30 text-white placeholder-blue-300 focus:border-yellow-400 focus:ring-yellow-400/20 cursor-pointer"
-                        />
-                        {dateFilter && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDateFilter("");
-                            }}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-white z-10"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto p-0 bg-slate-800 border-blue-600/30"
-                      align="start"
-                    >
-                      <CalendarPicker
-                        mode="range"
-                        numberOfMonths={2}
-                        selected={(() => {
-                          try {
-                            const rangeMatch = dateFilter.match(
-                              /^(\d{2}\/\d{2}\/\d{4})\s*-\s*(\d{2}\/\d{2}\/\d{4})$/,
-                            );
-                            if (rangeMatch) {
-                              const from = parse(
-                                rangeMatch[1],
-                                "dd/MM/yyyy",
-                                new Date(),
-                              );
-                              const to = parse(
-                                rangeMatch[2],
-                                "dd/MM/yyyy",
-                                new Date(),
-                              );
-                              if (
-                                !isNaN(from.getTime()) &&
-                                !isNaN(to.getTime())
-                              ) {
-                                return { from, to } as DateRange;
-                              }
-                            }
-                            const singleMatch = dateFilter.match(
-                              /^(\d{2}\/\d{2}\/\d{4})$/,
-                            );
-                            if (singleMatch) {
-                              const parsed = parse(
-                                singleMatch[1],
-                                "dd/MM/yyyy",
-                                new Date(),
-                              );
-                              if (!isNaN(parsed.getTime())) {
-                                return { from: parsed } as DateRange;
-                              }
-                            }
-                            return undefined;
-                          } catch {
-                            return undefined;
-                          }
-                        })()}
-                        onSelect={(range) => {
-                          if (!range) {
-                            setDateFilter("");
-                            return;
-                          }
-                          if (range.from && range.to) {
-                            setDateFilter(
-                              `${format(range.from, "dd/MM/yyyy")} - ${format(range.to, "dd/MM/yyyy")}`,
-                            );
-                            setDatePickerOpen(false);
-                          } else if (range.from) {
-                            setDateFilter(format(range.from, "dd/MM/yyyy"));
-                          }
-                        }}
-                        className="bg-slate-800"
-                        classNames={{
-                          day: "relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none",
-                          today: "bg-blue-500/20 text-blue-300 rounded-md",
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DatePicker
+                    mode="range"
+                    value={parseDateFilterString(dateFilter)}
+                    onChange={(range: DatePickerRangeValue) => {
+                      setDateFilter(formatDateFilterString(range));
+                    }}
+                    allowQuickPresets
+                    allowApplyButton
+                    allowClearButton
+                    placeholder="DD/MM/YYYY – DD/MM/YYYY"
+                    dateFormat="dd/MM/yyyy"
+                    className="w-[280px]"
+                  />
                 </div>
 
                 {/* Institution Filter - Only for Super Admin */}
@@ -1629,7 +1549,7 @@ function DashboardContent() {
                   >
                     Download All Students
                     <span className="text-blue-300 text-sm ml-1">
-                      (Total: {totalCount} Students)
+                      (Total: {totalAllStudents} Students)
                     </span>
                   </Label>
                   <p className="text-xs text-blue-300/70 mt-1">
