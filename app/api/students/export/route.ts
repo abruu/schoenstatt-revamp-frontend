@@ -27,6 +27,8 @@ interface StrapiStudent {
   levelCompleted?: string;
   purposeLearningGerman?: string[];
   workExperience?: boolean;
+  howDidYouHearAboutUs?: string;
+  howDidYouHearAboutUsOther?: string;
   statuses: "pending" | "accepted" | "rejected" | "enquired";
   photo?: {
     id: number;
@@ -286,6 +288,9 @@ function transformStudentForExport(
       ? student.purposeLearningGerman.join(", ")
       : "",
     "Work Experience": student.workExperience ? "Yes" : "No",
+    "How Did You Hear About Us": student.howDidYouHearAboutUs || "",
+    "How Did You Hear About Us (Other)":
+      student.howDidYouHearAboutUsOther || "",
     Status: formatStatus(student.statuses),
     Center: student.center?.name || "",
     "Course Level": student.courseLevel?.LabelFull || "",
