@@ -1,12 +1,13 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ElfsightReviews } from "@/components/elfsight-reviews";
 
 export function TestimonialsSection() {
-  const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
   const testimonials = [
     {
@@ -64,24 +65,26 @@ export function TestimonialsSection() {
     //   achievement: "PhD in Frankfurt, Germany",
     //   gradient: "from-pink-400 to-pink-600",
     // },
-  ]
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [testimonials.length])
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [testimonials.length]);
 
   const nextTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-  }
+    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+  };
 
   const prevTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)
-  }
+    setCurrentTestimonial(
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
+    );
+  };
 
-  const activeTestimonial = testimonials[currentTestimonial]
+  const activeTestimonial = testimonials[currentTestimonial];
 
   return (
     <section className="py-20 relative overflow-hidden">
@@ -109,9 +112,9 @@ export function TestimonialsSection() {
           </h2>
 
           <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-          At SLA, our commitment to excellence is reflected in the experiences of our valued clients. Here’s what some of them have to say about their journey with us:
-
-
+            At SLA, our commitment to excellence is reflected in the experiences
+            of our valued clients. Here’s what some of them have to say about
+            their journey with us:
           </p>
         </div>
 
@@ -143,16 +146,22 @@ export function TestimonialsSection() {
               <div className="md:col-span-2 space-y-6">
                 <div className="flex items-center gap-2">
                   {[...Array(activeTestimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                    <Star
+                      key={i}
+                      className="h-5 w-5 text-yellow-400 fill-current"
+                    />
                   ))}
                 </div>
 
                 <blockquote className="text-xl lg:text-2xl text-gray-200 leading-relaxed italic relative">
-                  <Quote className="absolute -top-4 -left-6 h-12 w-12 text-white/10" />"{activeTestimonial.feedback}"
+                  <Quote className="absolute -top-4 -left-6 h-12 w-12 text-white/10" />
+                  "{activeTestimonial.feedback}"
                 </blockquote>
 
                 <div className="space-y-2">
-                  <h4 className="text-2xl font-bold text-white">{activeTestimonial.name}</h4>
+                  <h4 className="text-2xl font-bold text-white">
+                    {activeTestimonial.name}
+                  </h4>
                   <p className="text-gray-400">
                     {activeTestimonial.course} • {activeTestimonial.location}
                   </p>
@@ -191,7 +200,9 @@ export function TestimonialsSection() {
                 key={index}
                 onClick={() => setCurrentTestimonial(index)}
                 className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  index === currentTestimonial ? `bg-white scale-125` : "bg-white/40 hover:bg-white/70"
+                  index === currentTestimonial
+                    ? `bg-white scale-125`
+                    : "bg-white/40 hover:bg-white/70"
                 }`}
                 aria-label={`Go to testimonial ${index + 1}`}
               />
@@ -233,6 +244,9 @@ export function TestimonialsSection() {
           ))}
         </div> */}
       </div>
+
+      {/* Elfsight Google Reviews Widget */}
+      {/* <ElfsightReviews className="pt-16" /> */}
     </section>
-  )
+  );
 }
