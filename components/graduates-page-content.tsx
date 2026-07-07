@@ -1,16 +1,23 @@
-"use client"
-import { ImageSlider } from "@/components/common/image-slider"
-import { SkeletonLoader } from "@/components/common/skeleton-loader"
-import { GraduateCard } from "@/components/common/graduate-card"
-import { useGraduates } from "@/hooks/use-graduates"
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
+"use client";
+import { ImageSlider } from "@/components/common/image-slider";
+import { SkeletonLoader } from "@/components/common/skeleton-loader";
+import { GraduateCard } from "@/components/common/graduate-card";
+import { getStrapiBaseUrl } from "@/lib/constants";
+import { useGraduates } from "@/hooks/use-graduates";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 
-import { useState, useMemo } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Search,
   Trophy,
@@ -28,7 +35,7 @@ import {
   Loader2,
   RefreshCw,
   AlertCircle,
-} from "lucide-react"
+} from "lucide-react";
 
 // Add fade-in animation styles
 const fadeInStyles = `
@@ -42,12 +49,12 @@ const fadeInStyles = `
       transform: translateY(0);
     }
   }
-  
+
   .animate-fade-in {
     animation: fade-in 0.6s ease-out forwards;
     opacity: 0;
   }
-`
+`;
 
 const gallery = [
   "/images/SLA gratuates/SLA gratuates 1.jpg",
@@ -83,14 +90,14 @@ const gallery = [
   "/images/SLA gratuates/9_14/3.jpeg",
   "/images/SLA gratuates/9_14/4.jpeg",
   "/images/SLA gratuates/9_14/5.jpeg",
-]
+];
 
 export function GraduatesPageContent() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedLevel, setSelectedLevel] = useState("all")
-  const [selectedCenter, setSelectedCenter] = useState("all")
-  const [selectedYear, setSelectedYear] = useState("all")
-  const [selectedGraduate, setSelectedGraduate] = useState<any>(null)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("all");
+  const [selectedCenter, setSelectedCenter] = useState("all");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedGraduate, setSelectedGraduate] = useState<any>(null);
 
   // Use the custom hook for data management
   const {
@@ -101,22 +108,22 @@ export function GraduatesPageContent() {
     loadingMore,
     filteredGraduates,
     stats,
-    actions
+    actions,
   } = useGraduates({
     searchTerm,
     selectedLevel,
     selectedCenter,
     selectedYear,
-    autoFetch: true
-  })
+    autoFetch: true,
+  });
 
   // Infinite scroll setup
   const { loadingRef } = useInfiniteScroll({
     hasMore,
     isLoading: loadingMore,
     onLoadMore: actions.loadMore,
-    threshold: 300
-  })
+    threshold: 300,
+  });
 
   return (
     <div className="pt-24 pb-16">
@@ -131,20 +138,33 @@ export function GraduatesPageContent() {
           </div>
 
           <h1 className="text-4xl lg:text-6xl font-bold">
-            <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Our Graduates</span>
+            <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Our Graduates
+            </span>
           </h1>
 
           <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-            Celebrating the achievements of our students who have successfully completed their German language journey
-            and are now pursuing their dreams in Germany and beyond.
+            Celebrating the achievements of our students who have successfully
+            completed their German language journey and are now pursuing their
+            dreams in Germany and beyond.
           </p>
         </div>
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {[
-            { label: "Total Graduates", value: stats.total, icon: Users, gradient: "from-blue-400 to-blue-600" },
-            { label: "B2 Certified", value: stats.b2, icon: Trophy, gradient: "from-yellow-400 to-yellow-600" },
+            {
+              label: "Total Graduates",
+              value: stats.total,
+              icon: Users,
+              gradient: "from-blue-400 to-blue-600",
+            },
+            {
+              label: "B2 Certified",
+              value: stats.b2,
+              icon: Trophy,
+              gradient: "from-yellow-400 to-yellow-600",
+            },
             {
               label: "Working in Germany",
               value: stats.employed,
@@ -168,7 +188,9 @@ export function GraduatesPageContent() {
                 >
                   <stat.icon className="h-6 w-6 text-white" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
+                <div className="text-2xl font-bold text-white mb-1">
+                  {stat.value}
+                </div>
                 <div className="text-sm text-gray-400">{stat.label}</div>
               </CardContent>
             </Card>
@@ -232,9 +254,9 @@ export function GraduatesPageContent() {
 
         {/* Loading State */}
         {loading && (
-          <SkeletonLoader 
-            count={10} 
-            show={loading} 
+          <SkeletonLoader
+            count={10}
+            show={loading}
             variant="graduate-card"
             className="mb-12"
           />
@@ -247,9 +269,11 @@ export function GraduatesPageContent() {
               <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="h-8 w-8 text-red-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Unable to Load Graduates</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Unable to Load Graduates
+              </h3>
               <p className="text-gray-400 mb-6">{error}</p>
-              <Button 
+              <Button
                 onClick={actions.refresh}
                 className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700"
               >
@@ -261,31 +285,37 @@ export function GraduatesPageContent() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && filteredGraduates.length === 0 && graduates.length > 0 && (
-          <div className="text-center py-16 mb-12">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md mx-auto">
-              <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="h-8 w-8 text-gray-400" />
+        {!loading &&
+          !error &&
+          filteredGraduates.length === 0 &&
+          graduates.length > 0 && (
+            <div className="text-center py-16 mb-12">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md mx-auto">
+                <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  No Graduates Found
+                </h3>
+                <p className="text-gray-400 mb-6">
+                  No graduates match your current search and filter criteria.
+                  Try adjusting your filters.
+                </p>
+                <Button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedLevel("all");
+                    setSelectedCenter("all");
+                    setSelectedYear("all");
+                  }}
+                  variant="outline"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Clear Filters
+                </Button>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">No Graduates Found</h3>
-              <p className="text-gray-400 mb-6">
-                No graduates match your current search and filter criteria. Try adjusting your filters.
-              </p>
-              <Button 
-                onClick={() => {
-                  setSearchTerm("")
-                  setSelectedLevel("all")
-                  setSelectedCenter("all")
-                  setSelectedYear("all")
-                }}
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                Clear Filters
-              </Button>
             </div>
-          </div>
-        )}
+          )}
 
         {/* No Data State */}
         {!loading && !error && graduates.length === 0 && (
@@ -294,11 +324,14 @@ export function GraduatesPageContent() {
               <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <GraduationCap className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">No Graduates Available</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                No Graduates Available
+              </h3>
               <p className="text-gray-400 mb-6">
-                There are no graduate records available at the moment. Please check back later.
+                There are no graduate records available at the moment. Please
+                check back later.
               </p>
-              <Button 
+              <Button
                 onClick={actions.refresh}
                 className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700"
               >
@@ -344,34 +377,51 @@ export function GraduatesPageContent() {
             {/* End of Content Message */}
             {!hasMore && filteredGraduates.length > 10 && (
               <div className="text-center py-8">
-                <p className="text-gray-400">You've reached the end of the graduates list</p>
+                <p className="text-gray-400">
+                  You've reached the end of the graduates list
+                </p>
               </div>
             )}
           </div>
         )}
 
-
         {/* Graduate Detail Modal */}
         {selectedGraduate && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 pt-20 md:pt-4 overflow-y-auto">
             <div className="bg-gray-900 rounded-3xl max-w-2xl w-full max-h-[80vh] md:max-h-[90vh] overflow-y-auto my-auto">
-              <div className={`bg-gradient-to-r ${selectedGraduate.gradient?.className || 'from-blue-400 to-purple-500'} p-4 sm:p-8 relative overflow-hidden`}>
+              <div
+                className={`bg-gradient-to-r ${selectedGraduate.gradient?.className || "from-blue-400 to-purple-500"} p-4 sm:p-8 relative overflow-hidden`}
+              >
                 <div className="absolute inset-0 bg-black/20"></div>
                 <div className="relative z-10">
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                       <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden">
                         <img
-                          src={selectedGraduate.StudentProfileImage?.url || selectedGraduate.StudentProfileImage?.formats?.thumbnail?.url || "/placeholder.svg"}
+                          src={(() => {
+                            const rawUrl =
+                              selectedGraduate.StudentProfileImage?.url ||
+                              selectedGraduate.StudentProfileImage?.formats
+                                ?.thumbnail?.url;
+                            if (!rawUrl) return "/placeholder.svg";
+                            return rawUrl.startsWith("http")
+                              ? rawUrl
+                              : `${getStrapiBaseUrl()}${rawUrl}`;
+                          })()}
                           alt={selectedGraduate.StudenName}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="text-center sm:text-left mt-2 sm:mt-0">
-                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">{selectedGraduate.StudenName}</h2>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                          {selectedGraduate.StudenName}
+                        </h2>
                         <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                           <Badge className="bg-white/20 text-white border-white/30">
-                            {selectedGraduate.language_certification_level.LabelFull}
+                            {
+                              selectedGraduate.language_certification_level
+                                .LabelFull
+                            }
                           </Badge>
                           {/* <Badge className="bg-white/20 text-white border-white/30">
                             {selectedGraduate.branch.header}
@@ -396,44 +446,72 @@ export function GraduatesPageContent() {
                   <div className="space-y-4">
                     {selectedGraduate.achievement && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-1">Achievement</h4>
-                        <p className="text-white">{selectedGraduate.achievement}</p>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">
+                          Achievement
+                        </h4>
+                        <p className="text-white">
+                          {selectedGraduate.achievement}
+                        </p>
                       </div>
                     )}
                     {selectedGraduate.score_percentage > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-1">Score</h4>
-                        <p className="text-green-400 font-bold">{selectedGraduate.score_percentage}%</p>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">
+                          Score
+                        </h4>
+                        <p className="text-green-400 font-bold">
+                          {selectedGraduate.score_percentage}%
+                        </p>
                       </div>
                     )}
                     {selectedGraduate.certification && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-1">Certification</h4>
-                        <p className="text-white">{selectedGraduate.certification}</p>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">
+                          Certification
+                        </h4>
+                        <p className="text-white">
+                          {selectedGraduate.certification}
+                        </p>
                       </div>
                     )}
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Graduate Date</h4>
-                      <p className="text-white">{new Date(selectedGraduate.GraduateDate).toLocaleDateString()}</p>
+                      <h4 className="text-sm font-medium text-gray-400 mb-1">
+                        Graduate Date
+                      </h4>
+                      <p className="text-white">
+                        {new Date(
+                          selectedGraduate.GraduateDate,
+                        ).toLocaleDateString()}
+                      </p>
                     </div>
                     {selectedGraduate.currentStatus && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-1">Current Status</h4>
-                        <p className="text-white">{selectedGraduate.currentStatus}</p>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">
+                          Current Status
+                        </h4>
+                        <p className="text-white">
+                          {selectedGraduate.currentStatus}
+                        </p>
                       </div>
                     )}
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Center</h4>
-                      <p className="text-white">{selectedGraduate.branch.name}</p>
+                      <h4 className="text-sm font-medium text-gray-400 mb-1">
+                        Center
+                      </h4>
+                      <p className="text-white">
+                        {selectedGraduate.branch.name}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {selectedGraduate.testimonial && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-400 mb-3">Testimonial</h4>
+                    <h4 className="text-sm font-medium text-gray-400 mb-3">
+                      Testimonial
+                    </h4>
                     <blockquote className="text-gray-300 italic border-l-4 border-yellow-400 pl-4">
                       "{selectedGraduate.testimonial}"
                     </blockquote>
@@ -463,5 +541,5 @@ export function GraduatesPageContent() {
         {/* </div> */}
       </div>
     </div>
-  )
+  );
 }

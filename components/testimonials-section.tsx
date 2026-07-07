@@ -246,7 +246,7 @@ export function TestimonialsSection() {
       </div>
 
       {/* Elfsight Google Reviews Widget */}
-      <ElfsightReviews className="pt-16" />
+      {/* <ElfsightReviews className="pt-16" /> */}
     </section>
   );
 }
