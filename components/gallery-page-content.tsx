@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import {
   Camera,
   Users,
@@ -9,6 +9,7 @@ import {
   ZoomIn,
   Search,
   MapPin,
+  ImageOff,
 } from "lucide-react";
 import {
   ImageLightbox,
@@ -21,8 +22,8 @@ import { useApiStore } from "@/lib/stores/api-store";
 import { getStrapiBaseUrl } from "@/lib/constants";
 import Link from "next/link";
 import { DateDisplay } from "./common/date-display";
-import { useEnhancedInfiniteScroll } from "@/hooks/use-enhanced-infinite-scroll";
 import { GalleryCardSkeleton } from "@/components/common/gallery-card-skeleton";
+import { VirtualizedGalleryGrid } from "@/components/common/virtualized-gallery-grid";
 
 interface GalleryPageContentProps {
   showCategories?: boolean;
@@ -31,6 +32,90 @@ interface GalleryPageContentProps {
   isPreview?: boolean;
   className?: string;
 }
+
+interface GalleryImageCardProps {
+  image: any;
+  index: number;
+  aspectRatioClass: string;
+  onOpen: (index: number) => void;
+}
+
+// Memoized so that scrolling/loading more images doesn't re-render every
+// previously mounted card - critical once the gallery holds 1000+ images.
+const GalleryImageCard = memo(function GalleryImageCard({
+  image,
+  index,
+  aspectRatioClass,
+  onOpen,
+}: GalleryImageCardProps) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
+  return (
+    <div
+      className="relative group cursor-pointer"
+      onClick={() => onOpen(index)}
+    >
+      <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-blue-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500"></div>
+      <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105">
+        <div
+          className={`${aspectRatioClass} bg-black flex items-center justify-center relative overflow-hidden`}
+        >
+          {!loaded && !errored && (
+            <div className="absolute inset-0 bg-white/5 animate-pulse" />
+          )}
+          {errored ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/5">
+              <ImageOff className="h-8 w-8 text-gray-500" />
+            </div>
+          ) : (
+            <img
+              src={image.src || "/placeholder.svg"}
+              alt={image.alt}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setLoaded(true)}
+              onError={() => setErrored(true)}
+              className={`w-full h-full object-cover transition-opacity duration-500 ${
+                loaded ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          )}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3">
+                <ZoomIn className="h-8 w-8 text-white" />
+              </div>
+              <p className="text-white font-medium">View Full Size</p>
+            </div>
+          </div>
+          <div className="absolute top-3 left-3">
+            <Badge className="bg-black/50 text-white text-xs capitalize">
+              {image.category}
+            </Badge>
+          </div>
+        </div>
+        <div className="p-4">
+          <h4 className="font-semibold text-white mb-1 text-sm line-clamp-1">
+            {image.title}
+          </h4>
+          <p className="text-xs text-gray-400 mb-2 line-clamp-2">
+            {image.description}
+          </p>
+          <div className="flex mt-4 justify-between items-center text-xs text-gray-500">
+            <span>
+              <DateDisplay date={image.date} />
+            </span>
+            <span className="flex items-center gap-1">
+              {" "}
+              <MapPin className="h-4 w-4" /> {image.location}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export function GalleryPageContent({
   showCategories = true,
@@ -62,19 +147,6 @@ export function GalleryPageContent({
     clearError,
   } = useApiStore();
 
-  // Initialize enhanced infinite scroll with retry and prefetch
-  const { loadingRef, retry, retryCount, lastError } =
-    useEnhancedInfiniteScroll({
-      hasMore: galleriesHasMore && !isPreview, // Disable infinite scroll in preview mode
-      isLoading: galleriesLoadingMore,
-      onLoadMore: loadMoreGalleries,
-      threshold: 400,
-      prefetchThreshold: 800,
-      retryAttempts: 3,
-      retryDelay: 1000,
-      enabled: !galleriesError && !isPreview,
-    });
-
   useEffect(() => {
     setIsClient(true);
     fetchCategories(false); // Fetch all categories with forceRefresh=false
@@ -84,7 +156,11 @@ export function GalleryPageContent({
   // Transform API galleries into individual images
   // This flattens the nested structure: each gallery contains multiple images
   // We create a separate item for each image to enable smooth scrolling
-  const transformApiGalleriesToImages = () => {
+  // Memoized: with 1000+ images this rebuild is expensive and previously ran
+  // on every render (including scroll-triggered state updates).
+  const galleryImages = useMemo(() => {
+    if (apiGalleries.length === 0) return [];
+
     const images: any[] = [];
 
     apiGalleries.forEach((gallery) => {
@@ -117,16 +193,7 @@ export function GalleryPageContent({
     });
 
     return images;
-  };
-
-  // Static fallback gallery images
-  const staticGalleryImages = [];
-
-  // Get gallery images from API or fallback to static
-  const galleryImages =
-    apiGalleries.length > 0
-      ? transformApiGalleriesToImages()
-      : staticGalleryImages;
+  }, [apiGalleries]);
 
   // Icon mapping for categories
   const getCategoryIcon = (categoryName: string) => {
@@ -142,7 +209,7 @@ export function GalleryPageContent({
   };
 
   // Build dynamic categories from API data with client-side filtering
-  const buildCategories = () => {
+  const categories = useMemo(() => {
     const allCategory = {
       id: "all",
       name: "All Photos",
@@ -195,47 +262,47 @@ export function GalleryPageContent({
     }));
 
     return [allCategory, ...dynamicCategories];
-  };
+  }, [apiCategories, galleryImages]);
 
-  const categories = buildCategories();
+  const filteredImages = useMemo(() => {
+    return galleryImages
+      .filter((img) => {
+        if (selectedCategory === "all") return true;
 
-  const filteredImages = galleryImages
-    .filter((img) => {
-      if (selectedCategory === "all") return true;
-
-      // Find the selected category from API data
-      const selectedCategoryData = apiCategories.find(
-        (cat) => cat.slug === selectedCategory,
-      );
-
-      // If we found the category, filter by both slug and name; otherwise use the selectedCategory directly
-      if (selectedCategoryData) {
-        return (
-          img.category === selectedCategoryData.slug ||
-          img.category === selectedCategoryData.name.toLowerCase()
+        // Find the selected category from API data
+        const selectedCategoryData = apiCategories.find(
+          (cat) => cat.slug === selectedCategory,
         );
-      }
 
-      return img.category === selectedCategory;
-    })
-    .filter(
-      (img) =>
-        img.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        img.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        img.tags.some((tag) =>
-          tag.toLowerCase().includes(searchTerm.toLowerCase()),
-        ),
-    )
-    .slice(0, maxImages); // Limit images if maxImages is specified
+        // If we found the category, filter by both slug and name; otherwise use the selectedCategory directly
+        if (selectedCategoryData) {
+          return (
+            img.category === selectedCategoryData.slug ||
+            img.category === selectedCategoryData.name.toLowerCase()
+          );
+        }
 
-  const openLightbox = (index: number) => {
+        return img.category === selectedCategory;
+      })
+      .filter(
+        (img) =>
+          img.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          img.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          img.tags.some((tag) =>
+            tag.toLowerCase().includes(searchTerm.toLowerCase()),
+          ),
+      )
+      .slice(0, maxImages); // Limit images if maxImages is specified
+  }, [galleryImages, selectedCategory, apiCategories, searchTerm, maxImages]);
+
+  const openLightbox = useCallback((index: number) => {
     setSelectedImageIndex(index);
     setIsLightboxOpen(true);
-  };
+  }, []);
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setIsLightboxOpen(false);
-  };
+  }, []);
 
   const currentImage =
     selectedImageIndex !== null ? filteredImages[selectedImageIndex] : null;
@@ -243,10 +310,6 @@ export function GalleryPageContent({
   const containerClass = isPreview
     ? `py-20 relative ${className}`
     : `container mx-auto px-4 py-16 space-y-12 ${className}`;
-
-  const gridClass = isPreview
-    ? "grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-    : "grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
 
   const aspectRatioClass = isPreview ? "aspect-video" : "aspect-square";
 
@@ -359,68 +422,35 @@ export function GalleryPageContent({
         </div>
       )}
 
-      {/* Loading state for galleries */}
-      {galleriesLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* Virtualized gallery grid - only renders rows near the viewport,
+          keeping scroll smooth even with 1000+ loaded images */}
+      <VirtualizedGalleryGrid
+        items={filteredImages}
+        isLoading={galleriesLoading || (galleriesLoadingMore && !isPreview)}
+        hasMore={galleriesHasMore && !isPreview}
+        onLoadMore={loadMoreGalleries}
+        columns={
+          isPreview
+            ? { default: 1, md: 2, lg: 3 }
+            : { default: 1, md: 2, lg: 3, xl: 4 }
+        }
+        estimateSize={isPreview ? 340 : 400}
+        aspectRatio={isPreview ? "video" : "square"}
+        loadingComponent={
           <GalleryCardSkeleton
             count={8}
             aspectRatio={isPreview ? "video" : "square"}
           />
-        </div>
-      ) : (
-        <div className={gridClass}>
-          {filteredImages.map((image, index) => (
-            <div
-              key={image.id}
-              className="relative group cursor-pointer"
-              onClick={() => openLightbox(index)}
-            >
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-blue-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500"></div>
-              <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-105">
-                <div
-                  className={`${aspectRatioClass} bg-black flex items-center justify-center relative overflow-hidden`}
-                >
-                  <img
-                    src={image.src || "/placeholder.svg"}
-                    alt={image.alt}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
-                      <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3">
-                        <ZoomIn className="h-8 w-8 text-white" />
-                      </div>
-                      <p className="text-white font-medium">View Full Size</p>
-                    </div>
-                  </div>
-                  <div className="absolute top-3 left-3">
-                    <Badge className="bg-black/50 text-white text-xs capitalize">
-                      {image.category}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h4 className="font-semibold text-white mb-1 text-sm line-clamp-1">
-                    {image.title}
-                  </h4>
-                  <p className="text-xs text-gray-400 mb-2 line-clamp-2">
-                    {image.description}
-                  </p>
-                  <div className="flex mt-4 justify-between items-center text-xs text-gray-500">
-                    <span>
-                      <DateDisplay date={image.date} />
-                    </span>
-                    <span className="flex items-center gap-1">
-                      {" "}
-                      <MapPin className="h-4 w-4" /> {image.location}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        }
+        renderItem={(image: any, index) => (
+          <GalleryImageCard
+            image={image}
+            index={index}
+            aspectRatioClass={aspectRatioClass}
+            onOpen={openLightbox}
+          />
+        )}
+      />
 
       {!galleriesLoading && filteredImages.length === 0 && (
         <div className="text-center py-16">
@@ -450,38 +480,23 @@ export function GalleryPageContent({
         </div>
       )}
 
-      {/* Infinite Scroll Loading Indicator */}
-      {!isPreview && galleriesHasMore && (
-        <div ref={loadingRef} className="flex justify-center py-8">
-          {galleriesLoadingMore && (
-            <div
-              className="flex flex-col items-center space-y-2 text-gray-400"
-              role="status"
-              aria-live="polite"
-            >
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"></div>
-                <span>Loading more photos...</span>
-              </div>
-              <span className="text-xs text-gray-500">
-                {filteredImages.length} images loaded from {apiGalleries.length}{" "}
-                galleries
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Retry on error */}
-      {!isPreview && lastError && retryCount > 0 && (
+      {/* Retry on load-more error */}
+      {!isPreview && galleriesError && galleriesHasMore && (
         <div
           className="flex flex-col items-center justify-center py-8 space-y-4"
           role="alert"
         >
           <div className="text-red-500 font-medium">
-            Failed to load more photos (Attempt {retryCount}/3)
+            Failed to load more photos: {galleriesError}
           </div>
-          <Button onClick={retry} variant="outline" size="sm">
+          <Button
+            onClick={() => {
+              clearError();
+              loadMoreGalleries();
+            }}
+            variant="outline"
+            size="sm"
+          >
             Retry Now
           </Button>
         </div>

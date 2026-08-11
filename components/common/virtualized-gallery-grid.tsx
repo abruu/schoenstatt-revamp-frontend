@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useState } from "react"
-import { useVirtualizer } from "@tanstack/react-virtual"
+import { useWindowVirtualizer } from "@tanstack/react-virtual"
 import { GalleryCardSkeleton } from "./gallery-card-skeleton"
 
 interface VirtualizedGalleryGridProps<T> {
@@ -17,6 +17,7 @@ interface VirtualizedGalleryGridProps<T> {
     xl?: number;
   };
   estimateSize?: number;
+  rowGap?: number;
   overscan?: number;
   loadingComponent?: React.ReactNode;
   emptyComponent?: React.ReactNode;
@@ -32,6 +33,7 @@ export function VirtualizedGalleryGrid<T>({
   onLoadMore,
   columns = { default: 2, md: 2, lg: 3, xl: 4 },
   estimateSize = 400,
+  rowGap = 24,
   overscan = 5,
   loadingComponent,
   emptyComponent,
@@ -71,11 +73,11 @@ export function VirtualizedGalleryGrid<T>({
     return () => window.removeEventListener('resize', handleResize);
   }, [columnCount]);
 
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useWindowVirtualizer({
     count: Math.ceil(items.length / columnCount),
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => estimateSize,
+    estimateSize: () => estimateSize + rowGap,
     overscan,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
@@ -115,13 +117,7 @@ export function VirtualizedGalleryGrid<T>({
   const responsiveGridCols = `grid-cols-${columns.default} md:grid-cols-${columns.md || columns.default} lg:grid-cols-${columns.lg || columns.md || columns.default} xl:grid-cols-${columns.xl || columns.lg || columns.md || columns.default}`;
 
   return (
-    <div
-      ref={parentRef}
-      className="w-full"
-      style={{
-        contain: 'strict',
-      }}
-    >
+    <div ref={parentRef} className="w-full">
       <div
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
@@ -144,7 +140,8 @@ export function VirtualizedGalleryGrid<T>({
                 top: 0,
                 left: 0,
                 width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
+                paddingBottom: `${rowGap}px`,
+                transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
                 gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
               }}
             >
